@@ -5,6 +5,7 @@ local W, T, E = G.world, G.traps, G.enemies
 local R = W.rooms.arena
 local CX, CZ, RAD = 30, 132, 17.5
 W.arena = { cx = CX, cz = CZ, r = RAD }
+W.AGATE = { x0 = 50 * 16 + 1, x1 = 50 * 16 + 3, z0 = 130 * 16 + 6, z1 = 134 * 16 - 8, h = 61 }      -- the exit portcullis (voxels, local), see the builder
 
 W.builders[#W.builders + 1] = function()
     -- the shell: a cylinder of brick, hollowed out; the floor of marble with a gold ring, the moat of lava
@@ -42,11 +43,11 @@ W.builders[#W.builders + 1] = function()
     G.corridor{ x = 47, z = 132, len = 7.2, w = 3.6, h = 3.8, axis = "x", floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
     W.openings[#W.openings + 1] = { 47.2, 0, 130.2, 48.0, 3.8, 133.8 }
     G.fill(49.5, 0, 130.0, 50.1, 4.1, 130.4, "metal"); G.fill(49.5, 0, 133.6, 50.1, 4.1, 134.0, "metal")             -- gate posts
-    -- the slot the gate sinks into
-    G.vclear(50 * 16, -66, 130 * 16 + 6, 50 * 16 + 5, -1, 134 * 16 - 8)
-    local gx = 50 * 16 + 1
-    for z = 130 * 16 + 6, 134 * 16 - 8, 5 do G.vfill(gx, 0, z, gx + 2, 62, z + 1, "metal") end
-    G.vfill(gx, 0, 130 * 16 + 6, gx + 2, 3, 134 * 16 - 8, "metal"); G.vfill(gx, 30, 130 * 16 + 6, gx + 2, 33, 134 * 16 - 8, "metal"); G.vfill(gx, 58, 130 * 16 + 6, gx + 2, 61, 134 * 16 - 8, "metal")
+    -- the gate: a portcullis slab that sinks into a slot in the floor (the door node moves exactly these voxels)
+    local g = W.AGATE
+    G.vclear(g.x0 - 1, -66, g.z0, g.x1 + 2, -1, g.z1)
+    for z = g.z0, g.z1, 5 do G.vfill(g.x0, 0, z, g.x1, g.h, math.min(z + 1, g.z1), "metal") end
+    G.vfill(g.x0, 0, g.z0, g.x1, 3, g.z1, "metal"); G.vfill(g.x0, 30, g.z0, g.x1, 33, g.z1, "metal"); G.vfill(g.x0, 58, g.z0, g.x1, g.h, g.z1, "metal")
 end
 
 W.things[#W.things + 1] = function()
@@ -59,7 +60,8 @@ W.things[#W.things + 1] = function()
     emitter.create{ name = "arena_embers", preset = "embers", pos = { G.mx(CX), G.my(-0.3), G.mz(CZ) }, size = { 12.5, 0.4, 12.5 }, shape = "disc" }
     T.hazard("lava", CX - 13.3, -3.5, CZ - 13.3, CX + 13.3, 0.3, CZ + 13.3, 0)     -- placeholder replaced below: the moat only
     T.hazards[#T.hazards] = nil
-    W.arena_gate = events.door{ name = "arena_exit_gate", box = { G.wx(50) + 1, G.wy(0), G.wz(130) + 6, G.wx(50) + 3, G.wy(0) + 61, G.wz(134) - 9 }, travel = { 0, -62, 0 }, speed = 2 }
+    local g = W.AGATE
+    W.arena_gate = events.door{ name = "arena_exit_gate", box = { G.OX + g.x0, G.OY, G.OZ + g.z0, G.OX + g.x1, G.OY + g.h, G.OZ + g.z1 }, travel = { 0, -62, 0 }, speed = 2 }
     if G.state.flags.boss_dead then events.command(W.arena_gate, "open") end
 end
 

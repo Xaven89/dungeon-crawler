@@ -5,6 +5,9 @@ local G = Game
 local W = {}
 G.world = W
 
+-- the slab of the lobby's portcullis (voxels, local): the door node moves exactly these voxels
+W.GATE = { x0 = 26 * 16 + 5, x1 = 26 * 16 + 8, z0 = 9 * 16 + 4, z1 = 13 * 16 - 4, h = 71 }
+
 -- room rectangles (metres, local frame), used by the rest of the game (music, announcer, spawns, checkpoints)
 W.rooms = {
     lobby    = { x = 0,   z = 0,   w = 26, d = 22, h = 9,   name = "Intake Lobby" },
@@ -68,10 +71,10 @@ local function build_lobby_voxels()
     G.corridor{ x = 26, z = 11, len = 4, w = 4, h = 4.5, axis = "x", floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
     G.fill(25, 0, 8.8, 26.4, 5, 9.2, "metal"); G.fill(25, 0, 12.8, 26.4, 5, 13.2, "metal")      -- gate posts
     G.fill(25, 4.5, 8.8, 26.4, 5.2, 13.2, "metal")                                               -- the lintel
-    G.vclear(26 * 16 + 4, -76, 9 * 16 + 4, 26 * 16 + 11, -1, 13 * 16 - 4)                          -- the slot the portcullis sinks into
-    local gx = 26 * 16 + 5
-    for z = 9 * 16 + 4, 13 * 16 - 4, 4 do G.vfill(gx, 0, z, gx + 3, 71, z + 1, "metal") end       -- bars
-    G.vfill(gx, 0, 9 * 16 + 4, gx + 3, 3, 13 * 16 - 4, "metal"); G.vfill(gx, 34, 9 * 16 + 4, gx + 3, 37, 13 * 16 - 4, "metal"); G.vfill(gx, 68, 9 * 16 + 4, gx + 3, 71, 13 * 16 - 4, "metal")
+    local g = W.GATE
+    G.vclear(g.x0 - 1, -76, g.z0, g.x1 + 3, -1, g.z1)                                                      -- the slot the portcullis sinks into
+    for z = g.z0, g.z1, 4 do G.vfill(g.x0, 0, z, g.x1, g.h, math.min(z + 1, g.z1), "metal") end            -- bars
+    G.vfill(g.x0, 0, g.z0, g.x1, 3, g.z1, "metal"); G.vfill(g.x0, 34, g.z0, g.x1, 37, g.z1, "metal"); G.vfill(g.x0, 68, g.z0, g.x1, g.h, g.z1, "metal")
     G.text(7.4, 6.4, 22, "GAUNTLET GATE - PLEASE SCREAM IN AN ORDERLY FASHION", { facing = "-z", material = "hazard_y", size = 1, depth = 1 })
 end
 
@@ -84,8 +87,8 @@ local function build_lobby_things()
     for _, z in ipairs({ 4, 18 }) do G.sconce(0, 3.2, z, "+x") end
     G.torch(3, 2.6, 11, { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 9, name = "lobby_crystal" })
     emitter.create{ name = "lobby_dust", preset = "dust_motes", pos = { G.mx(13), G.my(4), G.mz(11) }, size = { 11, 4, 9 } }
-    W.lobby_gate = events.door{ name = "lobby_gate", box = { G.wx(26) + 5, G.wy(0), G.wz(9) + 4, G.wx(26) + 7, G.wy(0) + 71, G.wz(13) - 5 },
-                                travel = { 0, -72, 0 }, speed = 2 }
+    local g = W.GATE
+    W.lobby_gate = events.door{ name = "lobby_gate", box = { G.OX + g.x0, G.OY, G.OZ + g.z0, G.OX + g.x1, G.OY + g.h, G.OZ + g.z1 }, travel = { 0, -72, 0 }, speed = 2 }
 end
 
 -- ================================================================================================ the whole floor

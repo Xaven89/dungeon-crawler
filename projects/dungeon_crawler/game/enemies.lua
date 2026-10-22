@@ -28,7 +28,7 @@ E.types = {
                 splat = "splat_spore", hit_sfx = "squish", die_sfx = "squish_die", ragdoll = true, loot = "drop", loot_chance = 0.4, wander = 1.5 },
     foreman = { model = "foreman", name = "Goblin Foreman", hp = 340, dmg = 17, speed = 1.9, reach = 2.7, aggro = 16, xp = 160, gold = { 40, 70 }, cd = 100, height = 2.9, radius = 0.9, miniboss = true,
                 splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", ragdoll = true, loot = "silver", loot_chance = 1, slam = true },
-    manager = { model = "manager", name = "The Floor Manager", hp = 700, dmg = 24, speed = 1.7, reach = 3.2, aggro = 40, xp = 400, gold = { 150, 250 }, cd = 110, height = 3.9, radius = 1.2, boss = true,
+    manager = { model = "manager", name = "The Floor Manager", hp = 620, dmg = 20, speed = 1.7, reach = 3.2, aggro = 40, xp = 400, gold = { 150, 250 }, cd = 110, height = 3.9, radius = 1.2, boss = true,
                 splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", ragdoll = true, loot = "platinum", loot_chance = 1 },
 }
 
@@ -187,7 +187,7 @@ function E.kill(inst, opts)
     s.gold = s.gold + gold
     if gold > 0 then P.popup("+" .. gold .. " gold", "#ffd24a") end
     P.add_xp(floor(T.xp * (1 + 0.0 * s.level)), "kill")
-    G.sfx.play(T.die_sfx or "squish_die", G.to_local(x or 0, (y or 0), z or 0))
+    if x then G.sfx.play(T.die_sfx or "squish_die", G.to_local(x, y, z)) end
     -- overkill: more than twice the hp that was left
     if inst.hp < -inst.max_hp * 0.8 then A.award("overkill") end
     if inst.kind == "slime" or inst.kind == "slime_toxic" then if (A.bump("slimes") or 0) >= 10 then A.award("squeegee") end end
@@ -201,11 +201,11 @@ function E.kill(inst, opts)
     end
     agent.stop(inst.id)
     -- drops
-    if G.rand() < (T.loot_chance or 0) then
+    if x and G.rand() < (T.loot_chance or 0) then
         local item = G.items.roll(T.loot or "drop", inst.id)
         E.drop(x, y + 0.3, z, "item", item)
     end
-    if gold > 3 then E.drop(x, y + 0.3, z, "gold", gold) end
+    if x and gold > 3 then E.drop(x, y + 0.3, z, "gold", gold) end
     -- the cleanup of the body
     local id, mdl = inst.id, inst.mdl
     after(T.ragdoll and 420 or 20, function()

@@ -81,7 +81,7 @@ function B.throw(inst, x, y, z)
     local b = body.box(sx + dx / d * 1.6, sy, sz + dz / d * 1.6, 9, 11, 2, "marble")
     local sp = 13
     body.push(b, dx / d * sp * 30, (dy / d * sp + 2.5) * 30, dz / d * sp * 30)
-    E.projectiles[#E.projectiles + 1] = { body = b, born = time.tick(), dmg = 15, from = "a thrown clipboard" }
+    E.projectiles[#E.projectiles + 1] = { body = b, born = time.tick(), dmg = 12, from = "a thrown clipboard" }
     G.sfx.play("swing", G.to_local(x, y + 3, z), 0.8, 0.6)
 end
 

@@ -71,7 +71,7 @@ function W.tick_gutter(t)
     if t % 40 == 0 and G.current_room == "gutter" then
         local px, py, pz = player.pos()
         local lx, ly, lz = G.to_local(px, py, pz)
-        if ly < W.gutter_level + 0.3 and ly > -1.8 then
+        if ly < W.gutter_level - 0.25 and ly > -1.8 then
             G.player.hurt(4, "toxic sludge", { pierce = true })
             if not G.state.counters.soggy then G.state.counters.soggy = 1; G.announcer.award("soggy") end
         end
@@ -85,7 +85,6 @@ W.things[#W.things + 1] = function()
     G.brazier(111, 88, { reach = 10, color = { 0.5, 1, 0.4 } })
     for _, z in ipairs({ 74, 88 }) do G.sconce(80, 3.2, z, "+x") ; G.sconce(122, 3.2, z, "-x") end
     emitter.create{ name = "gutter_mist", preset = "steam_vent", pos = { G.mx(100), G.my(0), G.mz(86) }, rate = 12, size = { 12, 0.3, 4 } }
-    T.hazard("water", 80, -2, 70, 122, 0.4, 96)
     T.crate("gutter_gold", "gold", 110.2, 0.4, 87.4, "-x")
     local node = events.find("crate_gutter_gold")
     if node and node ~= 0 then events.on(node, "pressed", function() after(30, W.start_flood) end) end
