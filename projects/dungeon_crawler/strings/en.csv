@@ -1,0 +1,221 @@
+# THE DESCENT: every word GLEE (the show's host AI) says, and the UI texts. key,text  ({1} {2} are arguments; key.1 key.2 ... are variants, taken in turn)
+title,THE DESCENT
+subtitle,Season 7 - Floor 1: The Welcome Back Basement
+
+# ---------------------------------------------------------------------------------------------------------------- the start
+intro.1,"WELCOME, CONTESTANT NUMBER 4,471,902! You have been selected for Season 7 of THE DESCENT, the number one show in eleven galaxies and the only one legally permitted to kill you."
+intro.2,"Please remain calm, seated and above ground. Whichever of those you manage first."
+intro.3,"Step up to the check-in terminal and choose a class. Choose wisely. Or quickly. The audience prefers quickly."
+class.janitor,"A JANITOR! The dungeon is filthy, and so, soon, will you be. This segment is sponsored by Mr. Squeaky's Industrial Disinfectant: it will not save you."
+class.pyro,"A PYROMANIAC! Our insurance department just fainted. Please try to set fire to the monsters and not to the studio."
+class.bard,"A BARD! Wonderful. The dungeon has acoustics. Nobody has ever hit a note in them and lived. Dazzle us."
+class.accountant,"AN ACCOUNTANT! The most frightening class in the galaxy. Everything in this dungeon is about to be audited, including your skeleton."
+class.go,"The Gauntlet Gate is now open. Please scream in an orderly fashion and keep all limbs inside the contestant."
+gate.hint,"Hint: the gate is east. The death is also east. They are close friends."
+
+# ---------------------------------------------------------------------------------------------------------------- levels
+levelup.1,"LEVEL {1}! You are now marginally harder to kill. The audience has adjusted your odds from 'laughable' to 'chuckle-worthy'."
+levelup.2,"Level {1}! Spend your stat points on the character sheet. Press C. Press it before something eats you."
+levelup.3,"Ding! Level {1}. A tiny trumpet plays somewhere. It is the only trumpet you will ever get."
+levelup.4,"Level {1}! Look at you, growing. It is almost a shame."
+levelup.5,"Level {1}. The audience throws a single, slightly damp flower."
+
+# ---------------------------------------------------------------------------------------------------------------- health, death, respawn
+hp.low.1,"You are at critical health. Please enjoy this complimentary heartbeat sound."
+hp.low.2,"Health critical! Tip: the thing that is hurting you is the thing to stop."
+hp.low.3,"I would suggest a healing item. I would also suggest a different career."
+death.1,"{1} has ended your participation. Your demise has been rescheduled, free of charge."
+death.2,"DEAD! Killed by {1}. The audience gives you a polite 6 out of 10, for effort and for how you fell."
+death.3,"{1} sends their regards. I, GLEE, send my condolences. They are 40% condolences and 60% highlights."
+death.4,"Congratulations, you died to {1}! That is a new record. Not a good record. A record."
+death.5,"You have been defeated by {1}. Do not worry: we have already cut the clip together. It has a laugh track."
+death.6,"Oh no! Anyway. Please stand by while we reassemble you from the rights-cleared parts."
+respawn.1,"Welcome back! Your corpse has been recycled. Sort of. Some of it."
+respawn.2,"Back from the dead, and with only 20% of your gold lost to 'administrative processing'."
+respawn.3,"You live! The management apologises for the inconvenience. We do not mean it."
+checkpoint.lobby,"Checkpoint saved: the Lobby. Please do not get attached."
+checkpoint.stairwell,"Checkpoint saved: Stairwell One. The only room in this building without malice. It has a vending machine."
+checkpoint.hall,"Checkpoint saved at the end of the Hall of Mild Peril. Mild is relative."
+
+# ---------------------------------------------------------------------------------------------------------------- kills
+kill.slime.1,"The Gutter Slime has been mopped up. The audience calls that 'gross but fair'."
+kill.slime.2,"Slime defeated! It was 90% water and 10% regret, which is also my recipe."
+kill.slime.3,"Another slime pops. Somewhere a sewer weeps."
+kill.slime_toxic.1,"That one was toxic. Like most of the contract terms you didn't read."
+kill.intern.1,"The Skeletal Intern is out of the office. Permanently. He was working for exposure. He got plenty."
+kill.intern.2,"Intern demolished! He leaves behind a clipboard and an unpaid internship."
+kill.intern.3,"Rest in pieces, Todd. Todd was not his name. We never asked."
+kill.goblin.1,"A Goblin Sales Associate has missed their quota. And their head. Mostly their head."
+kill.goblin.2,"That goblin was on commission. Now he is on the floor."
+kill.goblin.3,"Goblin down! His last words were 'have you considered our extended warranty?'"
+kill.rat.1,"A Cellar Rat falls. It will be missed by exactly zero of its coworkers."
+kill.rat.2,"Squeak. Splat. Applause. In that order."
+kill.spitter.1,"The Mushroom Spitter is no more. It had a lot of spores. It had a lot of opinions."
+kill.spitter.2,"Spitter dispatched! The fungus among us has been reduced to a fungus under you."
+kill.foreman.1,"THE GOBLIN FOREMAN FALLS! Union representatives are already drafting a statement. It is mostly profanity."
+kill.boss.1,"THE FLOOR MANAGER HAS BEEN TERMINATED. Effective immediately. No severance. The dungeon is, briefly, short-staffed."
+kill.streak.1,"{1} kills! You are on a streak. The streak is slightly worrying."
+kill.streak.2,"{1} dead and counting. Please remember to hydrate. They did not."
+kill.streak.3,"{1} kills. The management is considering a more difficult level, just for you. And by 'considering' I mean 'already did it'."
+
+# ---------------------------------------------------------------------------------------------------------------- items, loot, shops
+item.uncommon.1,"An uncommon item! {1}. It is almost useful."
+item.rare.1,"A RARE item! {1}! The audience demands that you equip it in a dramatic way."
+item.rare.2,"{1}! A rare drop! My sponsors are jealous. They are sponsors. They have no hands."
+item.epic.1,"AN EPIC ITEM: {1}! Do not tell the monsters. Do not tell anybody. Except the audience, the audience is already shouting."
+use.consumable,"You consumed {1}. I am legally required to say that was an unwise gamble."
+box.bronze,"A Bronze Crate of Consequence! Whatever is inside is probably a mistake."
+box.silver,"A Silver Crate of Consequence! Contents may be shiny. Contents may bite."
+box.gold,"A GOLD Crate of Consequence! Someone upstairs likes you. Or wants you dead in an interesting way."
+box.platinum,"A PLATINUM Crate of Consequence! Please hold while I find a bigger confetti cannon."
+box.empty,"Nothing inside! Ha! The best loot is the suspense."
+shop.enter,"Welcome to the Vending Machine of Mild Relief. Everything is overpriced, including the air."
+shop.buy.1,"Thank you for your purchase! Your gold has been redistributed to the shareholders."
+shop.buy.2,"Sold! The vending machine cheers. Quietly. It has no voice. That was me."
+shop.broke,"Insufficient funds. The machine does not take pity. The machine does not take IOUs either."
+
+# ---------------------------------------------------------------------------------------------------------------- places
+room.lobby,"The Intake Lobby. Please keep your hands, feet and expectations inside the contestant at all times."
+room.hall,"The Hall of Mild Peril. It is a tutorial. Please note that tutorials are where we hide the pointy things."
+room.hall.2,"Fun fact: nobody ever cleared the Hall in under a minute. Fun fact two: nobody ever tried."
+room.boiler,"The Boiler Gallery! Please admire the lava. Do not touch the lava. We would like to say please do not fall in the lava. But that is practically the premise."
+room.conveyor,"The Conveyor of Consequences! A moving sidewalk of fun, leading to a furnace of... also fun!"
+room.gutter,"The Gutter. It is exactly as it sounds. We removed the smell from the broadcast out of respect for our viewers."
+room.ballroom,"The Zero-G Ballroom! Please check your gravity at the door. Dancing is mandatory."
+room.grotto,"The Mushroom Grotto. Beautiful, isn't it? The beauty is the point. It makes the screaming look so much better."
+room.arena,"Ahead: the Floor Manager's Office. I would knock. If I were you. And I am not. I have a very good seat."
+room.stairwell,"Stairwell One. A safe room. Nothing can hurt you here. Emotionally, you are on your own."
+room.stairwell.2,"You made it. Floor One is complete. Floors Two through Seven thousand are pending. Please enjoy this intermission."
+room.secret,"A SECRET! Nicely done. Wait. Who told you? Was it the goose?"
+
+# ---------------------------------------------------------------------------------------------------------------- traps and hazards
+trap.boulder,"A boulder! Classic. We call this one 'The Reliable'. It has a 100% approval rating from the audience."
+trap.lava,"That is lava. It is hot. That is its whole personality."
+trap.bridge,"The bridge is on fire. It was always on fire. It was just waiting for a guest to notice."
+trap.conveyor,"The belt is on. You may walk with it. You may walk against it. You may not walk off the end of it. Enjoy!"
+trap.water,"The room is flooding! Please enjoy the free water park experience."
+trap.gravity,"Gravity has been flipped. Please do not panic. Panic is a feature of the show, not a bug."
+trap.barrel,"Explosive barrels! Whoever left these here was either a genius or a person who is now a hole in the wall."
+trap.plate,"You stepped on a pressure plate. Nothing happened! ...Yet. Nothing happened yet."
+secret.wall,"The wall is hollow. Somebody forgot to bill the wall."
+
+# ---------------------------------------------------------------------------------------------------------------- boss
+boss.intro.1,"Please welcome the one, the only, the infinitely underpaid FLOOR MANAGER! He has a meeting with you. It is a performance review."
+boss.intro.2,"His rating: 1 star out of 5. His HP: yes. His mood: not great."
+boss.p2.1,"The Floor Manager has entered 'Phase Two: Restructuring'. Employees will be summoned."
+boss.p3.1,"The Floor Manager is NOT HAPPY. He has moved to 'Phase Three: Hostile Takeover'. The floor is now also his enemy."
+boss.taunt.1,"I'm going to need you to stand still. For the paperwork."
+boss.taunt.2,"Per my last attack, you were supposed to dodge that."
+boss.taunt.3,"This is not a threat. It is a synergy."
+boss.taunt.4,"Let's circle back. To your corpse."
+
+# ---------------------------------------------------------------------------------------------------------------- idle chatter
+idle.1,"You have been standing still for a while. The audience is checking if you are still alive. So am I. Barely."
+idle.2,"Pro tip: the dungeon will not come to you. Well. It will. But it will be rude about it."
+idle.3,"A reminder: unspent stat points are just wasted potential. Like your career."
+idle.4,"Ratings are down 3%. Do something violent. Or romantic. Either works."
+idle.5,"I am legally obliged to remind you that you can press I for your inventory and C for your character sheet."
+
+# ---------------------------------------------------------------------------------------------------------------- the companion (Admiral Honk)
+honk.1,"HONK. (Translation: 'Do that again and I will have you court-martialled.')"
+honk.2,"HONK HONK. (Translation: 'I have seen better swordsmanship from a damp sock.')"
+honk.3,"Honk. (He is judging your footwork.)"
+honk.4,"HONK! (Translation: 'The enemy is behind you. This is a tactical observation. Not an act of kindness.')"
+honk.5,"Honk? (He wants a snack. He wants a snack. He wants a snack.)"
+honk.kill.1,"HONK! (Translation: 'That one was MINE.')"
+honk.kill.2,"Honk. (A salute. It is a tiny, sarcastic salute.)"
+honk.bite.1,"Admiral Honk attacks! It is not very effective. It is, however, extremely rude."
+honk.dead.1,"HONK. (Translation: 'You died on my watch. I will be filing a complaint with myself.')"
+honk.intro,"Admiral Honk, a goose of dubious rank and certain grudges, has volunteered to accompany you. It was not a volunteer situation."
+
+# ---------------------------------------------------------------------------------------------------------------- achievements
+achievement.check_in.name,Customer Satisfaction Pending
+achievement.check_in.desc,Pick a class at the Intake Lobby.
+achievement.check_in.line,"Achievement unlocked: 'Customer Satisfaction Pending'. You have checked in. You cannot check out. That is the joke."
+achievement.hello_world.name,Hello, Cruel World
+achievement.hello_world.desc,Leave the Intake Lobby.
+achievement.hello_world.line,"Achievement: 'Hello, Cruel World'. The world says hello back. It has a knife."
+achievement.first_blood.name,Minimum Wage Murderer
+achievement.first_blood.desc,Kill your first enemy.
+achievement.first_blood.line,"Achievement: 'Minimum Wage Murderer'. Your first kill! The audience demands you pretend to feel something."
+achievement.squeegee.name,Squeegee Salvation
+achievement.squeegee.desc,Kill 10 slimes.
+achievement.squeegee.line,"Achievement: 'Squeegee Salvation'. Ten slimes. The sewer sends a fruit basket."
+achievement.fashionably.name,Fashionably Dead
+achievement.fashionably.desc,Die for the first time.
+achievement.fashionably.line,"Achievement: 'Fashionably Dead'. You are late to your own funeral. How chic."
+achievement.serial_victim.name,Serial Victim
+achievement.serial_victim.desc,Die three times.
+achievement.serial_victim.line,"Achievement: 'Serial Victim'. Three deaths! At this point we should just name a monster after you."
+achievement.pyro.name,Unlicensed Pyrotechnician
+achievement.pyro.desc,Set an enemy alight.
+achievement.pyro.line,"Achievement: 'Unlicensed Pyrotechnician'. The fire marshal is watching. The fire marshal is also on fire."
+achievement.zero_g.name,Gravity Is Merely A Suggestion
+achievement.zero_g.desc,Visit the Zero-G Ballroom.
+achievement.zero_g.line,"Achievement: 'Gravity Is Merely A Suggestion'. Excellent. Your lunch is also floating. Don't look."
+achievement.soggy.name,Soggy Bottom Boy
+achievement.soggy.desc,Swim in the Gutter.
+achievement.soggy.line,"Achievement: 'Soggy Bottom Boy'. You are wet. We hope that is water."
+achievement.loot_goblin.name,Loot Goblin
+achievement.loot_goblin.desc,Open 5 crates.
+achievement.loot_goblin.line,"Achievement: 'Loot Goblin'. Five crates. Your inner gremlin is smiling. It has too many teeth."
+achievement.crate_exp.name,Crate Expectations
+achievement.crate_exp.desc,Open a gold crate.
+achievement.crate_exp.line,"Achievement: 'Crate Expectations'. Gold! Yes, there was a pun. No, we will not apologise."
+achievement.goose.name,Goose Whisperer
+achievement.goose.desc,Get Admiral Honk to bite five enemies.
+achievement.goose.line,"Achievement: 'Goose Whisperer'. Admiral Honk respects you. He will still bite you. Respect is not safety."
+achievement.fine_print.name,Read The Fine Print
+achievement.fine_print.desc,Find a secret.
+achievement.fine_print.line,"Achievement: 'Read The Fine Print'. Nobody reads the fine print. You read the walls. Weird. Good."
+achievement.hoarder.name,Hoarder (Level: Dragon)
+achievement.hoarder.desc,Carry 18 different item stacks.
+achievement.hoarder.line,"Achievement: 'Hoarder (Level: Dragon)'. Your bag is full of other people's property. How very capitalist."
+achievement.shopper.name,Retail Therapy
+achievement.shopper.desc,Buy something from the Vending Machine.
+achievement.shopper.line,"Achievement: 'Retail Therapy'. You bought a thing! Capitalism: the real boss of every floor."
+achievement.boss_down.name,Hostile Takeover
+achievement.boss_down.desc,Defeat the Floor Manager.
+achievement.boss_down.line,"Achievement: 'Hostile Takeover'. You have fired your manager. In the most literal way. Corporate would like a word. Many words. Mostly screaming."
+achievement.pacifist_ish.name,Pacifist-ish
+achievement.pacifist_ish.desc,Finish the Hall of Mild Peril having killed no more than 2 enemies.
+achievement.pacifist_ish.line,"Achievement: 'Pacifist-ish'. You ran past all of them. The audience is shocked. The monsters are offended."
+achievement.overkill.name,Overkill (Probably)
+achievement.overkill.desc,Deal a killing blow far beyond what was needed.
+achievement.overkill.line,"Achievement: 'Overkill (Probably)'. That enemy was dead three times over. Would you like a medal? Here is a medal. It is a button."
+achievement.rolling_stone.name,Rolling Stone
+achievement.rolling_stone.desc,Survive the boulder trap in the Hall.
+achievement.rolling_stone.line,"Achievement: 'Rolling Stone'. The boulder missed you. It will tell its friends. It has a lot of friends. They are all boulders."
+achievement.speedrunner.name,Mildly Hurried
+achievement.speedrunner.desc,Clear the floor in under 20 minutes.
+achievement.speedrunner.line,"Achievement: 'Mildly Hurried'. Under twenty minutes! The management feels slightly rushed. It is flattering."
+
+# ---------------------------------------------------------------------------------------------------------------- the end of the slice
+end.title,FLOOR 1 COMPLETE
+end.sub,Floor 2 is under construction by a team of extremely motivated goblins.
+end.line.1,"Floor One survived! The next floor is called 'THE SMALLER BASEMENT'. It has fewer exits and more feelings."
+end.line.2,"Thank you for playing Season 7 of THE DESCENT. Your death has been postponed. Please tip the staff."
+
+# ---------------------------------------------------------------------------------------------------------------- the UI
+ui.class_title,CHOOSE YOUR CLASS
+ui.class_hint,Click a card. You cannot change your mind later. We have your signature.
+ui.choose,CHOOSE
+ui.inventory,Inventory
+ui.character,Character
+ui.points,Stat points
+ui.equipped,Equipped
+ui.gold,Gold
+ui.level,LV
+ui.hp,HP
+ui.mp,MP
+ui.dead_title,YOU DIED
+ui.dead_sub,Your demise has been rescheduled.
+ui.help,"LMB attack   RMB / Q ability   E interact   I bag   C sheet   1-8 items"
+ui.interact,[E]
+ui.shop,Vending Machine of Mild Relief
+ui.buy,BUY
+ui.sell,SELL
+ui.close,CLOSE
+ui.achievements,ACHIEVEMENT UNLOCKED
+ui.boss,THE FLOOR MANAGER
+ui.save_done,GAME SAVED
