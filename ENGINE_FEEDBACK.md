@@ -112,3 +112,11 @@ kind: unclear docs        severity: annoying
 ## Unattached voxels fall as bodies without a warning: building props one voxel off a wall turns them into debris
 kind: unclear docs        severity: annoying
 Every prop that was a voxel away from its wall (sconces, sign letters, a crystal on a plinth) fell off at once as a loose body (the engine's connectivity analysis, docs/GUIDE.md "anchor" flags are only in the materials table docs). Easy to spot (`status` shows `bodies`), but the docs of `edit.*` / `edit.text` could say "voxels not connected to an anchor material fall".
+
+## A recording of a level that uses `prefab.place` cannot be replayed
+kind: bug        severity: hurts
+what I tried: `tools/playthrough.py` records a whole session (`--record`) of THE DESCENT and replays it (`--replay`). The level places the kit's props (`prefab.place("models/props/crate.vxm", ...)`) and two manifest prefabs (`prefab.place("buildings/door", ...)`, `prefab.place("props/sign_board", ...)`).
+expected: the replay ends with the recorded hash (it did, before the prefabs were added: `session hash ... == the recorded hash`, 23,693 ticks).
+happened: `replay: ... not the one the session was recorded with`, preceded by `prefab.place: no prefab 'buildings/door' (there is no /home/claude/share/voxelith-clips/buildings/door.prefab.lua ...)` (the manifest is looked up in a folder that is not the clip's) and `prefab.place: /tmp/x.log.clip/prefab_1.vxm: cannot read` for the plain model form (the clip folder has prefab_10.vxm, prefab_11.vxm ... but the first one is not readable); on_start then stops and the hash differs. 
+repro: any level with `prefab.place("models/props/crate.vxm", x, y, z)` in on_start, MCP `--record log`, one `step`, `voxelith --replay log`.
+workaround: the test tools write `dev/flags.lua` (`Game.no_prefabs = true`) and the level skips its set dressing when recording; the replay is then exact.

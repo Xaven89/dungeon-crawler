@@ -10,6 +10,7 @@ local floor = math.floor
 local chambers = {
     A = { 28, 82, 7 }, B = { 18, 72, 7 }, C = { 18, 60, 6.5 }, D = { 14, 94, 8 }, E = { 20, 104, 8 },
 }
+local order = { "A", "B", "C", "D", "E" }       -- the carving seeds depend on the order: walk this list, not pairs()
 local tubes = {     -- polylines of tube centres (r = 2.7)
     { { 28, 82 }, { 23, 77 }, { 18, 72 } },
     { { 18, 72 }, { 18, 66 }, { 18, 60 } },
@@ -46,7 +47,7 @@ end
 W.builders[#W.builders + 1] = function()
     G.seed(77)
     local seed = 100
-    for id, c in pairs(chambers) do seed = seed + 17; carve_ball(c[1], c[2], c[3], seed) end
+    for _, id in ipairs(order) do local c = chambers[id]; seed = seed + 17; carve_ball(c[1], c[2], c[3], seed) end
     for _, line in ipairs(tubes) do
         for i = 1, #line - 1 do
             local a, b = line[i], line[i + 1]
@@ -58,7 +59,7 @@ W.builders[#W.builders + 1] = function()
             end
         end
     end
-    for id, c in pairs(chambers) do refill(c[1], c[2], c[3]) end
+    for _, id in ipairs(order) do local c = chambers[id]; refill(c[1], c[2], c[3]) end
     for _, line in ipairs(tubes) do for i = 1, #line - 1 do
         local a, b = line[i], line[i + 1]
         local n = math.ceil(G.dist2(a[1], a[2], b[1], b[2]) / 1.4)
@@ -68,7 +69,8 @@ W.builders[#W.builders + 1] = function()
     W.openings[#W.openings + 1] = { 33.0, 0, 80, 35, 4.2, 84 }
     G.corridor{ x = 28, z = 112, len = 3, w = 3, h = 3.6, axis = "z", floor = "flagstone", wall = "dungeon_brick" }
     -- decoration, chamber by chamber
-    for id, c in pairs(chambers) do
+    for _, id in ipairs(order) do
+        local c = chambers[id]
         local cx, cz, r = c[1], c[2], c[3]
         -- stalactites hang from the ceiling of the sphere (the tops start inside the rock)
         for i = 1, floor(r * 1.4) do
@@ -105,7 +107,8 @@ W.builders[#W.builders + 1] = function()
 end
 
 W.things[#W.things + 1] = function()
-    for id, c in pairs(chambers) do
+    for _, id in ipairs(order) do
+        local c = chambers[id]
         emitter.create{ name = "grotto_flies_" .. id, preset = "fireflies", pos = { G.mx(c[1]), G.my(1.8), G.mz(c[2]) }, size = { c[3] * 0.6, 1.2, c[3] * 0.6 },
                         light = { color = { 0.6, 1.0, 0.7 }, reach = 12, flicker = true } }
         emitter.create{ name = "grotto_spores_" .. id, preset = "dust_motes", pos = { G.mx(c[1]), G.my(3), G.mz(c[2]) }, size = { c[3] * 0.7, 2.5, c[3] * 0.7 } }

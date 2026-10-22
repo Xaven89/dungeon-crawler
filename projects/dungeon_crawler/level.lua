@@ -25,6 +25,7 @@ include("game/hud.lua")
 local G = Game
 
 function on_start()
+    pcall(include, "dev/flags.lua")        -- optional switches for tests (tools/playthrough.py writes `Game.no_prefabs = true`: recordings cannot replay prefab.place, see ENGINE_FEEDBACK.md)
     G.load()
     G.items.init()
     G.enemies.define_fx()

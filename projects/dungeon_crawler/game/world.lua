@@ -110,6 +110,7 @@ function W.build()
 end
 
 -- the rooms next to each other (enemies exist only in the room the player is in and the rooms next to it)
+W.room_order = { "lobby", "hall", "boiler", "conveyor", "gutter", "ballroom", "grotto", "arena", "stairwell" }     -- a fixed order: the agent ids depend on the spawn order
 W.neighbors = {
     lobby = { "hall" }, hall = { "lobby", "boiler" }, boiler = { "hall", "conveyor" }, conveyor = { "boiler", "gutter" }, gutter = { "conveyor", "ballroom" },
     ballroom = { "gutter", "grotto" }, grotto = { "ballroom", "arena" }, arena = { "grotto", "stairwell" }, stairwell = { "arena" },
@@ -122,8 +123,9 @@ function W.sync_active(room)
         if room == "hall" and G.state.flags.secret_hall_south then active.grotto = true end
         if room == "grotto" and G.state.flags.secret_hall_south then active.hall = true end
     end
-    for r, list in pairs(W.populate_list) do
-        if active[r] then G.enemies.spawn_room(r, list) else G.enemies.despawn_room(r) end
+    for _, r in ipairs(W.room_order) do
+        local list = W.populate_list[r]
+        if list and active[r] then G.enemies.spawn_room(r, list) else G.enemies.despawn_room(r) end
     end
 end
 function W.populate() W.sync_active(G.current_room or "lobby") end

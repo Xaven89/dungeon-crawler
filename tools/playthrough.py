@@ -45,6 +45,14 @@ print(G.enemies.alive_in('%s'), G.state.hp, G.state.deaths)""" % room, ticks=ste
     return "%-10s %s  (ticks %d)  level/kills/deaths/hp/gold %s" % (room, "cleared" if t < max_ticks else "NOT cleared", t, o[0] if o else "?")
 
 def main():
+    flags = os.path.join(ROOT, "projects", "dungeon_crawler", "dev", "flags.lua")
+    with open(flags, "w") as f: f.write("Game = Game or {}\nGame.no_prefabs = true   -- recordings do not replay prefab.place (ENGINE_FEEDBACK.md)\n")
+    try:
+        run_all()
+    finally:
+        if os.path.exists(flags): os.remove(flags)
+
+def run_all():
     with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--time", "0.75", "--record", log]) as v:
         print("status:", v.status()["project"])
         v.step(30)
