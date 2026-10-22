@@ -47,6 +47,17 @@ function C.tick(t)
         C.respawn()
         return
     end
+    -- he trots at the player's back right shoulder, not in front of the camera
+    if C.state == "follow" and t % 30 == 0 then
+        local fx_, fy_, fz_ = player.forward()
+        local n = math.max(0.01, math.sqrt(fx_ * fx_ + fz_ * fz_))
+        fx_, fz_ = fx_ / n, fz_ / n
+        local sx, sz = px - fx_ * 2.4 - fz_ * 1.5, pz - fz_ * 2.4 + fx_ * 1.5
+        if G.dist2(info.x, info.z, sx, sz) > 1.6 and d < 14 then
+            local sy = nav.floor(sx, py + 0.5, sz)
+            if sy then agent.walk(C.id, sx, sy, sz) else agent.follow(C.id, 2.8) end
+        end
+    end
     -- in the safe room he sits in his bed
     if G.safe then
         if C.state ~= "bed" then

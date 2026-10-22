@@ -304,6 +304,10 @@ function P.attack()
     P.swings = P.swings + 1
     P.swing_tick = now
     G.sfx.play("swing", nil, nil, nil, 0.6, 0.9 + (P.swings % 3) * 0.1)
+    do   -- a little arc of sparks in front of the hand (cosmetic)
+        local px, py, pz = player.pos(); local fx_, fy_, fz_ = player.forward()
+        fx.play("slash", floor((px + fx_ * 1.6) * 16), floor((py + 1.3 + fy_ * 1.6) * 16), floor((pz + fz_ * 1.6) * 16), 0.8)
+    end
     local targets = P.targets_in_cone(w.reach, 0.62, 2)
     local hit = false
     for _, t in ipairs(targets) do

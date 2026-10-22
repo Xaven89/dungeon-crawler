@@ -209,7 +209,7 @@ end.line.2,"Thank you for playing Season 7 of THE DESCENT. Your death has been p
 
 # ---------------------------------------------------------------------------------------------------------------- the UI
 ui.class_title,CHOOSE YOUR CLASS
-ui.class_hint,Click a card. You cannot change your mind later. We have your signature.
+ui.class_hint,Click a card (or Tab and Enter). You cannot change your mind later. We have your signature.
 ui.choose,CHOOSE
 ui.inventory,Inventory
 ui.character,Character
