@@ -1,0 +1,7 @@
+# creatures.csv (docs/WORLD_GEN.md "Creatures"): who lives where. The models are the sample creatures of tools/make_creatures.py; everything spawned here wanders (hostility is a level script's, see projects/creature_test).
+# creature, biome, model, density, group_min, group_max, speed, day, night, wander_radius
+deer,    forest, models/deer.vxm,    0.5, 2, 4, 1.3, 1, 1, 30
+deer,    plains, models/deer.vxm,    0.3, 1, 3, 1.3, 1, 1, 40
+rabbit,  plains, models/rabbit.vxm,  0.6, 2, 5, 2.4, 1, 1, 15
+chicken, plains, models/chicken.vxm, 0.3, 3, 6, 0.8, 1, 1, 8
+goblin,  forest, models/goblin.vxm,  0.25, 2, 3, 1.6, 1, 1, 25

@@ -1,0 +1,16 @@
+#version 2
+lantern_1 lamp 1 1 0 0
+lantern_2 lamp 1 1 0 0
+lantern_3 lamp 1 1 0 0
+lantern_4 lamp 1 1 0 0
+lantern_5 lamp 1 1 0 0
+lantern_6 lamp 1 1 0 0
+lantern_7 lamp 1 1 0 0
+lantern_8 lamp 1 1 0 0
+lantern_9 lamp 1 1 0 0
+lantern_switch button 0 1 0 0
+house_door door 0 1 0 0
+house_plate volume 0 1 0 0
+lawn_door.door door 0 1 0 0
+lawn_door.plate volume 0 1 0 0
+push_door.door door 0 1 0 0

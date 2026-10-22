@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "voxelith": {
+      "command": "./voxelith",
+      "args": ["--mcp", "--project", "projects/demo_level", "--threads", "3"]
+    }
+  }
+}

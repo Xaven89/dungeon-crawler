@@ -1,0 +1,46 @@
+# Navigation and agents
+
+Characters of a level that walk over the voxels by themselves. `sim/nav.*` finds paths, `sim/agent_system.*` moves the characters. Both are driven from the level script and are deterministic (the same on every peer and in a replay).
+
+```lua
+local npc = agent.spawn { x = 40, y = 2.1, z = 52,          -- feet, metres
+                          speed = 1.4,                       -- m/s
+                          skin = "sand", shirt = "brick", legs = "wood" }   -- materials of the built-in figure (1.75 m)
+local npc2 = agent.spawn { x = 40, y = 2.1, z = 52, model = "models/walker.vxm" }  -- a rigged model instead (docs/GUIDE.md: the model editor): its "walk" clip plays while it walks
+local found, partial = agent.walk(npc, 60, 2.0, 70)          -- found: the path reaches it; partial: only part of the way (the closest cell it found)
+agent.follow(npc, 2.5)                                       -- keep within 2.5 m of the player (new path every second while the player moves)
+agent.wander(npc, 8)                                         -- random places within 8 m of where it is now, with pauses
+agent.stop(npc); agent.speed(npc, 3); agent.remove(npc)
+agent.info(npc)   -- { x, y, z, yaw, speed, mode = "idle|goto|follow|wander", falling, path_left, distance }
+agent.list()
+function on_agent(id, what) end                               -- what = "arrived", "stuck", "no_path", "fell"
+
+nav.path(x0, y0, z0, x1, y1, z1)   -- { {x=, y=, z=}, ... } waypoints in metres, or nil if there is no way (a query only)
+nav.floor(x, y, z)                 -- the standing height in the column near y, or nil
+```
+At most 64 agents. The Cove has a resident that wanders the lawn (`projects/lantern_cove/level.lua`).
+
+## How a path is found
+The world is read as columns. A spot is **standable** when there is solid ground under it, the body fits above it (1.75 m of free voxels in the column, the corners of the 0.5 m cell free from 3 voxels up), and it is not under deep water. A* runs over cells of 8 voxels (0.5 m), 8 directions, with steps up to 0.5 m, drops of up to 1 m, no corner cutting, a small cost for height changes. The result is smoothed by string pulling (the furthest later waypoint that can be walked to in a line). Budget: 8000 cells per search, and never more than `40 x (cells to the goal) + 200` (a goal that cannot be reached, like the top of a pillar, costs a few thousand cells, not the whole budget; the columns are looked at once per search) (`max_nodes` in `agent.spawn`, up to 50000), at most 160 cells (80 m) from the start; a search that runs out of budget goes to the closest cell it found (`partial`). Nothing is stored: the world is read when asked, so edits need no bookkeeping.
+
+All coordinates are integer voxels; costs use only `+` and `*`; ties in the open list break by insertion order, so a path is the same on every machine. Motion uses `+ - * /`, `sqrt` and the deterministic `atan2` of `core/dmath.hpp`.
+
+## Obstacles, doors, each other
+- **Loose bodies are obstacles.** The voxel grid does not hold a vehicle or a crate, so every search and every step also asks the loose bodies (not the driven ones: agents, animated parts, door panels; nothing smaller than about 0.6 m across): a spot is not standable when a body's box, grown by the walker's radius (0.34 m), overlaps the walker's column. An agent walks round a truck, the path is checked every 20 ticks and made again when a body has moved into it, and a step into a body (or a wall, or a closed door) waits and then plans again instead of ramming. `nav.path` knows the bodies too.
+- **Doors.** With the event system (`events.door`, sliding or hinged on a motor; not a dynamic swing door that is only pushed) a closed door is planned *through*: the agent walks up to it (a metre and a bit away), sends the command `open` (again every 1.5 s while it is closed), waits while it moves and goes on when it is open. A door that does not open in 15 seconds (disabled, blocked) ends the order with the event `stuck`.
+- **Each other.** Agents push each other away inside 1 m (and step to their own right when they meet head on), so a crowd spreads out and two agents walking toward each other pass.
+
+## How an agent moves
+It is a kinematic voxel body (it is drawn, it pushes crates and blocks the player, nothing pushes it), posed every tick before the physics step. Along its path it walks to the next waypoint, turns toward the way of travel (12 degrees a tick), steps up (0.7 voxel a tick; the floor nearest to its feet counts, a shelf above its head is not climbed) and down (1 voxel a tick); when the floor under it is more than 3 voxels lower it falls (9.81 m/s^2) and lands. Every 20 ticks the next three waypoints are checked: a wall built in the way, or ground dug away, makes it plan again (an event `no_path` when nothing is left). A `follow` or `wander` whose search fails or goes only partway waits three seconds (a minute for wander: one second) before it tries again. Two seconds of walking without making 4 voxels of progress is *stuck*: one new path for a `walk`, then the event `stuck` and it stops. An agent that falls out of the world is removed (`fell`).
+
+## State and replays
+An agent exists because the level script spawned it, and its orders come from the script, which runs on every peer and again in a replay, so no new logged action is needed. The agents' positions, paths and random state are part of the session hash when any exist (`tests/test_agents.cpp`; `tools/net_test.sh` runs a wandering agent and a driven vehicle on two peers and compares the hashes).
+
+## Limits (prototype)
+- Walking assumes the world's gravity (down the y axis); agents do not walk on walls or planetoids.
+- No avoidance of the player (they still push the player, who cannot push them), no locked doors (a door that will not open ends the order), no ladders, no swimming, no jumping over gaps, no climbing above 0.5 m.
+- **Footsteps** (round 25): `creature = "horse"` in `agent.spawn` (default: the model file's name, `agent` for the built-in figure) picks the rows of `footsteps.csv` (docs/AUDIO.md "Footsteps"): foot kind, pitch, volume, stride and gait. An agent steps by the distance it moved (a position delta, so a replay sounds the same); sound is cosmetic and never enters the hash.
+- **Animation of a rigged model** (round 22): `animation = "auto" | "clip" | "procedural"` in `agent.spawn`. `clip` plays the rig's `walk` clip while it walks (as before). `procedural` poses the model by rule from the rig's roles (`Rig::inferRoles`, docs/ANIMATION.md: legs swing in turn, arms against them, a tail follows, IK on the legs that have a shin and a foot so the feet stand on stairs, a smooth body turn for the quarter turns); the rig needs no clip. `auto` (default) picks `procedural` when the rig has no `walk` clip or has IK legs, `clip` otherwise. A procedural agent with a head turns it to the player within 6 m (`look_at_player = false` stops that). The agent's path and hash do not depend on the animation (the rules are cosmetic). A model that is hit hard enough (a `ragdoll` rule, `model.ragdoll(m, true)`) goes limp and the agent stops walking until it gets up; it stands up where its hips lie.
+- **Sample creatures** (round 28): `tools/make_creatures.py` writes six rigged models without the engine (a slime that hops by clip, a skeleton and a goblin with an `attack` clip whose `hit` event is where a game takes health, a rabbit, a deer and a chicken that walk by rule from their roles), into `projects/creature_test/models` and the kit's `creatures/` folder. `projects/creature_test` is the demo: the unfriendly ones `follow` the player and the script plays `attack` within reach (`on_anim` hears `hit`), the deer and the chicken wander, the rabbit bolts when the player is within 4 m. **There is no hostility in the engine**: follow, wander, walk, clips and events are the parts; a level script puts them together. `projects/endless_test/creatures.csv` spawns deer, rabbits, chickens and goblins by biome, all wandering.
+- A rigged model (`model = "file.vxm"`, e.g. `walker.vxm`) plays its `walk` clip while the agent walks and turns a quarter at a time (it should face +z and stand on y = 0); an agent without a model is the built-in figure, which does not animate. A model agent's id is `0x40000000 + the instance id`, one body size for the search (cell 0.5 m, 1.75 m high).
+- No hierarchical search: very long routes (more than 80 m) need waypoints from the script.

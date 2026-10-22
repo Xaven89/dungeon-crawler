@@ -1,0 +1,8 @@
+*.vxs
+*.vxs.*
+*.gen/
+*.clip/
+*.log
+__pycache__/
+.prefabs/
+*.ini

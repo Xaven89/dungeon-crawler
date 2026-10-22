@@ -1,0 +1,10 @@
+# biomes.csv with rules (docs/WORLD_GEN.md "Rules"): the last four cells are expressions: height_add, surface_rule, subsurface_rule, sub_depth_rule
+# name, temp_lo, temp_hi, moist_lo, moist_hi, surface, subsurface, sub_depth, base, amplitude, roughness, sea, trees, tree_spacing, caves, snow_line, height_add, surface_rule, subsurface_rule, sub_depth_rule, fog, fog_tint, sky_tint, wind, bed, bed_level, ores, cave_water, stalactites, overhang
+# plains: steep ground is bare stone, a little gravel-coloured sand where it is dry; the ground gets gentle terraces
+plains,   0.30, 0.70, 0.30, 0.70, grass, dirt,  24, 400, 120, 0.50, water, oak,  112, 1, 0,   terrace(fbm(900, 2, 0.5) * 14, 6, 0.6), select(slope > 0.9, stone, select(moist < 0.42 && hash(5) < 0.5, sand, grass)), select(slope > 0.9, stone, dirt), 18 + noise(40) * 16, 0.8, #f2f6ff, #fff8f0, 0.8, meadow, 0.55, metal:0.003:20:200, 0, 0.5, 0
+# forest: the ground rises toward the mountains (ecotone), moss-dark dirt under the trees
+forest,   0.30, 0.80, 0.60, 1.00, grass, dirt,  24, 420, 180, 0.55, water, pine, 72,  1, 0,   40 * weight(mountain), select(slope > 1.1, stone, grass), -, -, 2.2, #cfe3d4, #e4efe4, 0.5, forest, 0.6, metal:0.003:20:200, 340, 0.5, 0
+desert,   0.70, 1.00, 0.00, 0.40, sand,  sand,  40, 390, 60,  0.35, none,  none, 0,   1, 0,   10 * noise(200), -, -, -, 0.6, #fff0d0, #fff2dc, 1.8, desert, 0.5, -, 0, 0.3, 0
+# mountain: ridges cut into it, snow above a wobbling line
+mountain, 0.00, 0.60, 0.20, 0.80, stone, stone, 8,  520, 520, 0.70, water, pine, 160, 1, 760, -60 * band(ridge(1200), 1, 0.12), select(h > 740 + 60 * noise(220), snow, stone), stone, 8, 1.2, #e6eaf2, #e8eeff, 2.5, tundra, 0.5, metal:0.008:10:300, 0, 0.7, 36
+tundra,   0.00, 0.30, 0.00, 0.50, snow,  dirt,  6,  410, 90,  0.45, none,  none, 0,   0, 0, -, -, -, -, 1.5, #e8f0ff, #eef4ff, 3, tundra, 0.6, -, 0, 0, 0

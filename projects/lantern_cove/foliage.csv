@@ -1,0 +1,18 @@
+# Lantern Cove ground cover (docs/FOLIAGE.md). name,surfaces (;),share,density,h_base,h_var,h_step,h_max,blades,half,spread,main,dry,dark,color_mod,dark_count,dry_count,flower_mask,flowers (;),flower_half,stiffness,patch_scale,patch_density,patch_height,patch_type,taper,lean,splay,wet_dark,wet_lean,season,sprite
+# Paths: `path` is how much of the slow press (footsteps that stay ten minutes: @trample) a type shows: grass stays 60 % flat on a trail, clover 30 %, moss all of it, the rest springs back.
+# Bare ground: a painted type does not grow on a path (wear.csv makes them)
+@bare,path
+# The meadow: the engine's grass (tapered, blades radiating a little, glades and tall patches by a 5 m noise; wet rain-dark and bent; dry yellow in autumn), with a second type on the same ground:
+# short clover with pink and white heads that takes over where the noise is high (a flower field), and a few poppies (a small model: a stem and a red head)
+grass,grass,3,0.61,2,3,3,8,3,0.25,1.5,tuft,tuft-dry,tuft-dark,5,1,1,31,flower-red;flower-yellow;flower-white,0.36,1,40,0.45,0.7,0.8,0.55,0,0.5,0.75,0.5,tuft-dry,-,-,-,-,-,0.6
+clover,grass,1,0.8,1,2,4,3,2,0.3,1.2,clover,clover,tuft-dark,5,0,0,3,clover-flower;clover-pink;clover-flower,0.4,0.7,40,0.2,0.2,0,0.8,0,0.3,0.8,0.3,-,-,-,-,-,-,0.3
+poppies,grass,0.12,0.2,1,1,1,1,1,0.25,1.2,tuft-dark,tuft-dark,tuft-dark,1,0,0,0,flower-red;flower-yellow,0.3,0.8,0,0,0,0,1,0,0,0.8,0.3,-,models/poppy_s.vxm
+# Reeds on the sand and the shore: tall, thin, hardly swaying, a few dry ones
+reeds,sand,1,0.5,4,4,2,8,2,0.18,1.0,reed,reed-dry,reed-dark,5,1,2,0,-,0.3,0.45,0,0,0,0,0.6,0.2,0,0.85,0.2,-,-,0,-,1
+# Moss on stone: the top of the cliffs and the rocks
+moss,stone,1,0.55,1,1,6,2,3,0.32,1.3,moss,moss-light,moss-dark,4,1,1,0,-,0.3,0.2,0,0,0,0,1,0,0,0.7,0,-,-,-,-,-,-,1
+# Ferns (a small model: a stem and fronds) and a few mushrooms in the damp dirt
+ferns,dirt,1,0.45,1,1,1,1,1,0.3,1.8,fern,fern,fern-dark,3,1,0,0,-,0.3,1.2,0,0,0,0,1,0,0,0.8,0.3,-,models/fern_s.vxm
+mushrooms,dirt,0.2,0.2,1,1,1,1,1,0.3,2.0,sand,sand,sand,1,0,0,0,flower-red,0.3,0.2,0,0,0,0,1,0,0,1,0,-,models/mushroom_s.vxm
+# Kelp on the lake floor (it grows under water only: the blades stop below the surface)
+kelp,sand,1.5,0.4,3,4,2,8,2,0.25,1.2,moss,moss-light,moss-dark,5,1,1,0,-,0.3,1.6,24,0.5,0.3,0,0.6,0.3,0.3,1,0,-,-,1

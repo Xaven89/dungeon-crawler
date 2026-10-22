@@ -1,0 +1,6 @@
+# Crashes and lost sessions
+
+- **A crash leaves a report** (`core/crash.*`): on stderr and in `~/.cache/voxelith/crash-PID.txt`: the signal, the engine version and commit, the simulation tick, the last ten actions taken (`dig`, `explode`, `use` ...) and a backtrace. Only async-signal-safe calls run in the handler. The backtrace shows `voxelith(+0xOFFSET)`: `addr2line -f -C -e build/release/voxelith 0xOFFSET` names the function (the build has debug info). `voxelith --selftest-crash` makes one on purpose (`tools/crash_test.sh`, ctest `crash`).
+- **A recording survives a crash**: the log is flushed line by line and the crash handler adds a `crash` line, so `--replay` plays it up to the moment before. (A session that is killed with TERM or HUP gets the same line.)
+- **Autosave**: while a project with a save file is played, the world and the script's store are saved every `autosave` seconds (setting, default 300, 0 = off; in a networked session only the host saves). The save is an action like F11: logged, replayable.
+- **A save is never half-read** (docs/SAVES.md): a file of a newer version is refused, and a world save is an append-only log, so a crash in the middle of a save loses at most the record being written.

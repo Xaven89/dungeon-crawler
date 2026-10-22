@@ -1,0 +1,8 @@
+# biomes.csv: the climate picks a row, the row makes the ground (docs/WORLD_GEN.md)
+# name, temp_lo, temp_hi, moist_lo, moist_hi, surface, subsurface, sub_depth, base, amplitude, roughness, sea, trees, tree_spacing, caves, snow_line, height_add, surface_rule, subsurface_rule, sub_depth_rule, fog, fog_tint, sky_tint, wind, bed, bed_level
+# The four rule cells are empty (`-`: the plain ground); the six mood cells after them are cosmetic (docs/WORLD_GEN.md "Mood"): a clear day in the plains, a hazier forest, warm desert air, thin cold air over the mountains and the tundra.
+plains,   0.30, 0.70, 0.30, 0.70, grass, dirt,  24, 400, 120, 0.50, water, oak,  112, 1, 0,   -, -, -, -, 0.5, #f4f6ff, #ffffff, 0.8, meadow, 0.5
+forest,   0.30, 0.80, 0.60, 1.00, grass, dirt,  24, 420, 180, 0.55, water, pine, 72,  1, 0,   -, -, -, -, 0.8, #d8e6d8, #eef5ee, 0.5, forest, 0.6
+desert,   0.70, 1.00, 0.00, 0.40, sand,  sand,  40, 390, 60,  0.35, none,  none, 0,   1, 0,   -, -, -, -, 0.4, #ffefd2, #fff3e0, 1.6, desert, 0.5
+mountain, 0.00, 0.60, 0.20, 0.80, stone, stone, 8,  520, 520, 0.70, water, pine, 160, 1, 760, -, -, -, -, 0.7, #e8ecf4, #eaf0ff, 2.0, tundra, 0.5
+tundra,   0.00, 0.30, 0.00, 0.50, snow,  dirt,  6,  410, 90,  0.45, none,  none, 0,   0, 0,   -, -, -, -, 1.0, #e8f0ff, #eef4ff, 2.5, tundra, 0.6

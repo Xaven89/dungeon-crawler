@@ -1,0 +1,10 @@
+# footsteps.csv (docs/AUDIO.md "Footsteps"): what the sample creatures' feet sound like
+# creature, surface, foot, pitch, volume, stride, gait
+*,        *, shoe,  1.0,  1.0, 1.6, biped
+player,   *, shoe,  1.0,  1.0, 1.6, biped
+slime,    *, soft,  0.9,  0.9, 1.0, biped
+skeleton, *, claw,  1.1,  0.9, 1.4, biped
+goblin,   *, bare,  1.2,  0.9, 1.1, biped
+rabbit,   *, paw,   1.6,  0.4, 0.8, quad
+deer,     *, hoof,  1.1,  0.8, 1.8, quad
+chicken,  *, claw,  1.5,  0.4, 0.5, biped

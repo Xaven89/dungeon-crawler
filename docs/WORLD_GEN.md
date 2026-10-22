@@ -1,0 +1,258 @@
+# World generation: biomes, caves, trees by region (`terrain = biomes`)
+
+Steps G1 to G3 of docs/WORLD_WEAR_DESIGN.md. The demo island (`terrain = demo`) and the flat plain (`terrain = flat`) are unchanged; `terrain = biomes` makes a world from a climate. The generator is still a pure function of
+the integer position, the seed and the params, chunk by chunk, in any order, on any thread (the streamer, the far levels, the recordings and the net lockstep rely on that).
+
+```
+name = My world
+seed = 1337
+world = 250            # chunks per side
+terrain = biomes
+biomes = biomes.csv    # optional: without it the built-in table below is used
+caves = on             # rooms and tunnels under the ground (optional, default off)
+cave_floor = 128       # no cave below this height in voxels (optional)
+```
+`--terrain biomes --biomes file.csv --caves on --cave-floor N` do the same on the command line. `voxelith --check-project dir` reads the table against the project's materials. `projects/biome_test` is a ready world.
+
+## The biome table (`biomes.csv`)
+```
+# name, temp_lo, temp_hi, moist_lo, moist_hi, surface, subsurface, sub_depth, base, amplitude, roughness, sea, trees, tree_spacing, caves, snow_line
+plains,   0.30, 0.70, 0.30, 0.70, grass, dirt,  24, 400, 120, 0.50, water, oak,  112, 1, 0
+forest,   0.30, 0.80, 0.60, 1.00, grass, dirt,  24, 420, 180, 0.55, water, pine, 72,  1, 0
+desert,   0.70, 1.00, 0.00, 0.40, sand,  sand,  40, 390, 60,  0.35, none,  none, 0,   1, 0
+mountain, 0.00, 0.60, 0.20, 0.80, stone, stone, 8,  520, 520, 0.70, water, pine, 160, 1, 760
+tundra,   0.00, 0.30, 0.00, 0.50, snow,  dirt,  6,  410, 90,  0.45, none,  none, 0,   0, 0
+```
+At most 64 rows, names unique. `temp` / `moist`: 0..1 boxes. `surface` / `subsurface`: material names (the first 2 to 4 voxels, then `sub_depth` voxels of the second, then stone). `base` / `amplitude`: the mean height and the swing in
+voxels (a voxel is 6.25 cm: 400 is 25 m above the bottom, the sea is at 372). `roughness` 0..1: how much of the fine noise stays (0.5 is the demo island; above 0.6 the mountain ridges come in). `sea`: `water` fills the
+ground's hollows up to the sea level (with a beach of sand around it), `none` leaves them dry. `trees`: `oak` (a round crown) or `pine` (three balls), `tree_spacing`: about this many voxels between trees (0 or `none`: no trees).
+`caves`: 1/0. `snow_line`: above this height the surface is snow (0: never). The table is project data: a recording keeps a copy (`<clip>/biomes_0.csv`) and its hash, the net descriptor carries the hash, a replay reads the copy.
+A row with a material the project does not have is reported and left out.
+
+## How the ground is made (G1)
+- **Mountains** (rows rougher than 0.6; version 3): the old ridge term was the round top of plain value noise. It is now a **ridged multifractal**: five octaves (2048 down to 128 voxels), each the crest of its noise (the noise crossing its middle, squared: a sharp crease), each finer one 0.4 of the one before and strong only where the coarser one is high, the lines bent by a **domain warp** of up to 256 voxels so ranges meander, and **gullies** (the square of a 128 voxel crest, up to 26 voxels deep, deeper on the crests' flanks) cut into the slopes. The wide octaves are in the smooth ground the water finds its way over. Slopes: in the test area about 12 % of the columns step 2 or more voxels from a neighbour and under 0.2 % step 4, nothing walls (a test bounds it); `roughness` 0.72 and above gives the full effect, 0.7 (the built-in mountain) about 0.8 of it.
+- **Climate**: temperature and moisture are two smooth integer noise fields (three octaves, 256 m, 128 m and 64 m wavelengths), 0..65535. Temperature is lowered where the big-scale height noise is high, so mountains are cold.
+- **Pick**: the row whose box holds (temperature, moisture); several: the smaller box (the specific one); none: the nearest box centre.
+- **Relief blends over 128 voxels (8 m)**: the row's `base`, `amplitude` and `roughness` are taken at the corners of a grid of 128 voxels and interpolated with a smoothstep and integer weights, so a plain rises into a mountain along
+  a long ramp, never a cliff (the test requires at most 14 voxels of step between neighbours anywhere on a 6 km line). The grid is in fine voxels at every level, so the far levels agree.
+- **Materials blend over 2 m (32 voxels)**: the biome of a voxel (its surface, subsurface, sea, snow line, trees, caves) is picked at the corners of a grid of 32 voxels; in a cell where the corners disagree the second biome
+  takes a voxel when the position's own hash is below its weight: a dithered edge, grass thinning into sand. Everything is integer maths.
+- Known limits: a biome patch smaller than 128 voxels (8 m) gets its materials but only a share of its relief, so a lone mountain-climate pocket on a plain is a stone knoll, not a mountain; `topChunkY` is taken from the table (base + amplitude + ridges 660 + trees).
+- The start spot is dry land near the middle of the world (`biomeStartSpot`).
+
+## Caves (G2)
+Only at full resolution (the far levels never carve), only between `cave_floor` and the ground, and only in biomes with `caves = 1`. Rooms ("cheese") are noise above a threshold that falls with
+depth (bigger rooms deeper down): three parts of a wide noise (wavelength 256 voxels) and one of a fine one (48 voxels, version 5), so a room has lumpy walls, pillars and alcoves instead of a round shell; tunnels ("worms") are where two other noise fields are both near their middle (wavelength 512 voxels, the height
+sampled at 0.6 of the scale so a tunnel is taller than wide; the width follows the room noise, about 1.5 to 4 m, so passages open into halls). Both are sampled on lattices of 4 and 8 voxels per chunk and
+interpolated with integer weights. A cave stays 16 voxels under the ground (32 under the bed of the sea, a lake or a river; version 5, before 8), except where the column itself is a hillside (the ground rises 3 or more voxels over its two neighbours, about 56 degrees; version 5, before the whole chunk counted as a hillside when its ground spanned 24 voxels, which opened mouths under beaches): there a tunnel may reach the surface, which makes the mouths. **Floors and light** (version 6): the stone right under a cave's air (or water) is dirt (the sediment of a cave floor; the cell under a cave cell counts as a maybe-cell of the prune, so the pruned world stays the exact one), and about one 2 x 2 floor cell in 350 grows a **glow cap**, a 2 x 2 x 2 clump of `neon` that lights the cave (the same hash in a flooded cave: it glows under the water). Both are decided before the stalactites of a column, so a dry and a flooded cave agree. The only two cases in which a cave adds a voxel; the cave test allows exactly them.
+A cave only ever takes solid voxels away (the test compares with the world without caves). Cost: a chunk in the band builds 4,913 + 2 x 729 noise samples (about 1 ms) and its bricks are no longer uniform stone, so a cave column
+needs more of the brick pool; the soak and the pool gate bound it. Not built: flooded caves (cave air below the sea is air), stalactites, ore.
+
+## Trees by region (G3)
+The world is cut into regions of 512 x 512 voxels (32 m). `regionOps(rx, rz)` is a pure function that lists the trees of a region: a lattice of 32 voxels, one jittered candidate per cell, accepted by the biome at that point
+(`tree_spacing`: the density is 1 / spacing^2), above the sea (6 voxels), below the snow line and not on a slope steeper than 30 voxels in 20. A tree is a few ops (version 4): an **oak** is a trunk and a crown of three or four lumpy balls of leaves (`carve_sdf` spheres with a wobbling radius, filling air only), the biggest on top,
+the others to the sides and lower, one in seven a big old tree (1.25 x); a **pine** is a longer trunk and a cone of four or five lumpy tiers that widen downwards with a tip on top. The lists are memoised per
+region (1,024 regions, oldest out: a miss recomputes the same list). A chunk applies the ops of the regions within 128 voxels of it (the reach of a tree), sorted by (anchor hash, region, sequence), so the order never depends
+on which chunk asked first and a tree that crosses a chunk or region border is whole on both sides. Level 1 gets the scaled ops (leaf balls only); from level 2 on a tree is smaller than a voxel and is left out.
+**Bushes and boulders** come from the same list on a lattice of 16 voxels: a cell's hash makes it a bush (one in eight: a lumpy ball of leaves, radius 5 to 9, on the ground of a biome with trees), a boulder (a rough ball of stone, radius 4 to 12, sunk a third into the ground: one cell in eight on rough ground (roughness over 0.6), one in forty elsewhere)
+or nothing, decided before the ground is asked, so most cells cost nothing; only in rows with trees (a row with `trees = none` is bare ground: its top voxel is the ground, which the tests rely on), none in the water, on a beach, under the sea or above the snow line. Models of `features.csv` keep clear of trees, not of bushes or boulders. More kinds (ruins, kit prefabs) go into the same list later: they need the model file in the recording (not built).
+
+## Tests and checks
+`tests/test_biomes.cpp`: the table reader and its errors, the ground is a pure function (chunks agree with `terrainHeight`, forward and reverse generation give the same world hash), no cliffs, shares of the biomes on a big map,
+surfaces per biome, level 1 against level 0; caves (only in the band, only removing stone, order independent, none in the far level, a biome without caves has none); regions (the same trees however the cache was filled, trunks on dry
+land in biomes with trees, density follows the spacing, the whole world with trees is order independent). `tools/determinism.sh` records a walk through `projects/biome_test` (caves on) and replays it on 3 and 7 threads.
+
+## Endless worlds and the disc (E1)
+`world = endless` (project.cfg, `--world endless`, the replay header, the net descriptor, MCP `status.world.endless`) removes the edge: every column exists, the start is the origin (`biomeStartSpot` searches outwards for dry, flat land; a flat
+world starts at (0, ground, 0)), the regions and the biome picks are signed, so (-3, 7) is as good as (3, 7). It needs `terrain = flat` or `terrain = biomes` (the demo island is a fixed place; the project is refused otherwise). `topChunkY` comes from
+the biome table (the highest base + amplitude + ridges + trees). The autopilot flies a 500 m square around the start. Saved edits are keyed by chunk coordinate, so an edit at (-30, -30) survives leaving and coming back (a test).
+
+**The disc**: the resident area is a disc of `radius` chunks around each centre (the player, and in a net session every other player) instead of a square: 21 % fewer columns at radius 36 (4,185 instead of 5,329), the same reach along an axis. The
+renderer draws its level boxes as discs too (`FrameParams::discBoxes`, bit 1024 of `res.w`: the ray against an infinite cylinder in `boxSpanXZ`), concentric, so the nesting of the three levels is unchanged. `--stream-shape square` (and recordings made before
+the disc, which have no `stream_shape` in their header) keep the square. The recording writes `stream_shape`, the net descriptor carries it (what is resident is part of the session hash). The directory window of the GPU table is still the full square
+of the radius: the disc saves CPU time, generation and brick pool, not GPU table memory (E4 in the design is the cure).
+
+**Precision**: positions are float metres: 1 mm at 16 km, 8 mm at 65 km (collision starts to misbehave further out). The session logs a warning once when the player is more than 16 km from the origin; a floating origin (E3) is not built. The integer noise
+wraps deterministically beyond about 65 km (2^20 voxels) but the world repeats there only in the sense that the same maths gives the same numbers: do not build there.
+
+**Not built**: the save file keeps the last record of every edited chunk and grows on every autosave (compaction on open, region files: design 5.8); a net session of players further than 12 km apart (the float precision is per session).
+
+## Biome scale, the biome map, pop-in (E2 as built)
+- **Features and creatures in the test worlds** (round 28): `projects/endless_test` and `projects/biome_test` have a `features.csv` over the kit's models (villages with round huts, ruins, a broken tower, stone circles, roads, willows on wet ground, dead trees, birches, boulders, fallen logs, stumps and log piles, big mushrooms, berry bushes, cacti and rock spires in the desert, snowy rocks, dead shrubs and cairns in the tundra and the mountains), copied into their `models/` folders; the endless test also spawns deer, rabbits, chickens and goblins (`creatures.csv`, all wandering). The sea counts as water for the rules (version 6): nothing stands in the shallows.
+- **`biome_scale = 0..4`** (project.cfg, `--biome-scale`, header, descriptor): the climate's wavelengths (256, 128, 64 m) times 2^n. The default 0 keeps old worlds; 2 makes biomes about 1 km across, which is what a large or endless world wants (`projects/endless_test` uses 2).
+- **`biome_map {centre, size_m, pixels}`** (MCP): a top-down PNG of what the generator makes (biome colour, slope shading, sea, snow) and the share of every biome in JSON, from the pure functions: no chunks, no GPU, 768 x 768 pixels of a 4 km square in well under a second on the job system.
+- **Fog at the edge** (`fog_edge = 0..1` in the settings, default 0.35, 0 = a clear horizon): haze toward the sky colour that ramps in over the last 8 chunks before the full-detail area ends and stays beyond it, so the hand-over to the coarse levels and the columns that stream in lie in it
+  (`FrameParams::fogEdge`, `shade.comp`; a GPU test checks that it changes only pixels near the edge).
+- **Late columns**: `ChunkStreamer::Stats::lateColumns` (MCP `status.world.late_columns`) counts columns adopted inside radius - 4 of the camera, i.e. the ones a player could see arrive; walking gives none, a teleport and the first load give many (a test).
+- **Not built**: the velocity look-ahead (the streamer's centre ahead of the player) because it is not free as the design said: the GPU directory window has to grow by the look-ahead on every side (about +16 % of the record table for 4 chunks), the level-0 box has to move with it and the physics freeze radius too, for a gain of 2 to 3 chunks of reach ahead at walking speed; the dithered `lod_fade` (a second march in the band; its cost has to be measured on the desktop first, off by default).
+
+## Water: lakes and rivers (H1, `hydrology = on`)
+```
+hydrology = on          # lakes and rivers (off by default: a world without it is bit for bit what it was)
+river_threshold = 200   # cells (16 m x 16 m) that drain through a cell before it is a river (25: many short rivers, 200: few long ones)
+river_width = 48        # voxels (3 m) of a river's surface, wider with the catchment (12 voxels for every doubling)
+river_depth = 24        # voxels (1.5 m) the bed lies under the water
+lake_min_depth = 6      # voxels: a hollow shallower than this is no lake (24 gives fewer, deeper lakes)
+```
+`--hydrology on|off` on the command line; the recording header and the net descriptor carry all five numbers.
+
+**How** (all integer, a pure function of the position and the params; `world/worldgen.cpp`, "hydrology"): the ground is cut into cells of 256 voxels (16 m). A **super-region** is 64 x 64 cells (1 km) and its **window** 128 x 128 cells (an apron of 512 m,
+so the water of the neighbourhood reaches it), computed once (about 20 ms) and memoised (64 windows, a mutex, a miss recomputes the same window, concurrent asks wait for the first). The pass: the smooth ground of every cell (the wide octaves of the
+height noise, so a pit of the fine noise is no lake), a **priority flood** from the edge of the window and from the sea (a heap ordered by (level, index): the same order everywhere) which gives every cell the level the water would stand at before it
+spills and the neighbour it spills to; a hollow deeper than `lake_min_depth` is a **lake** with that level; the flow summed down the order gives every cell's **catchment**, and a cell with `river_threshold` of it is a **river** whose level is the filled surface
+rounded down to 4 voxels and never below the water it flows into (so a reach never rises downstream). The sea is the existing `sea = water` rule: a cell below the sea level in such a biome is an outlet at the sea level, so rivers end there.
+
+A column looks its neighbourhood up (no noise). **A lake follows the land** (version 3; before, it was a disc of 384 voxels around each lake cell closed by a raised ring, which showed as round basins with a sand wall): a lake is its deep cells plus the shallow cells of the same basin; a column
+is in it when one of the four cells around it is a lake cell, the ground bilinear between those cells' centres is under the level (+4 voxels) and the column's own ground is under the level, so the shore is a contour of the land and the beach is the land's own slope. A pit on the shore (the ground there is lower than the level but outside
+the basin by the smooth ground, up to 12 voxels above it) is filled to the level +1, so no water stands against lower ground. **A river's centre line** (version 4) runs through a hashed point of each river cell (not the middle, so it does not follow the grid), rounded at every point into a curve (a quadratic Bezier from the middle
+of the reach before the point to the middle of the reach after it, cut into eight straight pieces: `buildRiverPieces`, `RiverPiece`, indexed per cell so a column tests a dozen pieces, not every cell around it); a source runs straight from its point, a feeder that is not the biggest bends into the curve at its middle, the last reach runs straight into the lake or the sea.
+A column looks the pieces up at a position **bent by a slow noise** (up to 24 voxels, wavelength 224), so a reach meanders instead of running straight; the **width** is `river_width` at the threshold and grows with the square root of the catchment (at most 192), breathing by +-25 % along the river (a noise of 128 voxels). The surface lies **8 voxels under the smooth ground of its cell**
+(so the fine relief beside it is rarely lower than the water); inside the channel the bed is a U (flat in the middle, `river_depth` deep) under the highest reach that has the column; the **valley** around it is cut: the ground is brought down to a side that rises 5 voxels for 8 along from the water, the cut fading out over the last 40 of 112 voxels so there is no wall where it
+ends; only a lip of 6 voxels beside the water is raised to hold it. **The beach** is the ground within 3 voxels over the water (the first 24 voxels beside a river, the shore of a lake): a strip of sand over dirt; the rest of a bank keeps the biome's own ground, so a forest comes down to its river. Beds are sand in the shallows and mud (dirt) deeper than 12 voxels. Trees do not stand in the water or on a beach. `groundAt(p, x, z)` gives the carved height, the biome, the water level and the beach flag;
+`terrainHeight` and the start spot, the region ops and `biome_map` (water in blue, banks lighter) use it, so everything agrees with the generated chunks. The levels 1 and 2 carve the same water at their voxel centres.
+
+**Tests** (`tests/test_biomes.cpp`): a window is the same from any cache state (also after the cache evicted it); where the water does not reach, the ground is the generator's own; no lake lies under its ground and no reach rises; around the first six finds of water
+(400 x 400 voxels each) no column of water has a dry neighbour lower than the water; the chunks around a river are the same in any order and from any cache state; a dig beside a river at rest changes under 32 bricks (25 measured) and the solver is asleep again after 600 ticks.
+
+**Limits**: reaches are flat and the levels step (by 4 to 16 voxels between cells on a slope: a small waterfall); a river never starts below the catchment threshold and ends in the nearest lake, the sea or the edge of the window; rivers wider than a cell are not built;
+the window is about 1 km, so a catchment longer than 512 m beyond a super-region's border is cut there (the river then ends in a pond at the border of the window it was computed in, which the neighbour does not know: a seam, counted by no test yet);
+generated water is still water (state 0), so a lake at rest costs nothing and the sound of running water (`AudioEngine::setFlow`) is not played for a river.
+
+## Rules: expressions in the biome table (R1 and R2)
+The last four cells of a `biomes.csv` row are optional **rules** (an empty cell or `-` keeps the plain behaviour of the columns before it: a row without rules is bit for bit what it was):
+
+```
+..., snow_line, height_add, surface_rule, subsurface_rule, sub_depth_rule
+plains, ..., 0, terrace(fbm(900, 2, 0.5) * 14, 6, 0.6), select(slope > 0.9, stone, select(moist < 0.42 && hash(5) < 0.5, sand, grass)), select(slope > 0.9, stone, dirt), 18 + noise(40) * 16
+```
+- `height_add`: voxels added to the ground (blended between the rows around like the base height, so a rule never makes a cliff at a border); evaluated per column, also by the far levels and by the water's smooth ground.
+- `surface_rule` / `subsurface_rule`: a material (an id: write the material's name), per column; 0 or an unknown id keeps the row's. `sub_depth_rule`: the depth in voxels (0..400) of the subsurface layer.
+- A comma inside a call is fine (`noise(300, 2)`); the cell is split at commas outside parentheses.
+
+**The language** (`world/gen_expr.{hpp,cpp}`; 16.16 fixed point in an i64, no floats; pure by construction: no state, no loops, no allocation while it runs, so it runs on the worker threads and a world is the same on every machine):
+numbers, names, `+ - * / %` (division rounds toward zero, by zero gives 0; `%` is **floored**: the result has the sign of the divisor, so a periodic rule repeats the same way west and north of the origin; products and sums use 128 bit intermediates and saturate at 2^62 voxels instead of wrapping; a cell is at most 4000 characters and 40 levels deep), `< <= > >= == !=`, `&& || !` (0 or 1), `c ? a : b` and `select(c, a, b)` (both sides are evaluated), and calls:
+`noise(wavelength[, salt])` 0..1, `fbm(wavelength, octaves, roughness)` -1..1, `ridge(wavelength)` 0..1, `band(v, centre, width)` 1 at the centre falling to 0 at +- width, `terrace(v, step, hardness)`, `remap(v, a0, a1, b0, b1)`, `smoothstep(e0, e1, v)`, `ramp(v, e0, e1)`,
+`step(v, e)`, `clamp(v, lo, hi)`, `min`, `max`, `abs`, `floor`, `hash(salt)` 0..1 (the column's own: a dither), `weight(biome)` 0..1 (how much of the neighbourhood is that biome: 1 deep inside it, falling to 0 across the border: the ecotone).
+Noise samples the column's own position; wavelengths are in voxels (at least 4). **Inputs**: `x z` (fine voxels), `h` (the ground so far), `temp moist cont` (the climate, 0..1), `base amp rough` (the blended relief parameters; `rough` 0..1), `sea` (the sea level), `snow_line`, `slope` (voxels of height per voxel
+of distance, the steeper of the two central differences; a flat world is 0, a 45 degree slope is 1), `wet` (1 over a lake or a river), `water_level`, `shore` (1 on a bank), `biome` (the row's index: compare with a biome's name, `biome == forest`) and every material and biome name.
+`slope` makes the generator compute the heights of a ring around the column (a 66 x 66 grid), `weight` is free. A program is at most 512 operations and 32 values deep; a compile error names the row, the cell and the character, and **drops the biome** with a warning in the log and in `--check-project`.
+Cost: about 3 ns an operation and 50 ns a noise call per column cell (4,096 a column); `GenProgram::costNs()` is the estimate. The table's hash includes the rules, a replay reads them from `biomes_0.csv`, the net descriptor carries the hash. `projects/rules_test` uses terraces, surface by slope and dryness, an ecotone toward the mountains and a ridge cut.
+
+**Deviation from the design** (docs of round 26): the built-in rows do not run through the language (the old C++ arithmetic stays the default and an empty cell uses it), so that the golden hashes of `biome_test` and the demo cannot move; the rules are an extension, not a rewrite. There is no lattice hoisting of the noise yet (every call is evaluated per cell).
+
+**Tools for rules** (MCP, no GPU, `docs/MCP.md`): `gen_preview` (an expression over a square for up to eight seeds: a picture strip and statistics), `gen_histogram`, `gen_cost` (ops, noise calls and an estimate per row against the 4 ms a column budget), `worldgen_info` (every input and every rule value at one column), `biome_map`; and `--check-project` prints each row's rule
+cost and warns above the budget. They use `ruleInputsAt` (the inputs of a column from the pure functions; a test compares its surface-rule result with the generated chunks). Measured: `projects/rules_test` costs 2.8 ms a column against 2.0 for the plain table.
+
+## Features: models placed by rules (F1, `features = features.csv`)
+```
+# name, kind, biomes, models, where, spacing, jitter, cluster, reach, pad, sink, rotations, decay
+birches, model, plains;forest, models/birch.vxm:3;models/tree_small.vxm:1, slope < 0.5 && hash(3) < 0.35, 72, 1, 0, 0, 0, 0, 1, 0
+rocks,   model, mountain;tundra;desert, models/rock.vxm, slope > 0.3 || hash(7) < 0.1, 56, 1, 0, 0, 0, 1, 1, 0
+```
+`features = features.csv` in project.cfg (or `--features file` with the project as the root of the model paths). One row per rule, **in order**:
+- `kind`: `model`, `cluster`, `road` or `island` (see "Structures" below); `biomes`: names joined by `;`, or `any`; `models`: `.vxm` files joined by `;`, each with an optional `:weight` (the paths are relative to the project: `models/nature/birch.vxm`;
+  a path that is absolute or contains `..` is refused, a missing file is an error that leaves the rule out); `where`: an expression (the inputs and functions of "Rules": `slope`, `moist`, `h`, `hash(3)`, `noise(300)`, `weight(forest)` ...), non-zero places the model, empty or `-`: always.
+- `spacing`: the lattice in voxels, 16 and up: **one candidate per spacing x spacing**, `jitter` 0..1 how far from the middle of its cell it may stand; `sink`: voxels the model is sunk into the ground; `rotations` 1: one of the four upright turns (by the candidate's hash), 0: as made; `reach`: the horizontal reach for the routing (default: half the biggest model's larger side).
+  `cluster`, `pad`, `decay` are for the structure kinds.
+- A candidate is never placed in the water or within the reach of a tree of the biome table, and **a later rule keeps clear of the models of an earlier one** (the circles of their reaches; each answer is a pure function of a lattice cell, memoised per region). The model is chosen by weight with the candidate's hash.
+- The ops go into the same per-region lists as the trees (`makeRegionOps`: sorted by anchor, never by the order the chunks were asked in), so a model that crosses a chunk or region border is whole on both sides and any order gives the same world; the routing reach is the biggest rule's.
+- **Far levels**: `scaleOpToLevel` learns `SetModel`: at level 1 the model is replaced by its majority-reduced copy (a block of 8 x 8 x 8 voxels is solid when at least half of it is, with the commonest material; registered when the table loads), at level 2 it is dropped. `topChunkY` includes the tallest model.
+- **Recordings**: the table is kept as `<clip>/features_0.csv` and every model file it names under `<clip>/models_0/` (the same relative path); the hash of the rules and the bytes of the models is in the header (`features_hash`) and the net descriptor. `--check-project` loads the table against the project's materials and warns when a rule's spacing is smaller than twice the reach of its models.
+
+`projects/rules_test` has five rules (birches and small trees, bushes, rocks, mushrooms, the occasional hut). Tests: `tests/test_features.cpp`.
+Not built: a landmark kind (use a `cluster` of 1 on a pad); a model of a prefab with parts or events (a placed model is only voxels: a regenerated chunk cannot rebuild a script's nodes).
+
+## Versioning: the generator hash, the sidecar of a save, gen.lock
+Changing a rule changes every column nobody has visited, which is what a developer wants and what a player must not get: **`worldGenHash(params)`** is one number over the version of the generator (`kWorldGenVersion`: bump it when a code change alters a voxel), the seed, the shape (endless or its size), the biome table with its rules, the caves,
+the water, the feature rules and the bytes of their model files, the painted mask, and, when the level script has an `on_region`, the script's text and the bytes of its declared `hook_models`. The game logs it at start (`world generator hash N (version 3)`); the net descriptor carries it (`worldgen`) and the parts; a recording's header keeps `gen_version`, `gen_hash` and the hash of every copy it made (`biomes_hash`, `features_hash`, `creatures_hash`), and **a replay checks all of them** after it read the clip's copies: a copy that is missing or was edited is named at once (exit 2), as is a clip of another generator version.
+Version 6 changed: the sea counts as water for the feature rules and `worldgen_info` (features no longer stand in the shallows; a beach a few voxels over the sea level is a shore); cave floors are dirt and glow caps (2 x 2 x 2 clumps of `neon`, about one per 350 floor cells, in flooded caves too) light the caves; the tree line thins out over the 96 voxels under the 24 that are bare. Version 5 changed: cave rooms have a fine octave (lumpy walls, pillars), tunnels are taller than wide with a width that follows the room noise, caves keep 24 voxels under a bed, stalagmites. Version 4 changed: rivers run on curved, meandering centre lines with a U bed and a width from the catchment, beaches are the ground within 3 voxels of the water, deep beds are mud, oaks are lumpy and pines cones, bushes and boulders stand on the ground. Version 3: lakes follow the ground, rivers in valleys, ridged mountains.
+Version 2 changed: ores and stalactites compare integer shares (no float decides a voxel), a rule's `reach` is never less than what the rule places (pads, islands, models), `%` floors, painted relief is part of the world's height; the hash of the ore cells is over the integer shares (spaces in a cell do not matter), the mask's origin and size are chained, not xor-ed.
+- **The sidecar**: the first save of a world writes `<save>.gen/` beside it (`gen.txt` with the numbers and the hash, `biomes.csv`, `features.csv`, `models/`). A later start with that save **opens with the saved rules** (seed, size, terrain, caves, water, tables, models), not the project's, and says so
+  (a warning when the project's differ). `--regenerate` adopts the project's rules and rewrites the sidecar at the next save; edited chunks always stay as saved (they are in the store, the rules only make the rest). Not used in a replay (the clip has its own) or a net session (the descriptor decides).
+- **`gen.lock`** in the project folder pins the hash for a shipped game: `voxelith --lock-gen dir` writes it, `--check-project` fails with `generator hash changed` when the rules, the tables, a model or the version moved, until the lock is written again on purpose.
+- The sidecar is written into a folder beside the old one and swapped in, so a world opened from its sidecar can be saved again (the sources may lie inside the old sidecar); a mask that cannot be copied is an error. It keeps the table with its `@mask` line. The sidecar of a save compares the project's tables by text (a changed mask or model *file* is not noticed until `--regenerate`). Creature models are read from the project's folder, not from the sidecar (the sidecar keeps feature models only).
+- Not built: counting the seams between regenerated terrain and edited chunks, a HUD caption when a save opens with old rules.
+
+### Structures (S1): cluster, road, island
+- **`cluster`**: a village or a ruin. One candidate per `spacing` cell (the centre); `cluster` = how many models, `reach` = the radius they spread over (default 120), `pad` = half-width of a **flattened square pad** under it (0: none; the pad is a dirt slab 16 voxels deep at the centre's ground level with everything above it cleared, so
+  pick centres with a `slope` test), `decay` = the share of members that are left out (a ruin: 0.5; their place stays taken), `rotations`, `sink` as for models. Members are drawn by weight, placed at hashed spots inside the circle (inside the pad when there is one) and clear of one another (circles of their reach); without a pad each stands on its own ground and not in water. The centre keeps clear of the models of earlier rules, a cluster clears the trees under it.
+- **`road`**: `models` names the **surface material** (`dirt`, `brick`, `concrete`, a project material), `cluster` the width in voxels (default 6), `jitter` how much it bends (0..1), `where` is tested at the nodes. Every 512 voxel region has a node (a hashed point near its middle); the region owns the edges to the east and south neighbours' nodes (accepted with a hash, 72 %),
+  a road is a polyline through a bent midpoint, a ribbon of boxes every 3 voxels at the ground level of each point (so it follows the terrain), and a **bridge deck** of wood at the water level where it meets a lake or a river. The roads of a world form a loose net; they do not know about villages yet.
+- **`island`**: floating stone: `reach` is the largest radius (the real one is 60 to 100 % of it), `sink` the height over the ground (plus a hash of up to 200), `where` the gate (`noise(2500, 4) > 0.6` for a few). A stone sphere with its underside cut away and a hill of grass and dirt on top; plain stone, no planetoid gravity.
+- **Order of application** (the ops of a chunk are sorted by phase, then by anchor hash, then by region): trees, then pads and roads (they clear and replace what is under them), then models, cluster members and islands. A chunk finds the ops that can touch it through an **index by chunk column** built with each region's list, so a road that reaches 900 voxels is no cost to the others.
+- Far levels: roads and pads follow as boxes (`scaleOpToLevel` keeps boxes), models as their coarse copies, islands as spheres; from level 2 on, models are dropped.
+
+## Mood: fog, sky, wind and ambience per biome (M1)
+Six optional cells at the end of a `biomes.csv` row, all **cosmetic** (never in the world hash, the descriptor or the save's sidecar; a replay does not depend on them):
+`fog` (multiplier of the fog density, 0..10), `fog_tint` and `sky_tint` (`r;g;b` 0..255 or `#rrggbb`, multiplied into the horizon / the whole sky), `wind` (multiplier of the foliage wind, 0..4), `bed` (`meadow forest desert tundra shore cave none`) and `bed_level` (0..1).
+```
+..., sub_depth_rule, fog, fog_tint, sky_tint, wind, bed, bed_level
+forest, ..., -, -, 2.2, #cfe3d4, #e4efe4, 0.5, forest, 0.6
+```
+The app reads the biome under the camera every 10 frames (`biomeAt`: a few dozen noise calls), blends the mood toward it over about five seconds (`blendMood`) and applies it: `fogDensity` times `fog`, the sky colours times the tints, `windStrength` times `wind`, `AudioEngine::setAmbience(kind, level)`. When the camera is more than 40 voxels under the ground the mood is a **cave's**
+(close dark air, no wind, drips). MCP screenshots show the mood of the camera's place at once. **The ambience** (`audio_engine.cpp`, `docs/AUDIO.md`): one bed that fades the old kind out before the new one comes in (about 1.5 s each way): `meadow` insects (a gated buzz of narrow noise) and a lone chirp, `forest` leaves in a breeze and birds (FM tweets
+from a random schedule), `desert` a low wind with the hiss of sand, `tundra` a high thin wind and a faint whistle, `shore` waves (a swell every 7 s that breaks into a hiss), `cave` a deep rumble and drips that go mostly into the room's tail. `--audio-demo` plays all six. Tests: `mood: ...` and `ambience: ...`.
+
+## Creatures: the wildlife of a biomes world (K1, `creatures = creatures.csv`)
+```
+# creature, biome, model, density, group_min, group_max, speed, day, night, wander_radius
+villager, plains, -, 0.6, 1, 3, 1.4, 1, 1, 20
+walker,   forest, models/walker.vxm, 0.5, 2, 4, 1.6, 1, 1, 30
+```
+`creature` is its name (and the name `footsteps.csv` knows it by: a `wolf` row there makes it sound like paws); `biome` a biome name or `any`; `model` a rigged `.vxm` relative to the project (it plays its walk clip / is posed by rule, docs/ANIMATION.md) or `-` for the built-in figure;
+`density` herds per region of 32 m (0.5: every other region has one, 3: three), `group_min`..`group_max` animals per herd, `speed` m/s, `wander_radius` metres they stroll around their spot; `day` and `night` are reserved. `max_agents` in project.cfg (default 24) caps the world's agents; `--creatures file` on the command line.
+- **When**: the system (`sim/spawn_system.*`) looks every half second at the regions within 3 of the first player; a region that is **completely resident** (all 8 x 8 of its chunk columns, asked of the streamer) gets its herds, drawn from hashes of (region, row, seed): how many herds, where (a hashed spot on dry land above the sea in the row's biome), how big, where each member stands (within 2 m of the spot, on the ground the *world* has now);
+  they are `AgentSystem` agents set to wander. When a region is no longer completely resident (or is more than 4 regions away) its animals are removed; coming back draws the same herds again. A region is spawned **whole or not at all**: when `max_agents` runs out half way through, what was made is taken back and the region (and the farther ones) wait until there is room.
+- **Deterministic**: what is resident is (the lockstep streamer adopts a column at a fixed tick) and the draws are pure; the agents are in the session hash and the replay, so nothing is logged. A recording keeps `creatures_0.csv` and the model files (`models_creatures_0/`), `creatures_hash` and `max_agents` in its header, the net descriptor carries the hash. MCP `status.world.animals` counts them.
+- Not built: day and night rows (the sky is cosmetic and not part of the simulation), herds that follow a leader, predators, a creature that leaves its biome, more than 64 agents. `projects/rules_test` has two rows; the player starts in its forest. Tests: `tests/test_creatures.cpp`.
+
+## Underground and relief: ores, flooded caves, stalactites, overhangs (C1, V1)
+Four more optional cells at the end of a `biomes.csv` row (after the mood cells; they change the world, so they are in the hash when set):
+```
+..., bed_level, ores, cave_water, stalactites, overhang
+mountain, ..., tundra, 0.5, metal:0.008:10:300, 0, 0.7, 36
+```
+- `ores`: `material:density[:min_depth[:max_depth]]` joined by `;` (at most six). Ore comes in **clumps of cubes about 50 cm across**: a brick of 8 x 8 x 8 voxels is picked with twice the density, half of its eight 4-voxel cells then are ore, a pure function of the brick's place; only **stone** turns to ore, and only between the depths (voxels under the ground of the column).
+  Density is the share of the stone volume, 0..0.3 (0.003 to 0.01 is a lot). A brick without ore is still the plain stone shortcut, so ore costs nothing where there is none (measured: no visible cost).
+- `cave_water`: a height in voxels; air of a cave **at or below it is water** (a flooded cave: water voxels at rest, the liquid solver sleeps on them; `0`: dry). A cave still only ever replaces stone.
+- `stalactites` (0..1): the share of cave-ceiling 2 x 2 columns that grow one, 2 to 8 voxels long, two voxels wide for the upper half and one at the tip; half as many **stalagmites** (version 5) grow up from the floors the same way. Only ceilings and floors inside the same chunk grow them (a ceiling at the top edge of a chunk row has none).
+- `overhang` (voxels): the ground may **bulge out above itself** by up to this much (stone where a smooth noise of 6 m wavelength is high, rarer higher up: arches, ledges, floating rocks) and is **undercut** by half of it (air where the noise is very low). Level 0 only (the far levels keep the height field; they agree within the amount); `topChunkY` grows by it. The height field itself, `terrainHeight`, trees and rivers do not see overhangs.
+- Cost: caves cost about 4.5 ms a column on top of 3 (measured on `projects/rules_test` with the feature rules off); the noise cells of a chunk are checked against bounds from their corners first, so most voxels never run the exact cave test (`VX_NO_CAVE_PRUNE=1` turns that off for a comparison: the world is identical), and a deep brick that cannot hold a cave is plain stone. Tests: `underground: ...`.
+
+## Hot reload: `gen_reload` (R3)
+MCP `gen_reload {}` (not a recorded action) re-reads the project's generator keys (`project.cfg`), `biomes.csv` with its rules and `features.csv`, **compiles everything first** (any problem, a biome or a rule that would be left out, a missing model, refuses the reload and changes nothing) and then regenerates:
+the three streamers wait for the columns in flight, save the edited chunks and evict every resident column (`ChunkStreamer::reloadAll`), the generators are replaced, the water cache, the region hook and the wildlife forget the old ground, liquids, fire and wear are told every chunk was replaced, and the world around the camera is loaded again
+(a stall of a second or two; a player standing in changed ground is set on top of it). Edited chunks come back from the store as they were, the rest is made by the new rules; the next save writes the new rules into the sidecar. **Refused** while recording, replaying or in a networked session (nothing logs it: start a new session),
+for a world that is not `terrain = biomes`, and when the world would get **taller** than it started (`topChunkY` sizes the GPU tables: restart). Use it while editing tables and rules with `gen_preview` / `biome_map` / a screenshot in a loop.
+
+## The region hook: `on_region` in the level script (L1)
+Placement logic a table cannot say (a shrine in every third village, a ring of stones where two rivers meet) is Lua, but **never on a worker thread** and never impure. A level script may define
+```lua
+function on_region(rx, rz)         -- a region is 512 x 512 voxels (32 m); called once for each one the world needs
+    local h, biome, water = worldgen.ground(x, z)   -- the ground's top voxel, the biome's name, the water level (0: none)
+    -- worldgen.biome(x, z), worldgen.hash(x, z [, salt]) 0..1 (a pure hash), worldgen.noise(x, z, wavelength [, salt]) 0..1, worldgen.seed
+    return { { kind = "box", lo = {x, y, z}, hi = {x, y, z}, material = "stone" },
+             { kind = "sphere", c = {x, y, z}, r = 8, material = "metal" },       -- no material: air (a hollow)
+             { kind = "clear", lo = {...}, hi = {...} },
+             { kind = "model", file = "models/shrine.vxm", at = {x, y, z}, rot = 0 } }   -- at = the model's smallest corner, rot = quarter turns 0..3
+end
+```
+- **Restricted**: the function runs with an environment of `math` (without `random`), copies of `string` (without `dump`), `table` and `utf8`, `ipairs`, `select`, `type`, `tonumber`, `error`, `assert`, `pcall`, a **`pairs` that walks the keys in sorted order** (numbers, then strings; a table or function as a key is an error: the order of Lua's own `pairs` differs between runs), a **`tostring` that refuses tables and functions** (their text is an address), and `worldgen`: no `edit`, `world`, `agent`, `print`, `next`, `getmetatable`, no clock, so the answer for a region is a pure function of
+  (seed, tables, region): the same on every peer and in a replay. Static placements only (boxes, spheres, clears, voxel models): no prefabs with nodes, nothing alive. At most 4000 entries, boxes up to 512 voxels along an axis, spheres up to 256, **at most 192 voxels beyond the region's bounds** (a placement that reaches further is left out with a warning).
+  An error or a bad entry gives *no placements for that region* and one line in the log (with the instruction limit of the script host: an endless loop is stopped, also one inside a `pcall`: once the limit is spent every instruction raises).
+  **No chunk level locals**: a hook that uses a `local` of the script file (a helper, a constant, `local W = world`) is refused with the name of the local, whatever order Lua numbers its upvalues in; put helpers inside `on_region`. Placement numbers (`r`, `rot`) must be whole numbers. `worldgen.noise` computes in whole voxels (the wavelength is rounded) and wraps instead of overflowing.
+- **When**: on the **main thread** before a column that can need the region is launched (`WorldGenerator::beforeColumn` from `ChunkStreamer::launch`), memoised (`RegionHook`: the 4096 regions asked for most recently are kept, an older one is made again, the hook being pure); the workers only read. `beforeColumn` asks for every region a chunk can gather (the same reach as the chunk: a `road` rule makes it 928 voxels), `saveAll` too. The hook's ops are **not part of the memoised region lists** (they are indexed on their own and merged when a chunk asks, as phase 2 after trees, pads and models, in order of their anchor), so a list built before the hook had answered can never hide them: the world does not depend on which chunk came first.
+  **A hot reload of the script** makes the resident world again (a live session); a recording with a hook keeps the script it started with (the hot reload is switched off), and so does a replay or a net session.
+  A script that defines `on_region` makes the engine **generate the world around the start again** after loading it (the world is made before the script runs): about two seconds at start.
+- **Models** are declared by the script: `hook_models = { "models/shrine.vxm" }` (a global list of paths relative to the project, or the script's folder). They are read once at start; a `model` placement of a file that is not listed is left out with a warning. The script's text and the bytes of the declared models are in `worldGenHash` (`hookHash`), so the net descriptor, a recording's header and `gen.lock` all see them.
+- **Recordings**: the script is in the clip as always; the declared models are copied to `<clip>/models_hook_0/` (feature models: `models_0/`, creature models: `models_creatures_0/`: one folder per source, so one name from two roots cannot replay the wrong bytes) and read from there by a replay. Far levels: boxes, spheres and clears scale, models as their coarse copies.
+- Not built: hooks for the surface or the height (that is `height_add`), a hook per biome, placing agents (the creature table does that), reading what other regions placed. `projects/rules_test/level.lua` has an example (standing stones in a third of the regions); tests `region hook: ...`.
+
+## The biome painter (P1)
+A **mask** over the climate: `@mask,biome_mask.png,-8192,-8192` in `biomes.csv` names a PNG whose texel is 32 x 32 voxels (2 m) and the voxel of its top left corner; **R = the biome's row + 1** (0: the climate decides), **G = the ground's base height / 8** (0: the row's own; 80 is 640 voxels = 40 m), B and A unused (A is 255 where painted).
+`cornerAt` reads it before it picks: a painted texel decides the biome at that corner (and its relief), the dither at the borders of a texel and the 128 voxel blend of the relief keep the edge soft (a stroke of a few metres paints a few texels: use brushes of 10 m and more). Outside the image the climate decides. An unpainted mask hashes like none; the painted texels are in the table's hash (so in the generator hash, the descriptor and `gen.lock`).
+- **MCP** (not recorded actions): `biome_mask_brush {centre, radius_m, biome, relief_m}` (a biome's name, or `climate` to clear), `biome_mask_undo`, `biome_mask_redo` (64 strokes), `biome_mask_info` (file, corner, size, painted texels per biome). The first stroke makes a 1024 x 1024 texel mask (a 2 km square around the origin, corner at -16384 voxels), appends the `@mask` line to the project's `biomes.csv`, and every stroke writes the PNG.
+  The project needs **its own biomes.csv** (copy the built-in table); a world that opens with the rules saved beside it (a save with a sidecar) refuses the painter (start with `--regenerate`, then paint). A stroke waits for the generation in flight, changes the mask, evicts the columns under it and a **margin of what reads the climate beyond it** (the relief blend, trees, the hook, a feature rule's reach: at least 4 chunks, 16 with a `road` rule; **the whole resident world when hydrology is on**, the flood of a window being about a kilometre), forgets the memoised regions, the hook's answers and the hydrology windows, tells liquids, fire and wear, loads the world around the player again and lifts the player out of ground that rose: about a second for a 20 m brush.
+  A painted **relief** raises the ground, so it raises the world's top: the mask's highest base height (G x 8) plus what a row adds is part of the height of the world (`paintTop`; a mask on disk sets it at start), and a stroke whose relief would go above the top of the world that was started is refused (restart: the mask then sets the height). The undo stack keeps 64 strokes and at most 64 MB. A mask that paints a row the table does not have (a biome removed or moved) is reported when it loads.
+- **Refused** while recording, replaying or in a networked session: a stroke is simulation input and is **not logged** (the design's logged action with a reload for every peer is not built). The recording copies the mask beside its table (`<clip>/biome_mask.png`), a replay reads it from there; the sidecar of a save copies it too, `gen_reload` re-reads it.
+- Not built: a brush in the window (the foliage painter's UI), per-stroke feathering (the A channel), masks beyond 4096 texels a side, painting while a net session runs. Tests: `biome mask: ...`.

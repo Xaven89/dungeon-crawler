@@ -1,0 +1,4 @@
+# the wear test table (docs/WEAR.md): grass wears quickly, dirt sticks, stone shows prints
+grass, dirt,  players, 0.2, 8, 0, 0, , 0, 0.0, 0, none, 0, 1
+dirt,  ,      ,        0,   0, 0, 0, , 0, 0.6, 0, none, 0, 1
+stone, ,      ,        0,   0, 0, 0, , 0, 0.0, 0.1, dark_brown;brown;light_brown, 1800, 8

@@ -1,0 +1,77 @@
+{
+ "values": {
+  "inventory_player": {
+   "bag": [
+    {
+     "count": 7,
+     "id": "apple"
+    },
+    false,
+    {
+     "count": 1,
+     "id": "sword"
+    },
+    {
+     "count": 1,
+     "id": "sword"
+    },
+    {
+     "count": 1,
+     "id": "sword"
+    },
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "hotbar": [
+    {
+     "count": 45,
+     "id": "stone"
+    },
+    false,
+    {
+     "count": 16,
+     "id": "wood"
+    },
+    {
+     "count": 6,
+     "id": "torch"
+    },
+    {
+     "count": 1,
+     "id": "sword"
+    },
+    {
+     "count": 3,
+     "id": "gem"
+    },
+    {
+     "count": 1,
+     "id": "key"
+    },
+    {
+     "count": 1,
+     "id": "key"
+    }
+   ],
+   "selected": 6
+  }
+ },
+ "version": 2
+}

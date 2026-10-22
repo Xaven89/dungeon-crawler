@@ -1,0 +1,12 @@
+# features.csv (docs/WORLD_GEN.md "Features"): models placed by rules
+# name, kind, biomes, models, where, spacing, jitter, cluster, reach, pad, sink, rotations, decay
+birches,   model, plains;forest, models/birch.vxm:3;models/tree_small.vxm:1, slope < 0.5 && hash(3) < 0.35, 72, 1, 0, 0, 0, 0, 1, 0
+bushes,    model, plains;forest;desert, models/bush.vxm, slope < 0.6 && noise(220) > 0.45 && hash(5) < 0.5, 40, 1, 0, 0, 0, 0, 1, 0
+rocks,     model, mountain;tundra;desert, models/rock.vxm, slope > 0.3 || hash(7) < 0.1, 56, 1, 0, 0, 0, 1, 1, 0
+mushrooms, model, forest, models/mushroom_s.vxm, moist > 0.75 && hash(9) < 0.4, 48, 1, 0, 0, 0, 0, 1, 0
+huts,      model, plains, models/house_small.vxm, slope < 0.25 && hash(11) < 0.15, 520, 0.6, 0, 0, 0, 2, 1, 0
+# S1: structures. A dirt road network between hashed points of the 512 voxel regions (width in the cluster column), villages on a flattened pad, ruins with half their models gone, floating islands.
+roads,     road,    plains;forest;desert, dirt, -, 512, 0.6, 5, 0, 0, 0, 0, 0
+village,   cluster, plains, models/house_small.vxm:3;models/shed.vxm:2;models/well.vxm:1;models/market_stall.vxm:1, slope < 0.3 && hash(21) < 0.5, 1536, 0.5, 7, 150, 56, 0, 1, 0
+ruins,     cluster, forest;plains;desert, models/stone_arch.vxm:2;models/shed.vxm:1, hash(22) < 0.12, 1100, 1, 4, 90, 40, 0, 1, 0.5
+isles,     island,  any, -, noise(2500, 4) > 0.6, 1800, 1, 0, 90, 0, 300, 0, 0

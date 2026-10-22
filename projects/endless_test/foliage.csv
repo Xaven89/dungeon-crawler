@@ -1,0 +1,5 @@
+# Endless test ground cover (docs/FOLIAGE.md): a meadow on the grass of the plains and the forest (the engine's built-in tuft and flower colours), nothing on sand, snow or stone.
+# name,surfaces (;),share,density,h_base,h_var,h_step,h_max,blades,half,spread,main,dry,dark,color_mod,dark_count,dry_count,flower_mask,flowers (;),flower_half,stiffness,patch_scale,patch_density,patch_height,patch_type,taper,lean,splay,wet_dark,wet_lean,season,sprite
+grass,grass,3,0.61,2,3,3,8,3,0.25,1.5,tuft,tuft-dry,tuft-dark,5,1,1,31,flower-red;flower-yellow;flower-white,0.36,1,40,0.45,0.7,0.8,0.55,0,0.5,0.75,0.5,tuft-dry,-
+# a second type on the same ground: short dark grass with white and yellow heads that takes over where the patch noise is high (a flower field)
+meadow,grass,1,0.8,1,2,4,3,2,0.3,1.2,tuft-dark,tuft-dry,tuft-dark,5,0,0,3,flower-white;flower-yellow;flower-white,0.4,0.7,40,0.2,0.2,0,0.8,0,0.3,0.8,0.3,-,-

@@ -1,0 +1,5 @@
+# Lantern Cove: the text of the level (key,text). {1}.. are filled by tr("key", a, b, ...)
+title,Lantern Cove
+position,{1} m east   {2} m north   {3} m up
+visit,visit {1}
+switch_lanterns,Switch the lanterns

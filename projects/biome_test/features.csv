@@ -1,0 +1,20 @@
+# features.csv (docs/WORLD_GEN.md "Features"): models placed by rules, by biome. Earlier rows have priority where two candidates would overlap, so the big things come first.
+# name, kind, biomes, models, where, spacing, jitter, cluster, reach, pad, sink, rotations, decay
+village,    cluster, plains, models/house_small.vxm:3;models/hut_round.vxm:2;models/shed.vxm:2;models/well.vxm:1;models/market_stall.vxm:1, slope < 0.3 && hash(21) < 0.4, 1800, 0.5, 7, 150, 56, 0, 1, 0
+ruins,      cluster, forest;plains;desert, models/broken_pillar.vxm:3;models/stone_arch.vxm:1;models/shed.vxm:1, hash(22) < 0.12, 1100, 1, 5, 80, 36, 0, 1, 0.4
+towers,     model, plains;forest;mountain, models/ruined_tower.vxm, slope < 0.35 && hash(16) < 0.08, 900, 0.7, 0, 0, 0, 3, 1, 0
+circles,    model, plains;tundra, models/stone_circle.vxm, slope < 0.2 && hash(15) < 0.06, 1024, 0.6, 0, 0, 0, 2, 1, 0
+huts,       model, plains, models/hut_round.vxm, slope < 0.25 && hash(18) < 0.1, 520, 0.6, 0, 0, 0, 2, 1, 0
+roads,      road,    plains;forest;desert, dirt, -, 512, 0.6, 5, 0, 0, 0, 0, 0
+spires,     model, desert, models/rock_spire.vxm, noise(900) > 0.55 && hash(10) < 0.3, 220, 1, 0, 0, 0, 4, 1, 0
+willows,    model, plains;forest, models/willow.vxm, moist > 0.65 && slope < 0.3 && hash(4) < 0.35, 160, 1, 0, 0, 0, 0, 1, 0
+dead_trees, model, plains;mountain;tundra, models/dead_tree.vxm, hash(5) < 0.15, 128, 1, 0, 0, 0, 0, 1, 0
+birches,    model, plains;forest, models/birch.vxm:3;models/tree_small.vxm:2, slope < 0.5 && hash(3) < 0.4, 64, 1, 0, 0, 0, 0, 1, 0
+boulders,   model, mountain;plains, models/boulder_big.vxm:1;models/rock.vxm:3, slope > 0.25 || hash(11) < 0.12, 72, 1, 0, 0, 0, 3, 1, 0
+logs,       model, forest, models/fallen_log.vxm:2;models/stump.vxm:3;models/log_pile.vxm:1, slope < 0.4 && hash(6) < 0.5, 56, 1, 0, 0, 0, 0, 1, 0
+mushrooms,  model, forest, models/mushroom_big.vxm, moist > 0.7 && hash(7) < 0.3, 80, 1, 0, 0, 0, 0, 1, 0
+berries,    model, plains;forest, models/berry_bush.vxm:2;models/bush.vxm:3, slope < 0.6 && noise(220) > 0.4 && hash(8) < 0.5, 40, 1, 0, 0, 0, 0, 1, 0
+cacti,      model, desert, models/cactus.vxm:3;models/cactus_small.vxm:2, slope < 0.5 && hash(9) < 0.45, 48, 1, 0, 0, 0, 0, 1, 0
+ice,        model, tundra, models/ice_rock.vxm, hash(12) < 0.3, 64, 1, 0, 0, 0, 2, 1, 0
+shrubs,     model, tundra;desert;mountain, models/dead_shrub.vxm, hash(13) < 0.35, 40, 1, 0, 0, 0, 0, 1, 0
+cairns,     model, mountain;tundra, models/cairn.vxm, slope < 0.3 && hash(14) < 0.08, 256, 0.8, 0, 0, 0, 0, 1, 0

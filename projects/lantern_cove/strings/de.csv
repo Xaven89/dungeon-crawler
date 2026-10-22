@@ -1,0 +1,23 @@
+# Lantern Cove auf Deutsch
+title,Laternenbucht
+position,{1} m Ost   {2} m Nord   {3} m hoch
+visit,Besuch {1}
+switch_lanterns,Laternen umschalten
+# Untertitel (Standard: Englisch eingebaut; docs/ACCESSIBILITY.md)
+caption.line,{1} - {2}, {3} m
+caption.explosion,Explosion
+caption.impact,Aufprall
+caption.splash,Platschen
+caption.dig,Graben
+caption.crumble,Geröll
+caption.door,Tür
+caption.click,Klick
+caption.tone,Ton
+caption.sample,Geräusch
+caption.left,links
+caption.right,rechts
+caption.ahead,vorn
+caption.behind,hinten
+caption.above,oben
+caption.below,unten
+caption.here,hier

@@ -1,0 +1,15 @@
+# Lantern Cove wear (docs/WEAR.md): `wear = wear.csv` in project.cfg (or --setting wear=projects/lantern_cove/wear.csv) turns it on.
+# from, to, who, radius, threshold, decay, regrow, regrow_to, falling_refill, pickup, deposit, track, fade, wash
+# Grass wears to a path after about five passes of a foot; it grows back after ten minutes of nobody walking there.
+grass,    path, players;agents;vehicles;bodies, 0.20, 60,  0.02, 36000, grass, 0, 0.0, 0.0, none,       0,    1
+# Snow sinks a voxel under a foot and fills back while it snows (fx.snow(amount, true)).
+snow,     sink, players;agents;vehicles;bodies, 0.25, 6,   0.00, 0,     ,      1, 0.8, 0.0, none,       0,    1
+# Dirt sticks to the soles (and mud on wet grass). A step leaves `deposit` of the load (0.06: about 40 prints, 17 m), the print gets sparser and lighter with the load (the colours go from the fullest load to the last),
+# it stays 5 minutes (18000 ticks) and the rain washes it off eight times faster. `tracks = on` in project. `@rate`, `@fade` and `@distance` below tune the whole table.
+@rate 1
+@fade 1
+@distance 1cfg.
+path,     ,     ,                               0,    0,   0,    0,     ,      0, 0.6, 0.0, none,       0,    1
+concrete, ,     ,                               0,    0,   0,    0,     ,      0, 0.0, 0.06, dark_brown;brown;light_brown, 18000, 8
+stone,    ,     ,                               0,    0,   0,    0,     ,      0, 0.0, 0.06, dark_brown;brown;light_brown, 18000, 8
+wood,     ,     ,                               0,    0,   0,    0,     ,      0, 0.0, 0.07, dark_brown;brown;light_brown, 12000, 8
