@@ -200,6 +200,8 @@ function T.reveal_secret()
     if s.opened then return end
     s.opened = true
     G.state.flags["secret_" .. s.name] = true
+    -- the blast cracks the hollow wall wide open (the bricks are tougher than a barrel)
+    after(6, function() edit.carve(G.wx(s.x), G.wy(s.y + 0.1), G.wz(s.z + 0.15), 30, 0.25, 4242) end)
     G.announcer.say_key("room.secret", { prio = 1 })
     G.announcer.award("fine_print")
     G.player.popup("SECRET FOUND", "#ffd24a", true)

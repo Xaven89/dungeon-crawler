@@ -28,8 +28,8 @@ W.builders[#W.builders + 1] = function()
     G.corridor{ x = 72, z = 11, len = 4, w = 4, h = 4, axis = "x", floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
     W.openings[#W.openings + 1] = { 71.6, 0, 9, 72.4, 4, 13 }; W.openings[#W.openings + 1] = { 75.6, 0, 9, 76.4, 4, 13 }
     -- the secret wall (speckled, hollow) with a passage behind it
-    G.fill(36, 0, 19.75, 40, 3.5, 20, "dungeon_brick", "speckle")
-    G.paint(36, 0, 19.75, 40, 3.5, 20, "dark_slate")
+    G.fill(36, 0, 20, 40, 3.5, 20.25, "dungeon_brick", "speckle")
+    G.paint(36, 0, 20, 40, 3.5, 20.25, "dark_slate")
     G.corridor{ x = 38, z = 20.25, len = 25.75, w = 2.6, h = 3.4, axis = "z", floor = "flagstone", wall = "dungeon_brick" }
     G.room{ x = 34.5, z = 28, w = 7, d = 7, h = 4, floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
     G.corridor{ x = 20, z = 46, len = 18.25, w = 2.6, h = 3.4, axis = "x", floor = "flagstone", wall = "dungeon_brick" }

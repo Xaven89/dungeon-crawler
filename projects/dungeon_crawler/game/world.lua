@@ -193,7 +193,7 @@ function W.track_room(t)
         if id then W.enter_room(id, old) end
     end
     for _, z in ipairs(W.zones) do
-        local inside = lx >= z.x0 and lx <= z.x1 and lz >= z.z0 and lz <= z.z1
+        local inside = lx >= z.x0 and lx <= z.x1 and lz >= z.z0 and lz <= z.z1 and ly >= (z.y0 or -99) and ly <= (z.y1 or 99)
         if inside and not z.fired then z.fired = true; z.on_enter()
         elseif not inside and z.fired and z.repeatable then z.fired = false end
     end
