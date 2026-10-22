@@ -90,14 +90,24 @@ end
 
 -- ================================================================================================ the whole floor
 W.builders = { build_lobby_voxels }
+W.things = {}
+W.openings = {}       -- { x0, y0, z0, x1, y1, z1 } (metres, local): cleared after every room is built, so a corridor can cut through the walls of the rooms it joins
+W.populate_list = {}
+W.zones = {}          -- { id, x0, z0, x1, z1, y0, y1, on_enter }
 
 -- one call per area (each is an undo step of its own)
 function W.build()
     if G.should_build() then
         for _, b in ipairs(W.builders) do b() end
+        for _, o in ipairs(W.openings) do G.clear(o[1], o[2], o[3], o[4], o[5], o[6]) end
     end
     build_lobby_things()
     for _, f in ipairs(W.things or {}) do f() end
+end
+
+-- the enemies of every room that was not cleared in an earlier session
+function W.populate()
+    for room, list in pairs(W.populate_list) do G.enemies.populate(room, list) end
 end
 
 -- ================================================================================================ housekeeping: the engine's debug keys cannot be unbound (docs/INPUT.md), so the game defends itself
@@ -133,10 +143,46 @@ function W.tick(t)
         end
     end
     if t % 180 == 0 then fx.rain(false) end
+    G.traps.tick_all(t)
+    if W.tick_belt then W.tick_belt(t) end
+    if W.tick_gutter then W.tick_gutter(t) end
+    if t % 15 == 0 and G.state and G.state.class and not G.player.dead then W.track_room(t) end
+end
+
+-- which room is the player in: announcements, music, safe zones, checkpoints
+G.current_room = nil
+function W.track_room(t)
+    local px, py, pz = player.pos()
+    local lx, ly, lz = G.to_local(px, py, pz)
+    local id = W.room_at(lx, lz)
+    if id ~= G.current_room then
+        local old = G.current_room
+        G.current_room = id
+        if id then W.enter_room(id, old) end
+    end
+    for _, z in ipairs(W.zones) do
+        if lx >= z.x0 and lx <= z.x1 and lz >= z.z0 and lz <= z.z1 and not z.fired then
+            z.fired = true
+            z.on_enter()
+        end
+    end
+end
+
+function W.enter_room(id, old)
+    local s, A = G.state, G.announcer
+    s.flags["visited_" .. id] = true
+    if id ~= "lobby" then A.award("hello_world") end
+    A.say_key("room." .. id, { prio = 0, key = "room_" .. id, cooldown = 36000 })
+    if id == "ballroom" then A.award("zero_g") end
+    if G.music and G.music.on_room then G.music.on_room(id) end
+    G.safe = (id == "stairwell")
+    if id == "stairwell" then G.player.set_checkpoint("stairwell") end
+    if W.on_enter_room then W.on_enter_room(id, old) end
 end
 
 W.checkpoints = {
     lobby     = { x = 3.5, y = 0.1, z = 11 },
+    hall      = { x = 68.5, y = 0.1, z = 6.5 },
     stairwell = { x = 58, y = 0.1, z = 132 },
 }
 

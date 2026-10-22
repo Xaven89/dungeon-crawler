@@ -4,7 +4,11 @@ include("game/items.lua")
 include("game/announcer.lua")
 include("game/player.lua")
 include("game/enemies.lua")
+include("game/traps.lua")
 include("game/world.lua")
+include("game/rooms/hall.lua")
+include("game/rooms/boiler.lua")
+include("game/rooms/conveyor.lua")
 include("game/hud.lua")
 
 local G = Game
@@ -14,6 +18,7 @@ function on_start()
     G.items.init()
     G.enemies.define_fx()
     G.world.build()
+    G.world.populate()
     G.sfx.preload({ "voice_blip", "swing", "hit", "hurt" })
     local s = G.state
     if not s.class then
