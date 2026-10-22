@@ -35,10 +35,11 @@ function on_start()
     if not s.class then
         local x, y, z = G.world.start_position()
         player.teleport(x, y, z)
-        G.screen = "class"
-        after(60, function() G.announcer.say_key("intro", {}) end)
-        after(300, function() G.announcer.say_key("intro", {}) end)
-        after(620, function() G.announcer.say_key("intro", {}) end)
+        G.screen = "title"
+        after(330, function() if not G.state.class then G.screen = "class" end end)
+        after(360, function() G.announcer.say_key("intro", {}) end)
+        after(660, function() G.announcer.say_key("intro", {}) end)
+        after(960, function() G.announcer.say_key("intro", {}) end)
     else
         local cp = G.world.checkpoints[s.checkpoint] or G.world.checkpoints.lobby
         player.teleport(G.mx(cp.x), G.my(cp.y), G.mz(cp.z))

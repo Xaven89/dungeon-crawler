@@ -29,13 +29,13 @@ function B.begin()
     G.sfx.play("boss_stinger")
     -- the cutscene: the editor camera (a free camera that leaves the player parked) circles him for seven seconds, then the view goes back to the player's eyes
     local t0 = time.tick()
-    camera.mode("editor")
+    camera.mode("editor"); G.cutscene = true
     local timer
     timer = every(4, function()
         local f = (time.tick() - t0) / 420
         camera.focus(G.mx(30), G.my(2.4), G.mz(136.5))
         camera.set{ zoom = 9 - 2.5 * f, pitch = 14, yaw = 95 - 55 * f }
-        if f >= 1 then cancel(timer); camera.mode("first") end
+        if f >= 1 then cancel(timer); camera.mode("first"); G.cutscene = false end
     end)
     model.play(inst.mdl, "roar", 1, false, 4)
     if G.music and G.music.set then G.music.set("boss") end

@@ -334,6 +334,20 @@ local function class_screen(w, h, input)
     end
 end
 
+local function title_screen(w, h)
+    local t = time.tick()
+    local a = math.min(1, t / 60, (330 - t) / 40)
+    a = math.max(0, a)
+    local al = string.format("%02x", math.floor(255 * a))
+    ui.rect(0, 0, w, h, "#05060a" .. string.format("%02x", math.floor(235 * math.min(1, (330 - t) / 30 + 0.0))))
+    ui.text(w / 2, h / 2 - 190, "A GLEE PRODUCTION", { size = 28, color = "#58f2ff" .. al, align = "center" })
+    ui.text(w / 2, h / 2 - 130, tr("title"), { size = 150, color = "#ffcf4a" .. al, align = "center" })
+    ui.text(w / 2, h / 2 + 50, tr("subtitle"), { size = 34, color = "#ffffff" .. al, align = "center" })
+    ui.text(w / 2, h / 2 + 140, "Please wait while we locate your consent.", { size = 24, color = "#98a0b4" .. al, align = "center" })
+    local dots = math.floor(t / 20) % 4
+    ui.text(w / 2, h / 2 + 180, string.rep(".", dots), { size = 40, color = "#98a0b4" .. al, align = "center" })
+end
+
 local function bag_screen(w, h, input)
     uikit.open_screen()
     local s, P = G.state, G.player
@@ -492,14 +506,15 @@ function H.draw(dt)
     if G.minimap then G.minimap(w, h) end
     -- screens
     local sc = G.screen
-    if sc == "class" then class_screen(w, h, input)
+    if sc == "title" then title_screen(w, h)
+    elseif sc == "class" then class_screen(w, h, input)
     elseif sc == "bag" then bag_screen(w, h, input)
     elseif sc == "shop" then shop_screen(w, h, input)
     elseif sc == "death" then death_screen(w, h)
     elseif sc == "end" then end_screen(w, h, input) end
     H.announcer(w, h)
     -- keys (only when no modal asks for the pointer)
-    if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" then
+    if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" then
         if pressed(input, "i") then G.screen = (sc == "bag" and (G.bag_tab or 1) == 1) and nil or "bag"; G.bag_tab = 1
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
         elseif pressed(input, "j") then G.screen = (sc == "bag" and G.bag_tab == 3) and nil or "bag"; G.bag_tab = 3 end

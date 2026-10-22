@@ -172,6 +172,7 @@ function W.tick(t)
         end
     end
     if t % 180 == 0 then fx.rain(false) end
+    if t % 20 == 0 and G.state and G.state.class and not G.cutscene and camera.mode() == "editor" then camera.mode("first") end      -- the 0 key cycles into the free editor camera: a cheat view
     G.traps.tick_all(t)
     if W.tick_belt then W.tick_belt(t) end
     if W.arena_tick then W.arena_tick(t) end
