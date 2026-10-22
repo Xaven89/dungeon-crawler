@@ -86,3 +86,29 @@ expected: the check's dry run (and the real run) knows "skull".
 happened: the real engine run is fine (the file is read and rewritten with ids at exit), but `--check-project` fails the dry run with `unknown texture 'skull'`, and the MCP `reload_level` then answers "not reloaded, the project has errors", so the running session cannot be restarted until the script avoids the project's textures (or the check is satisfied). Also: the first guess at the file format (a bare JSON array) is a WARN, a file with ids replaces the built-in table (everything else becomes "unknown texture 'planks'"), and the format is only found in docs/TEXTURES.md prose (`{ "name": ..., "kind": "tile", "pixels": "00111100/...", "palette": [...] }`, 8 rows of 8 digits joined by `/`).
 repro: any project with a textures.json that defines a name used in on_start; `./voxelith --check-project dir`.
 workaround: `pcall(edit.texture_box, ...)` in my box helper.
+
+## `--check-project` has no gravity system: `events.gravity_target` raises "this session has no gravity system"
+kind: bug        severity: annoying
+what I tried: a level that declares `events.gravity_target{ name, field = gravity.add{...} }` in `on_start`.
+happened: `gravity.add` works in the dry run, `events.gravity_target` errors ("gravity_target 'x': this session has no gravity system") so the project "has errors" (and MCP `reload_level` refuses it). The real run is fine.
+workaround: `pcall(events.gravity_target, ...)`.
+
+## Two ways the dry run differs from the real run (textures, gravity targets) make `reload_level` unusable without workarounds
+kind: unclear docs        severity: hurts
+`reload_level` answers "not reloaded, the project has errors" with the check's report; an author who sees a green real run cannot restart it. Suggest: reload anyway with a warning when the failure is only in the dry run, or make the dry run use the project's textures and a gravity system.
+
+## No non-positional sound: music is awkward
+kind: missing        severity: hurts
+`sound.play(file, x, y, z [, volume [, pitch]])` is positional (a sound stays where the player stood when it started, gain falls with distance), there is no stop / loop / volume change of a playing sound, and no "2D" / UI sound. Music and the announcer's voice have to be cut into 2-second pieces that are started one after another at the player's head (tools/make_sounds.py `write_chunks`, game/music.lua), so a track cannot change at once and a gap or click between pieces depends on the 60 Hz timer. idea: `sound.play{ file, loop = true, bus = "music", volume }` returning a handle with `stop` / `volume`, and a listener-relative flag.
+
+## The player has no body in first person and the third-person figure is a debug mannequin
+kind: missing        severity: nice to have
+`camera.mode("third")` draws a wooden mannequin standing in the air with a yellow bounding box; there is no way to give the player a model (the rigged models and clips exist for agents). A game cannot show the hero or a weapon swing. idea: `player.model("models/hero.vxm")` driven by the walk rules, and a first-person "hands" model.
+
+## Cosmetic emitter presets: the light of `dust_motes` did not light the room
+kind: unclear docs        severity: annoying
+`emitter.create{ preset = "dust_motes", light = { color = {...}, reach = 14 } }` as a hanging lamp's light left the hall as dark as before; the same `light` on `preset = "torch"` lights it. (I did not find out whether presets without a flame ignore `light`, or whether the speck particles are too few; the docs list `light` as a key of every emitter.)
+
+## Unattached voxels fall as bodies without a warning: building props one voxel off a wall turns them into debris
+kind: unclear docs        severity: annoying
+Every prop that was a voxel away from its wall (sconces, sign letters, a crystal on a plinth) fell off at once as a loose body (the engine's connectivity analysis, docs/GUIDE.md "anchor" flags are only in the materials table docs). Easy to spot (`status` shows `bodies`), but the docs of `edit.*` / `edit.text` could say "voxels not connected to an anchor material fall".
