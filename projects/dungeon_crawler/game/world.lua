@@ -51,6 +51,7 @@ local function build_lobby_voxels()
     G.fill(8, 0, 2.2, 18, 1.1, 3.8, "marble", "blocks")
     G.fill(7.9, 1.1, 2.1, 18.1, 1.25, 3.9, "gold")
     G.fill(8, 0, 3.8, 18, 0.3, 4, "dark_wood")
+    G.fill(2, 0.8, 9, 4, 0.85, 13, "marble", "rune_tile")
     G.text(4.2, 5.3, 0, "THE DESCENT", { facing = "+z", material = "gold", size = 3, spacing = 1, depth = 2 })
     G.text(2.9, 4.1, 0, "SEASON 7 - NOW WITH 40% MORE DEATH", { facing = "+z", material = "neon_red", size = 1, depth = 1 })
     -- the check-in crystal (the save point of the lobby): a rune crystal on a plinth, west wall

@@ -86,8 +86,7 @@ W.things[#W.things + 1] = function()
     for _, z in ipairs({ 74, 88 }) do G.sconce(80, 3.2, z, "+x") ; G.sconce(122, 3.2, z, "-x") end
     emitter.create{ name = "gutter_mist", preset = "steam_vent", pos = { G.mx(100), G.my(0), G.mz(86) }, rate = 12, size = { 12, 0.3, 4 } }
     T.crate("gutter_gold", "gold", 110.2, 0.4, 87.4, "-x")
-    local node = events.find("crate_gutter_gold")
-    if node and node ~= 0 then events.on(node, "pressed", function() after(30, W.start_flood) end) end
+    T.crate_hooks.gutter_gold = function() after(30, W.start_flood) end
     W.populate_list.gutter = {
         { "slime_toxic", 117, 73 }, { "slime_toxic", 109, 81 }, { "slime_toxic", 93, 91 }, { "slime_toxic", 85, 86 },
         { "rat", 112, 82 }, { "rat", 101, 84 }, { "rat", 95, 91 }, { "rat", 118, 79 },

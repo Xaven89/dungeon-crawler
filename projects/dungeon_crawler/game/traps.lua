@@ -7,6 +7,7 @@ G.traps = T
 local floor, max, min = math.floor, math.max, math.min
 
 T.interact = {}      -- { name, x, y, z (local metres), radius, prompt, active = function }
+T.crate_hooks = {}   -- crate id -> function run when it is opened (events.on keeps only ONE callback per node: see ENGINE_FEEDBACK.md)
 T.barrels = {}
 T.hazards = {}
 T.plates = {}
@@ -128,6 +129,7 @@ function T.open_crate(id, tier, lx, ly, lz, face)
         if tier == "platinum" and i == 1 then item = ({ "excalibur", "tux", "spoon" })[1 + (s.level or 1) % 3] end
         G.enemies.drop(cx + G.range(-0.4, 0.4), cy + 0.2 * i, cz + G.range(-0.4, 0.4), "item", item)
     end
+    if T.crate_hooks[id] then T.crate_hooks[id]() end
     local cnt = A.bump("crates")
     if cnt >= 5 then A.award("loot_goblin") end
     if tier == "gold" or tier == "platinum" then A.award("crate_exp") end

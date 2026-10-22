@@ -47,7 +47,7 @@ function G.fill(x0, y0, z0, x1, y1, z1, mat, tex)
     local ax, ay, az, bx, by, bz = G.wx(x0), G.wy(y0), G.wz(z0), G.wx(x1) - 1, G.wy(y1) - 1, G.wz(z1) - 1
     if bx < ax or by < ay or bz < az then return end
     edit.box(ax, ay, az, bx, by, bz, mat)
-    if tex then edit.texture_box(ax, ay, az, bx, by, bz, tex) end
+    if tex then pcall(edit.texture_box, ax, ay, az, bx, by, bz, tex) end     -- (pcall: --check-project's dry run does not know the project's own textures)
 end
 function G.clear(x0, y0, z0, x1, y1, z1)
     local ax, ay, az, bx, by, bz = G.wx(x0), G.wy(y0), G.wz(z0), G.wx(x1) - 1, G.wy(y1) - 1, G.wz(z1) - 1
@@ -99,7 +99,7 @@ function G.ring(cx, cz, r0, r1, y0, y1, mat, tex)
             edit.box(x + w0 + 1, ya, z + dz, x + w1, yb, z + dz, mat)
         end
     end
-    if tex then edit.texture_box(x - R1, ya, z - R1, x + R1, yb, z + R1, tex) end
+    if tex then pcall(edit.texture_box, x - R1, ya, z - R1, x + R1, yb, z + R1, tex) end
 end
 
 -- A room: carves the interior and lines it (floor, ceiling and four wall skins, 25 cm thick). r = { x, z, w, d, h, y = 0, floor, wall, ceil, ftex, wtex, ctex }

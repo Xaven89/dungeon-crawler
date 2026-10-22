@@ -71,3 +71,18 @@ workaround: attack = F, ability = Q / RMB-if-ever, quick items R / T / G.
 kind: annoying        severity: nice to have
 what I tried: `pcall(include, "dev/boot.lua")` as an optional scratch hook.
 happened: "[sol2] An exception occurred: include: no such file ..." in the log (and in `--check-project` output); the pcall does catch it. A `include_optional` or `file_exists` would do.
+
+## `events.on` keeps one callback per node: a second `events.on` on the same node and signal silently replaces the first
+kind: unclear docs        severity: annoying
+what I tried: a loot crate button with `events.on(node, "pressed", open_crate)` in the crate helper and, in the room file that owns the crate, a second `events.on(node, "pressed", start_flood)`.
+expected: both run (or an error / warning that the node already has a callback).
+happened: only the last one ran (the flood started, the crate never opened); no log line. docs/LUA_API.md: "a function called when the node sends the signal".
+workaround: my own hook table (`Game.traps.crate_hooks`). The docs could say "one per node"; two would be easy with events.connect to a `Lua callback` node kind (docs/EVENTS.md lists it, but I found no Lua constructor for it).
+
+## `--check-project` (and so MCP `reload_level`) does not know the project's own textures.json
+kind: bug        severity: hurts
+what I tried: `projects/dungeon_crawler/textures.json` with three pixel-art tiles (`{"textures": [{name, kind: "tile", pixels, palette}]}`, no ids: "a file without ids adds to the built-ins"), used by `edit.texture_box(..., "skull")` in `on_start`.
+expected: the check's dry run (and the real run) knows "skull".
+happened: the real engine run is fine (the file is read and rewritten with ids at exit), but `--check-project` fails the dry run with `unknown texture 'skull'`, and the MCP `reload_level` then answers "not reloaded, the project has errors", so the running session cannot be restarted until the script avoids the project's textures (or the check is satisfied). Also: the first guess at the file format (a bare JSON array) is a WARN, a file with ids replaces the built-in table (everything else becomes "unknown texture 'planks'"), and the format is only found in docs/TEXTURES.md prose (`{ "name": ..., "kind": "tile", "pixels": "00111100/...", "palette": [...] }`, 8 rows of 8 digits joined by `/`).
+repro: any project with a textures.json that defines a name used in on_start; `./voxelith --check-project dir`.
+workaround: `pcall(edit.texture_box, ...)` in my box helper.
