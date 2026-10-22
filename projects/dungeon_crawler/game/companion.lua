@@ -121,7 +121,7 @@ function C.on_kill_by_honk()
 end
 
 function C.on_player_death()
-    G.announcer.say_key("honk.dead", { who = "HONK", prio = 1, key = "honk_dead", cooldown = 600 })
+    G.announcer.say_key("honk.dead", { who = "HONK", prio = 0, key = "honk_dead", cooldown = 600 })
 end
 
 function C.on_kill(inst) end

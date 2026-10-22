@@ -55,6 +55,7 @@ W.things[#W.things + 1] = function()
         G.torch(CX + math.cos(a) * 14.6, 3.5, CZ + math.sin(a) * 14.6, { reach = 13, color = { 1.0, 0.45, 0.2 } })
     end
     G.torch(CX, 0.5, CZ, { preset = "campfire", color = { 1, 0.3, 0.2 }, reach = 18, name = "arena_core" })
+    G.brazier(23.5, 137.5, { reach = 12 }); G.brazier(36.5, 137.5, { reach = 12 })       -- they light the manager's face for his entrance
     emitter.create{ name = "arena_embers", preset = "embers", pos = { G.mx(CX), G.my(-0.3), G.mz(CZ) }, size = { 12.5, 0.4, 12.5 }, shape = "disc" }
     T.hazard("lava", CX - 13.3, -3.5, CZ - 13.3, CX + 13.3, 0.3, CZ + 13.3, 0)     -- placeholder replaced below: the moat only
     T.hazards[#T.hazards] = nil

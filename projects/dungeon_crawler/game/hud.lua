@@ -211,6 +211,46 @@ local function hud_world(w, h, input)
     if t < 4000 and not G.screen then ui.text(w / 2, h - 118, tr("ui.help"), { size = 20, color = "#ffffff80", align = "center" }) end
 end
 
+-- the map (top left, under the place): the rooms the contestant has seen, the corridors between them, an arrow for the player
+local links = { { "lobby", "hall" }, { "hall", "boiler" }, { "boiler", "conveyor" }, { "conveyor", "gutter" }, { "gutter", "ballroom" }, { "ballroom", "grotto" }, { "grotto", "arena" }, { "arena", "stairwell" } }
+function G.minimap(w, h)
+    if G.screen == "class" or not G.state.class then return end
+    local W, s = G.world, G.state
+    local mx, my, sc = 26, 92, 1.55
+    local pw, ph = 124 * sc + 16, 154 * sc + 16
+    ui.rect(mx - 8, my - 8, pw, ph, "#0b0d14a0", { radius = 10 })
+    local function center(r) return mx + (r.x + r.w / 2) * sc, my + (r.z + r.d / 2) * sc end
+    for _, l in ipairs(links) do
+        if s.flags["visited_" .. l[1]] and s.flags["visited_" .. l[2]] then
+            local ax, ay = center(W.rooms[l[1]]); local bx, by = center(W.rooms[l[2]])
+            ui.line(ax, ay, bx, by, "#6a7388", 3)
+        end
+    end
+    for id, r in pairs(W.rooms) do
+        local seen = s.flags["visited_" .. id]
+        local x, y = mx + r.x * sc, my + r.z * sc
+        if seen then
+            local cur = (G.current_room == id)
+            ui.rect(x, y, r.w * sc, r.d * sc, cur and "#4a6a9a" or "#2a3347", { radius = 3 })
+            ui.rect(x, y, r.w * sc, r.d * sc, cur and "#9fd0ff" or "#586178", { radius = 3, outline = true, thickness = 2 })
+            if s.cleared[id] then ui.text(x + 4, y + 2, "ok", { size = 14, color = "#5fd35f" }) end
+        else
+            ui.rect(x, y, r.w * sc, r.d * sc, "#ffffff0c", { radius = 3, outline = true, thickness = 1 })
+        end
+    end
+    if G.boss and G.boss.active and G.boss.inst and not G.boss.inst.dead then
+        local ax, ay = center(W.rooms.arena); ui.circle(ax, ay, 6, "#ff3030")
+    end
+    local px, py, pz = player.pos()
+    local lx, ly, lz = G.to_local(px, py, pz)
+    local fx, fy, fz = player.forward()
+    local ax, ay = mx + lx * sc, my + lz * sc
+    local n = math.max(0.01, math.sqrt(fx * fx + fz * fz))
+    local dx, dz = fx / n, fz / n
+    ui.line(ax, ay, ax + dx * 12, ay + dz * 12, "#ffd24a", 3)
+    ui.circle(ax, ay, 4.5, "#ffd24a")
+end
+
 -- achievement toasts (right side, under the numbers)
 local function hud_toasts(w, h)
     local A = G.announcer
@@ -323,7 +363,7 @@ local function bag_screen(w, h, input)
             string.format("XP %d / %d     Kills %d     Deaths %d", s.xp, P.xp_needed(), s.kills, s.deaths),
         }
         for i, ln in ipairs(lines) do ui.text(cx + 8, sy + 34 + (i - 1) * 28, ln, { size = 20, color = "#dfe4f0" }) end
-        ui.text(cx + 8, sy + 128, "Click an item: equip / use.   Drag onto the bar: hotkey.", { size = 17, color = C.dim })
+        ui.text(cx + 8, sy + 128, "Quick keys: R heal, T mana, G throw.", { size = 17, color = C.dim })
         -- the bag
         local bx = cx + 520
         ui.text(bx, top, tr("ui.inventory"), { size = 26, color = C.gold })
@@ -340,7 +380,7 @@ local function bag_screen(w, h, input)
         local used = 0
         for _, sl in ipairs(inv.bag) do if sl then used = used + 1 end end
         ui.text(bx, top + 40 + 4 * (size + gap) + 4, string.format("%d / %d slots", used, inv.bag_n), { size = 18, color = C.dim })
-        ui.text(bx, top + 40 + 4 * (size + gap) + 30, G.state.checkpoint == "stairwell" and "Right-click an item to sell it to the vending machine." or "Drag items to the hotbar below. Heal with a click.", { size = 17, color = C.dim })
+        ui.text(bx, top + 40 + 4 * (size + gap) + 30, G.state.checkpoint == "stairwell" and "Right-click an item to sell it to the vending machine." or "Click an item to use or equip it.", { size = 17, color = C.dim })
     elseif G.bag_tab == 2 then
         ui.text(cx + 8, top, string.format("%s  -  level %d", P.classes[s.class].name, s.level), { size = 30, color = P.classes[s.class].color })
         ui.text(cx + 8, top + 42, tr("ui.points") .. ": " .. s.points, { size = 24, color = s.points > 0 and C.green or C.dim })
@@ -380,8 +420,8 @@ end
 local function shop_screen(w, h, input)
     uikit.open_screen()
     local s = G.state
-    local pw, ph = 900, 720
-    local px, py = (w - pw) / 2, (h - ph) / 2 - 20
+    local pw, ph = 900, 780
+    local px, py = (w - pw) / 2, (h - ph) / 2 - 10
     local cx, cy, cw = panel(px, py, pw, ph, tr("ui.shop"))
     ui.text(cx + 4, cy + 4, string.format("%s gold", G.format_int(s.gold)), { size = 28, color = C.gold })
     local y = cy + 54

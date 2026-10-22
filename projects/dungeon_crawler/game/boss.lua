@@ -27,11 +27,17 @@ function B.begin()
     A.say_key("boss.intro", { prio = 2 })
     A.say_key("boss.intro", { prio = 0 })
     G.sfx.play("boss_stinger")
-    -- the cutscene: a third-person look at him for a few seconds
-    camera.mode("third")
-    camera.set{ distance = 7.5, lift = 1.6 }
+    -- the cutscene: the editor camera (a free camera that leaves the player parked) circles him for seven seconds, then the view goes back to the player's eyes
+    local t0 = time.tick()
+    camera.mode("editor")
+    local timer
+    timer = every(4, function()
+        local f = (time.tick() - t0) / 420
+        camera.focus(G.mx(30), G.my(2.4), G.mz(136.5))
+        camera.set{ zoom = 9 - 2.5 * f, pitch = 14, yaw = 95 - 55 * f }
+        if f >= 1 then cancel(timer); camera.mode("first") end
+    end)
     model.play(inst.mdl, "roar", 1, false, 4)
-    after(420, function() camera.mode("first") end)
     if G.music and G.music.set then G.music.set("boss") end
 end
 
