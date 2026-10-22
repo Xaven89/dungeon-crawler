@@ -143,9 +143,9 @@ function G.torch(xm, ym, zm, opts)
     opts = opts or {}
     torch_n = torch_n + 1
     local name = opts.name or ("torch_" .. torch_n)
-    local col = opts.color or { 1.0, 0.55, 0.2 }
+    local col = opts.color or { 2.0, 1.05, 0.4 }
     emitter.create{ name = name, preset = opts.preset or "torch", pos = { G.mx(xm), G.my(ym), G.mz(zm) },
-                    light = { color = col, reach = opts.reach or 13, flicker = opts.flicker ~= false } }
+                    light = { color = col, reach = opts.reach or 14, flicker = opts.flicker ~= false } }
     G.torches[#G.torches + 1] = name
     return name
 end
@@ -178,7 +178,7 @@ function G.lamp(xm, zm, y_ceil, drop, opts)
         G.fill(xm - 0.2, y_ceil - drop - 0.4, zm - 0.2, xm + 0.2, y_ceil - drop, zm + 0.2, opts.mat or "lantern")
         G.fill(xm - 0.25, y_ceil - drop - 0.05, zm - 0.25, xm + 0.25, y_ceil - drop, zm + 0.25, "metal")
     end
-    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = "dust_motes", color = opts.color or { 1.0, 0.7, 0.35 }, reach = opts.reach or 13, flicker = false })
+    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 2.4, 1.6, 0.8 }, reach = opts.reach or 15, flicker = true })
 end
 
 -- a floor brazier / standing fire bowl

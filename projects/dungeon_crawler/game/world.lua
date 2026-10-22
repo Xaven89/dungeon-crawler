@@ -174,6 +174,7 @@ function W.tick(t)
     G.traps.tick_all(t)
     if W.tick_belt then W.tick_belt(t) end
     if W.arena_tick then W.arena_tick(t) end
+    if W.shuttle and W.shuttle.tick then W.shuttle.tick(t) end
     if W.tick_gutter then W.tick_gutter(t) end
     if t % 15 == 0 and G.state and G.state.class and not G.player.dead then W.track_room(t) end
 end

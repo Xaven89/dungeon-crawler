@@ -106,6 +106,10 @@ guard.teleport.1,"Unauthorised teleportation detected. This is a game show, not 
 guard.teleport.2,"Please do not press number keys. Number keys are for people who have a plan."
 guard.teleport.3,"Teleporting is not an approved activity. Walking is. Walking is also fatal. We are very consistent."
 
+shuttle.first.1,"You are driving the Complimentary Shuttle! No licence required. No insurance, either. That is a different department."
+shuttle.hit.1,"Vehicular contestant-on-monster collision! The audience gives that a 9. The shuttle gives it a 10. The monster gives it a very dramatic 0."
+shuttle.hit.2,"Road rage, but make it dungeon."
+
 # ---------------------------------------------------------------------------------------------------------------- boss
 boss.intro.1,"Please welcome the one, the only, the infinitely underpaid FLOOR MANAGER! He has a meeting with you. It is a performance review."
 boss.intro.2,"His rating: 1 star out of 5. His HP: yes. His mood: not great."
@@ -226,3 +230,20 @@ ui.close,CLOSE
 ui.achievements,ACHIEVEMENT UNLOCKED
 ui.boss,THE FLOOR MANAGER
 ui.save_done,GAME SAVED
+
+# class cards
+ui.class.janitor.name,"Janitor"
+ui.class.janitor.tag,"Tank. Sweeper. Underpaid."
+ui.class.janitor.blurb,"Sturdy, slow, and professionally unbothered. Mop Sweep clears the room around you and knocks the muck back."
+ui.class.pyro.name,"Pyromaniac"
+ui.class.pyro.tag,"Glass cannon. Candle."
+ui.class.pyro.blurb,"Fragile and festive. Fire Bolt sets things alight, including things you did not mean to."
+ui.class.bard.name,"Bard"
+ui.class.bard.tag,"Support. Sound. Mostly sound."
+ui.class.bard.blurb,"Charming and loud. Power Chord stuns everything in earshot and lifts your spirits (and your health)."
+ui.class.accountant.name,"Accountant"
+ui.class.accountant.tag,"Precision. Paperwork. Pain."
+ui.class.accountant.blurb,"Fast hands, sharp eyes. Audit marks a target: it takes double damage and pays out extra gold."
+ui.weapon,Weapon
+ui.ability,Ability
+ui.mana,mana

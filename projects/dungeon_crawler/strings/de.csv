@@ -81,3 +81,19 @@ ui.save_done,GESPEICHERT
 ui.achievements,ERFOLG FREIGESCHALTET
 end.title,EBENE 1 GESCHAFFT
 end.sub,Ebene 2 wird von einem Team aeusserst motivierter Kobolde gebaut.
+
+ui.class.janitor.name,"HAUSMEISTER"
+ui.class.janitor.tag,"Panzer. Fegender. Unterbezahlt."
+ui.class.janitor.blurb,"Robust, langsam und professionell unbeeindruckt. Wischer-Schwung raeumt den Raum um dich und schiebt den Dreck zurueck."
+ui.class.pyro.name,"FEUERTEUFEL"
+ui.class.pyro.tag,"Glaskanone. Kerze."
+ui.class.pyro.blurb,"Zerbrechlich und festlich. Feuerblitz zuendet Dinge an, auch solche, die du nicht meintest."
+ui.class.bard.name,"BARDE"
+ui.class.bard.tag,"Unterstuetzung. Schall. Meist Schall."
+ui.class.bard.blurb,"Charmant und laut. Kraftakkord betaeubt alles in Hoerweite und hebt deine Stimmung (und deine Gesundheit)."
+ui.class.accountant.name,"BUCHHALTER"
+ui.class.accountant.tag,"Praezision. Papierkram. Schmerz."
+ui.class.accountant.blurb,"Flinke Haende, scharfe Augen. Pruefung markiert ein Ziel: es nimmt doppelten Schaden und zahlt mehr Gold aus."
+ui.weapon,Waffe
+ui.ability,Faehigkeit
+ui.mana,Mana

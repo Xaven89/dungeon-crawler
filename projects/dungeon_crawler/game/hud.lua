@@ -317,10 +317,10 @@ local function class_screen(w, h, input)
         local hover = uikit.over(x, y, cw, ch)
         ui.rect(x, y, cw, ch, hover and "#1b2030f2" or "#10131cf0", { radius = 16 })
         ui.rect(x, y, cw, ch, c.color, { radius = 16, outline = true, thickness = hover and 5 or 3 })
-        ui.text(x + cw / 2, y + 18, c.name:upper(), { size = 38, color = c.color, align = "center" })
-        ui.text(x + cw / 2, y + 64, c.tag, { size = 21, color = C.dim, align = "center" })
+        ui.text(x + cw / 2, y + 18, tr("ui.class." .. id .. ".name"):upper(), { size = 38, color = c.color, align = "center" })
+        ui.text(x + cw / 2, y + 64, tr("ui.class." .. id .. ".tag"), { size = 21, color = C.dim, align = "center" })
         local ly = y + 108
-        for _, ln in ipairs(wrap(c.blurb, 22, cw - 50)) do ui.text(x + 26, ly, ln, { size = 22, color = "#dfe4f0" }); ly = ly + 28 end
+        for _, ln in ipairs(wrap(tr("ui.class." .. id .. ".blurb"), 22, cw - 50)) do ui.text(x + 26, ly, ln, { size = 22, color = "#dfe4f0" }); ly = ly + 28 end
         local by = y + 300
         for _, st in ipairs({ "str", "dex", "int", "con", "cha" }) do
             ui.text(x + 26, by, st:upper(), { size = 21, color = C.dim })
@@ -328,8 +328,8 @@ local function class_screen(w, h, input)
             by = by + 32
         end
         local wd = G.items.defs[c.weapon]
-        ui.text(x + 26, y + 478, "Weapon: " .. wd.name, { size = 20, color = "#dfe4f0" })
-        ui.text(x + 26, y + 506, "Ability: " .. c.ability.name .. (c.ability.cost > 0 and ("  (" .. c.ability.cost .. " mana)") or ""), { size = 20, color = "#dfe4f0" })
+        ui.text(x + 26, y + 478, tr("ui.weapon") .. ": " .. wd.name, { size = 20, color = "#dfe4f0" })
+        ui.text(x + 26, y + 506, tr("ui.ability") .. ": " .. c.ability.name .. (c.ability.cost > 0 and ("  (" .. c.ability.cost .. " " .. tr("ui.mana") .. ")") or ""), { size = 20, color = "#dfe4f0" })
         if uikit.button("class_" .. id, tr("ui.choose"), x + 60, y + ch - 80, cw - 120, 56, { color = c.color }) then ui.run(string.format("Game.player.pick_class(%q)", id)) end
     end
 end
