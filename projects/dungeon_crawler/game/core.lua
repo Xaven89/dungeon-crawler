@@ -20,6 +20,10 @@ function G.my(ym) return units.m(G.OY) + ym end
 function G.mz(zm) return units.m(G.OZ) + zm end
 function G.to_local(wxm, wym, wzm) return wxm - units.m(G.OX), wym - units.m(G.OY), wzm - units.m(G.OZ) end
 
+-- voxels are built on the first run only (the save keeps them), or when the guard finds the world undone (Z is the engine's undo key and cannot be unbound)
+G.rebuilding = false
+function G.should_build() return G.rebuilding or project.first_run() end
+
 -- ---------------------------------------------------------------------------------------------- random numbers (an LCG: the engine's own determinism, not the C library's)
 local rng_state = 12345
 function G.seed(n) rng_state = (n or 12345) % 2147483648 end
@@ -144,7 +148,7 @@ end
 -- a floor brazier / standing fire bowl
 function G.brazier(xm, zm, opts)
     opts = opts or {}
-    if project.first_run() then
+    if G.should_build() then
         local cx, cz, y = G.wx(xm), G.wz(zm), G.wy(opts.y or 0)
         edit.box(cx - 2, y, cz - 2, cx + 2, y + 10, cz + 2, "metal")
         edit.box(cx - 5, y + 11, cz - 5, cx + 5, y + 13, cz + 5, "metal")

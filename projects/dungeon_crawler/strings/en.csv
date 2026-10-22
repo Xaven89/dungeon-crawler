@@ -99,6 +99,10 @@ trap.barrel,"Explosive barrels! Whoever left these here was either a genius or a
 trap.plate,"You stepped on a pressure plate. Nothing happened! ...Yet. Nothing happened yet."
 secret.wall,"The wall is hollow. Somebody forgot to bill the wall."
 
+guard.teleport.1,"Unauthorised teleportation detected. This is a game show, not a travel agency. You have been returned to where you were standing."
+guard.teleport.2,"Please do not press number keys. Number keys are for people who have a plan."
+guard.teleport.3,"Teleporting is not an approved activity. Walking is. Walking is also fatal. We are very consistent."
+
 # ---------------------------------------------------------------------------------------------------------------- boss
 boss.intro.1,"Please welcome the one, the only, the infinitely underpaid FLOOR MANAGER! He has a meeting with you. It is a performance review."
 boss.intro.2,"His rating: 1 star out of 5. His HP: yes. His mood: not great."
@@ -210,7 +214,7 @@ ui.hp,HP
 ui.mp,MP
 ui.dead_title,YOU DIED
 ui.dead_sub,Your demise has been rescheduled.
-ui.help,"LMB attack   RMB / Q ability   E interact   I bag   C sheet   1-8 items"
+ui.help,"F attack    Q ability    E interact    R heal    T mana    G throw    I bag    C sheet    J achievements"
 ui.interact,[E]
 ui.shop,Vending Machine of Mild Relief
 ui.buy,BUY

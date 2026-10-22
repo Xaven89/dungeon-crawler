@@ -90,7 +90,7 @@ end
 function I.init()
     include("engine/ui_kit.lua")
     include("engine/inventory.lua")
-    I.inv = inventory.new{ name = "player", slots = 24, hotbar = 8, columns = 6, items = I.defs }
+    I.inv = inventory.new{ name = "player", slots = 32, hotbar = 0, columns = 8, items = I.defs }
     inventory.load(I.inv)
     return I.inv
 end

@@ -5,6 +5,7 @@ include("game/announcer.lua")
 include("game/player.lua")
 include("game/enemies.lua")
 include("game/world.lua")
+include("game/hud.lua")
 
 local G = Game
 
@@ -26,6 +27,7 @@ function on_start()
         local cp = G.world.checkpoints[s.checkpoint] or G.world.checkpoints.lobby
         player.teleport(G.mx(cp.x), G.my(cp.y), G.mz(cp.z))
     end
+    pcall(include, "dev/boot.lua")      -- a developer's scratch script (not in git): sets up a situation for a screenshot, see tools/hudshot.sh
 end
 
 function on_tick(t)

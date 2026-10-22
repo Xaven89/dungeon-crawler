@@ -451,11 +451,28 @@ function P.use_item(id)
     return true
 end
 
-function P.use_hotbar(n)
-    local slot = G.items.inv.hotbar[n]
-    G.items.inv.selected = n
-    if slot then return P.use_item(slot.id) end
-    return false
+-- the quick keys: R heals with the smallest item that does the job, T drinks mana, G throws a firecracker (the number keys are the engine's teleports, so no hotbar)
+local quick_lists = { heal = { "bandage", "smoothie", "sushi", "cheese" }, mana = { "energy", "cheese" }, throw = { "firecracker" } }
+function P.quick(kind)
+    local s = G.state
+    if P.dead or not s.class or G.screen then return false end
+    local need = P.max_hp() - s.hp
+    local pick
+    for _, id in ipairs(quick_lists[kind] or {}) do
+        local d = G.items.defs[id]
+        if G.items.count(id) > 0 then
+            if kind == "heal" then
+                if d.heal and need > 0 then
+                    if not pick then pick = id end
+                    if d.heal >= need * 0.8 then pick = id; break end
+                end
+            elseif kind == "mana" then
+                if d.mana and s.mp < P.max_mp() - 5 then pick = id; break end
+            else pick = id; break end
+        end
+    end
+    if not pick then P.popup(kind == "heal" and "NO HEALING ITEM" or (kind == "mana" and "NO MANA ITEM" or "NOTHING TO THROW"), "#cccccc"); return false end
+    return P.use_item(pick)
 end
 
 -- ---------------------------------------------------------------------------------------------- per tick
