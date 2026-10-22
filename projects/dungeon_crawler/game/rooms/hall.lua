@@ -41,6 +41,7 @@ end
 
 W.things[#W.things + 1] = function()
     for _, x in ipairs({ 40, 48, 56, 64 }) do G.sconce(x, 3.0, 2, "+z"); G.sconce(x, 3.0, 20, "-z") end
+    for x = 38, 70, 8 do G.lamp(x, 11, 7.0, 1.2, { reach = 12 }) end
     G.torch(70, 2.4, 4, { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 9, name = "hall_crystal" })
     G.torch(36.5, 1.5, 31.5, { reach = 9 })
     emitter.create{ name = "hall_dust", preset = "dust_motes", pos = { G.mx(51), G.my(3.5), G.mz(11) }, size = { 18, 3, 7 } }

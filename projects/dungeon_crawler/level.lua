@@ -69,6 +69,7 @@ function on_tick(t)
     G.companion.tick(t)
     G.music.tick(t)
     if G.world.tick then G.world.tick(t) end
+    if t % 1800 == 900 and G.state.class then G.save() end        -- progress is kept every 30 s (the world itself is saved on exit / F11)
 end
 
 function on_anim(m, event, clip)

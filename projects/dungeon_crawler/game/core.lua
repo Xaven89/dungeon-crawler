@@ -170,6 +170,17 @@ function G.sconce(xm, ym, zm, face, opts)
     end
     return G.torch(xm + fx * 0.22, ym + 0.45, zm + fz * 0.22, opts)
 end
+-- a hanging lamp: a chain from the ceiling (y_ceil) and a glowing lantern with a light; the cube touches the chain, the chain the ceiling
+function G.lamp(xm, zm, y_ceil, drop, opts)
+    opts = opts or {}
+    if G.should_build() then
+        G.fill(xm - 0.04, y_ceil - drop, zm - 0.04, xm + 0.04, y_ceil, zm + 0.04, "metal")
+        G.fill(xm - 0.2, y_ceil - drop - 0.4, zm - 0.2, xm + 0.2, y_ceil - drop, zm + 0.2, opts.mat or "lantern")
+        G.fill(xm - 0.25, y_ceil - drop - 0.05, zm - 0.25, xm + 0.25, y_ceil - drop, zm + 0.25, "metal")
+    end
+    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = "dust_motes", color = opts.color or { 1.0, 0.7, 0.35 }, reach = opts.reach or 13, flicker = false })
+end
+
 -- a floor brazier / standing fire bowl
 function G.brazier(xm, zm, opts)
     opts = opts or {}

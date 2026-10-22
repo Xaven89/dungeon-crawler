@@ -13,7 +13,7 @@ W.rooms = {
     lobby    = { x = 0,   z = 0,   w = 26, d = 22, h = 9,   name = "Intake Lobby" },
     hall     = { x = 30,  z = 2,   w = 42, d = 18, h = 7,   name = "Hall of Mild Peril" },
     boiler   = { x = 76,  z = 0,   w = 36, d = 26, h = 10,  name = "The Boiler Gallery" },
-    conveyor = { x = 114, z = 26,  w = 8,  d = 44, h = 6,   name = "The Conveyor of Consequences" },
+    conveyor = { x = 114, z = 20,  w = 8,  d = 50, h = 6,   name = "The Conveyor of Consequences" },
     gutter   = { x = 80,  z = 70,  w = 42, d = 26, h = 7,   name = "The Gutter" },
     ballroom = { x = 38,  z = 66,  w = 38, d = 32, h = 12,  name = "The Zero-G Ballroom" },
     grotto   = { x = 0,   z = 52,  w = 34, d = 58, h = 12,  name = "The Mushroom Grotto" },

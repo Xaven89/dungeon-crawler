@@ -177,6 +177,17 @@ local function hud_world(w, h, input)
         ui.line(cx - r, cy - r, cx - r + 8, cy - r + 8, col, 3); ui.line(cx + r, cy - r, cx + r - 8, cy - r + 8, col, 3)
         ui.line(cx - r, cy + r, cx - r + 8, cy + r - 8, col, 3); ui.line(cx + r, cy + r, cx + r - 8, cy + r - 8, col, 3)
     end
+    -- the interaction prompt (what the E key would press)
+    if not G.screen and not P.dead then
+        local it = G.traps.current_prompt()
+        if it then
+            local tw = ui.measure(it.prompt, 26) + 70
+            ui.rect(cx - tw / 2, cy + 70, tw, 46, "#0b0d14d0", { radius = 10 })
+            ui.rect(cx - tw / 2, cy + 70, tw, 46, "#ffd24a", { radius = 10, outline = true, thickness = 2 })
+            ui.text(cx - tw / 2 + 14, cy + 78, "E", { size = 28, color = "#ffd24a" })
+            ui.text(cx - tw / 2 + 52, cy + 82, it.prompt, { size = 24, color = "#ffffff" })
+        end
+    end
     -- popups above the crosshair
     local n = #P.popups
     for i = n, 1, -1 do
