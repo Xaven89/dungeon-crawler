@@ -98,6 +98,15 @@ function T.crate(id, tier, lx, ly, lz, face)
     G.torch(cx, ly + 1.4, cz, { preset = "magic_sparks", reach = 5, color = ({ bronze = { 1, .6, .3 }, silver = { .7, .7, 1 }, gold = { 1, .85, .3 }, platinum = { .4, 1, 1 } })[tier], name = "crate_light_" .. id })
 end
 
+-- a crate made while the game runs (the boss's reward): the voxels now, and the button
+function T.build_crate_now(id, tier, lx, ly, lz, face)
+    if G.state.opened[id] then return end
+    local was = G.rebuilding
+    G.rebuilding = true
+    T.crate(id, tier, lx, ly, lz, face)
+    G.rebuilding = was
+end
+
 function T.open_crate(id, tier, lx, ly, lz, face)
     local s = G.state
     if s.opened[id] then return end
@@ -197,13 +206,43 @@ function T.reveal_secret()
     G.save()
 end
 
+-- loot that hangs in the air (weightless places): a little body, picked up by walking into it; once taken it is not made again
+T.floating_list = {}
+function T.floating(id, lx, ly, lz, kind, payload)
+    if G.state.opened["float_" .. id] then return end
+    local b = body.box(G.mx(lx), G.my(ly), G.mz(lz), 5, 5, 5, "lantern")
+    T.floating_list[#T.floating_list + 1] = { id = id, body = b, kind = kind, payload = payload, x = lx, y = ly, z = lz }
+end
+
 -- ---------------------------------------------------------------------------------------------- hazards: a box (local metres) that hurts whoever stands in it
 -- kind: "lava" (burns), "water" (wet: only the achievement), "fire"
 function T.hazard(kind, x0, y0, z0, x1, y1, z1, dmg)
     T.hazards[#T.hazards + 1] = { kind = kind, x0 = x0, y0 = y0, z0 = z0, x1 = x1, y1 = y1, z1 = z1, dmg = dmg or 25 }
 end
 
+function T.tick_floating(t)
+    if t % 6 ~= 0 then return end
+    local px, py, pz = player.pos()
+    for i = #T.floating_list, 1, -1 do
+        local f = T.floating_list[i]
+        local x, y, z, ok = body.pos(f.body)
+        if ok and G.dist3(x, y, z, px, py + 0.9, pz) < 1.5 then
+            G.state.opened["float_" .. f.id] = true
+            body.remove(f.body)
+            table.remove(T.floating_list, i)
+            if f.kind == "item" then
+                if G.items.add(f.payload, 1) then
+                    local d = G.items.defs[f.payload]
+                    G.player.popup(d.name, d.color); G.sfx.play("pickup")
+                end
+            end
+            G.save()
+        end
+    end
+end
+
 function T.tick(t)
+    T.tick_floating(t)
     if t % 6 ~= 0 then return end
     local px, py, pz = player.pos()
     local lx, ly, lz = G.to_local(px, py + 0.2, pz)

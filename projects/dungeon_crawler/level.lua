@@ -9,6 +9,13 @@ include("game/world.lua")
 include("game/rooms/hall.lua")
 include("game/rooms/boiler.lua")
 include("game/rooms/conveyor.lua")
+include("game/rooms/gutter.lua")
+include("game/rooms/ballroom.lua")
+include("game/rooms/grotto.lua")
+include("game/rooms/arena.lua")
+include("game/rooms/stairwell.lua")
+include("game/shop.lua")
+include("game/boss.lua")
 include("game/hud.lua")
 
 local G = Game
@@ -34,6 +41,24 @@ function on_start()
     end
     pcall(include, "dev/boot.lua")      -- a developer's scratch script (not in git): sets up a situation for a screenshot, see tools/hudshot.sh
 end
+
+function G.save_now()
+    G.save()
+    G.player.popup(tr("ui.save_done"), "#a6ffcc", true)
+    G.sfx.play("checkpoint")
+    G.player.set_checkpoint(G.current_room == "stairwell" and "stairwell" or (G.state.checkpoint or "lobby"), true)
+end
+
+function G.finish_floor()
+    if G.state.flags.floor_done then G.screen = "end"; return end
+    G.state.flags.floor_done = true
+    G.screen = "end"
+    G.announcer.say_key("end.line", { prio = 2 })
+    local mins = G.state.playtime / 3600
+    if mins < 20 then G.announcer.award("speedrunner") end
+    G.save()
+end
+function G.close_end() G.screen = nil end
 
 function on_tick(t)
     G.announcer.tick(t)

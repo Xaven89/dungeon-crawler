@@ -33,7 +33,7 @@ W.builders[#W.builders + 1] = function()
     G.corridor{ x = 38, z = 20.25, len = 25.75, w = 2.6, h = 3.4, axis = "z", floor = "flagstone", wall = "dungeon_brick" }
     G.room{ x = 34.5, z = 28, w = 7, d = 7, h = 4, floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
     G.corridor{ x = 20, z = 46, len = 18.25, w = 2.6, h = 3.4, axis = "x", floor = "flagstone", wall = "dungeon_brick" }
-    G.corridor{ x = 20, z = 46, len = 6.25, w = 2.6, h = 3.4, axis = "z", floor = "flagstone", wall = "dungeon_brick" }
+    G.corridor{ x = 20, z = 46, len = 10, w = 2.6, h = 3.4, axis = "z", floor = "flagstone", wall = "dungeon_brick" }
     -- the hall-end checkpoint: a crystal on a plinth (north-east corner)
     G.fill(69, 0, 3, 71, 0.8, 5, "marble", "blocks")
     G.sphere(70, 1.4, 4, 0.6, "rune")

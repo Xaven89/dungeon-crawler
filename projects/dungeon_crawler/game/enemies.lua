@@ -28,7 +28,7 @@ E.types = {
                 splat = "splat_spore", hit_sfx = "squish", die_sfx = "squish_die", ragdoll = true, loot = "drop", loot_chance = 0.4, wander = 1.5 },
     foreman = { model = "foreman", name = "Goblin Foreman", hp = 340, dmg = 17, speed = 1.9, reach = 2.7, aggro = 16, xp = 160, gold = { 40, 70 }, cd = 100, height = 2.9, radius = 0.9, miniboss = true,
                 splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", ragdoll = true, loot = "silver", loot_chance = 1, slam = true },
-    manager = { model = "manager", name = "The Floor Manager", hp = 900, dmg = 24, speed = 1.7, reach = 3.6, aggro = 40, xp = 400, gold = { 150, 250 }, cd = 110, height = 5.2, radius = 1.4, boss = true,
+    manager = { model = "manager", name = "The Floor Manager", hp = 700, dmg = 24, speed = 1.7, reach = 3.2, aggro = 40, xp = 400, gold = { 150, 250 }, cd = 110, height = 3.9, radius = 1.2, boss = true,
                 splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", ragdoll = true, loot = "platinum", loot_chance = 1 },
 }
 
@@ -59,7 +59,7 @@ function E.spawn(kind, lx, ly, lz, opts)
                             animation = T.anim or "auto", turn_smoothing = 6 }
     if not id then return nil end
     local inst = { id = id, mdl = id - 0x40000000, kind = kind, T = T, hp = T.hp * (opts.hp_mult or 1), max_hp = T.hp * (opts.hp_mult or 1), state = "idle",
-                   next_attack = 0, stun_until = 0, room = opts.room, height = T.height, radius = T.radius, home = { lx, ly, lz }, born = time.tick(), name = T.name }
+                   next_attack = 0, stun_until = 0, room = opts.room, height = T.height, radius = T.radius, home = { lx, ly, lz }, born = time.tick(), name = T.name, index = opts.index }
     E.list[id] = inst
     E.by_model[inst.mdl] = inst
     if T.wander and not opts.still then agent.wander(id, T.wander) end
@@ -67,15 +67,37 @@ function E.spawn(kind, lx, ly, lz, opts)
     return inst
 end
 
--- a room's population: list of { kind, x, z [, y] } in local metres; nothing when the room was cleared before (saved)
-function E.populate(room, list)
-    if G.state.cleared[room] then return end
+-- a room's population: list of { kind, x, z [, y] } in local metres. Only the rooms near the player are alive (the engine allows 64 agents): rooms are spawned when the player comes close
+-- and taken away again when he leaves; what was killed stays dead (W.remaining), a room that was cleared stays cleared (saved).
+E.remaining = {}      -- room -> { [index] = true } of the entries still alive
+E.spawned = {}        -- room -> true while its enemies exist
+function E.spawn_room(room, list)
+    if G.state.cleared[room] or E.spawned[room] then return 0 end
+    E.spawned[room] = true
+    local rem = E.remaining[room]
     local n = 0
-    for _, e in ipairs(list) do
-        local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = 1 + (G.state.level - 1) * 0.03 })
-        if inst then n = n + 1 end
+    for i, e in ipairs(list) do
+        if not rem or rem[i] then
+            local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = 1 + (G.state.level - 1) * 0.03, index = i })
+            if inst then n = n + 1 end
+        end
     end
     return n
+end
+
+function E.despawn_room(room)
+    if not E.spawned[room] then return end
+    E.spawned[room] = nil
+    local rem = {}
+    for id, inst in pairs(E.list) do
+        if inst.room == room then
+            if not inst.dead then rem[inst.index or 0] = true end
+            agent.remove(id)
+            E.list[id] = nil
+            E.by_model[inst.mdl] = nil
+        end
+    end
+    E.remaining[room] = rem
 end
 
 function E.alive_in(room)
@@ -195,6 +217,7 @@ function E.kill(inst, opts)
     -- GLEE comments (not on every kill: she gets bored)
     if T.boss then
         A.say_key("kill.boss", { prio = 2 })
+        if G.boss and G.boss.on_dead then G.boss.on_dead(inst) end
     elseif T.miniboss then
         A.say_key("kill.foreman", { prio = 2 })
     else
@@ -320,7 +343,7 @@ function E.ai(inst, t)
         if inst.state ~= "idle" then inst.state = "idle"; agent.stop(inst.id); if inst.T.wander then agent.wander(inst.id, inst.T.wander) end end
         return
     end
-    if inst.T.ai then return inst.T.ai(inst, t, d, dy, info) end
+    if inst.ai or inst.T.ai then return (inst.ai or inst.T.ai)(inst, t, d, dy, info) end
     if inst.state == "stunned" then
         if t >= inst.stun_until then inst.state = "idle"; E.aggro(inst, true) end
         return
@@ -366,7 +389,7 @@ function E.on_anim(mdl, event, clip)
     elseif event == "spit" then
         E.spit(inst, x, y, z)
     end
-    if inst.T.on_event then inst.T.on_event(inst, event, x, y, z) end
+    if inst.T.boss and G.boss and G.boss.on_event then G.boss.on_event(inst, event, x, y, z) end
     return true
 end
 

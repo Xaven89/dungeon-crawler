@@ -35,6 +35,9 @@ respawn.2,"Back from the dead, and with only 20% of your gold lost to 'administr
 respawn.3,"You live! The management apologises for the inconvenience. We do not mean it."
 checkpoint.lobby,"Checkpoint saved: the Lobby. Please do not get attached."
 checkpoint.stairwell,"Checkpoint saved: Stairwell One. The only room in this building without malice. It has a vending machine."
+checkpoint.boiler,"Checkpoint: the Boiler Gallery exit. It is warm. You may sit. Do not sit."
+checkpoint.ballroom,"Checkpoint: the Ballroom door. Please remove your dancing shoes. Your actual shoes are fine."
+checkpoint.arena,"Checkpoint: the Manager's doorstep. Your final checkpoint before the meeting. Take a deep breath. It will not help."
 checkpoint.hall,"Checkpoint saved at the end of the Hall of Mild Peril. Mild is relative."
 
 # ---------------------------------------------------------------------------------------------------------------- kills

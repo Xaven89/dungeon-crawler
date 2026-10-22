@@ -136,22 +136,28 @@ def foreman():
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------ the floor manager (boss)
 def manager():
-    c = Creature("manager", (50, 84, 30))
+    # the engine silently replaces a rigged model that is larger than 64 voxels along an axis by its demo mannequin (ENGINE_FEEDBACK.md): the boss is 62 voxels (3.9 m) tall
+    c = Creature("manager", (44, 64, 26))
     skin = "dusty_blue"
-    torso, head = biped(c, skin, pelvisY=32, legLen=15, shinLen=15, torsoH=28, headR=8, armLen=17, foreLen=17, width=14, limbR=3.4, paint_torso="white", cloth="dark_slate")
-    # a suit: dark jacket sides, a long red tie, a lanyard and a badge, a tiny pair of glasses on a big face
-    c.box((10, 34, 12), (14, 58, 20), "dark_slate", "torso"); c.box((36, 34, 12), (40, 58, 20), "dark_slate", "torso")
-    c.box((24, 33, 20), (26, 56, 20), "red", "torso"); c.box((23, 52, 20), (27, 56, 20), "red", "torso"); c.box((22, 33, 21), (28, 38, 21), "red", "torso")
-    c.box((18, 40, 21), (21, 46, 21), "white", "torso"); c.box((19, 41, 21), (20, 43, 21), "black", "torso")
-    for x in (21, 28): c.box((x, 71, 24), (x + 2, 72, 24), "black", "head"); c.box((x, 71, 25), (x + 1, 71, 25), "yellow", "head")
-    c.box((23, 71, 24), (27, 71, 24), "black", "head")
-    c.box((24, 67, 24), (26, 69, 24), "dusty_blue", "head")
-    c.box((21, 64, 24), (28, 64, 24), "dark_red", "head")
-    for x in (21, 22, 27, 28): c.box((x, 65, 24), (x, 65, 24), "white", "head")
-    c.box((23, 75, 22), (27, 76, 25), "dark_slate", "head")                                   # a severe fringe
-    cb = c.part("clipboard", "forearm_l", (15.5, 42, 15))
-    c.box((11, 24, 18), (20, 40, 18), "brown", cb); c.box((12, 25, 19), (19, 39, 19), "white", cb); c.box((14, 39, 19), (17, 41, 20), "silver", cb)
-    for yy in range(27, 38, 3): c.box((13, yy, 20), (18, yy, 20), "black", cb)
+    cx, cz = 22, 13
+    torso, head = biped(c, skin, pelvisY=24, legLen=11, shinLen=11, torsoH=19, headR=6.5, armLen=12, foreLen=12, width=11, limbR=2.8, paint_torso="white", cloth="dark_slate")
+    fz = cz + 1                     # the front face of the torso
+    # a suit: dark jacket panels either side, a long red tie, a lanyard and a badge, a pair of small glasses on a big face
+    c.box((cx - 8, 26, fz - 2), (cx - 5, 42, fz), "dark_slate", "torso"); c.box((cx + 4, 26, fz - 2), (cx + 7, 42, fz), "dark_slate", "torso")
+    c.box((cx - 1, 25, fz + 1), (cx, 41, fz + 1), "red", "torso"); c.box((cx - 2, 38, fz + 1), (cx + 1, 41, fz + 1), "red", "torso"); c.box((cx - 2, 25, fz + 2), (cx + 1, 29, fz + 2), "red", "torso")
+    c.box((cx - 6, 31, fz + 1), (cx - 4, 36, fz + 1), "white", "torso"); c.box((cx - 5, 32, fz + 2), (cx - 5, 34, fz + 2), "black", "torso")
+    hy = 24 + 19 + 1 + 6.5                     # centre of the head
+    for x in (cx - 4, cx + 2): c.box((x, int(hy) + 1, cz + 6), (x + 2, int(hy) + 2, cz + 6), "black", "head"); c.box((x + 1, int(hy) + 1, cz + 7), (x + 1, int(hy) + 1, cz + 7), "yellow", "head")
+    c.box((cx - 2, int(hy) + 1, cz + 6), (cx + 1, int(hy) + 1, cz + 6), "black", "head")
+    c.box((cx - 1, int(hy) - 3, cz + 6), (cx, int(hy) - 1, cz + 7), "dusty_blue", "head")
+    c.box((cx - 3, int(hy) - 5, cz + 6), (cx + 2, int(hy) - 5, cz + 6), "dark_red", "head")
+    for x in (cx - 3, cx - 2, cx + 1, cx + 2): c.box((x, int(hy) - 4, cz + 6), (x, int(hy) - 4, cz + 6), "white", "head")
+    c.box((cx - 3, int(hy) + 6, cz + 3), (cx + 2, int(hy) + 7, cz + 6), "dark_slate", "head")                 # a severe fringe
+    # the clipboard in the left hand (the arm hangs at x = cx - 8)
+    hx = cx - (5.5 + 2.5)
+    cb = c.part("clipboard", "forearm_l", (hx, 24 + 19 - 1 - 12, cz))
+    c.box((int(hx) - 4, 16, fz + 3), (int(hx) + 4, 31, fz + 3), "brown", cb); c.box((int(hx) - 3, 17, fz + 4), (int(hx) + 3, 30, fz + 4), "white", cb); c.box((int(hx) - 1, 30, fz + 4), (int(hx) + 1, 32, fz + 5), "silver", cb)
+    for yy in range(19, 29, 3): c.box((int(hx) - 2, yy, fz + 5), (int(hx) + 2, yy, fz + 5), "black", cb)
     c.clip("idle", 2.6, True, {"torso": [K(0, (2, 0, 0)), K(1.3, (5, 0, 0)), K(2.6, (2, 0, 0))], "head": [K(0, (0, 8, 0)), K(1.3, (0, -8, 0)), K(2.6, (0, 8, 0))]})
     c.clip("attack", 1.0, False, {"upper_arm_r": [K(0), K(0.35, (-170, 0, -10)), K(0.55, (-10, 0, 0)), K(1.0)], "torso": [K(0), K(0.35, (-14, 0, 0)), K(0.55, (24, 0, 0)), K(1.0)]}, [(0.55, "hit")])
     c.clip("slam", 1.6, False, {"upper_arm_r": [K(0), K(0.7, (-180, 0, 0)), K(0.95, (15, 0, 0)), K(1.6)], "upper_arm_l": [K(0), K(0.7, (-180, 0, 0)), K(0.95, (15, 0, 0)), K(1.6)],

@@ -12,7 +12,7 @@ W.rooms = {
     boiler   = { x = 76,  z = 0,   w = 36, d = 26, h = 10,  name = "The Boiler Gallery" },
     conveyor = { x = 114, z = 26,  w = 8,  d = 44, h = 6,   name = "The Conveyor of Consequences" },
     gutter   = { x = 80,  z = 70,  w = 42, d = 26, h = 7,   name = "The Gutter" },
-    ballroom = { x = 38,  z = 66,  w = 38, d = 32, h = 14,  name = "The Zero-G Ballroom" },
+    ballroom = { x = 38,  z = 66,  w = 38, d = 32, h = 12,  name = "The Zero-G Ballroom" },
     grotto   = { x = 0,   z = 52,  w = 34, d = 58, h = 12,  name = "The Mushroom Grotto" },
     arena    = { x = 12,  z = 114, w = 36, d = 36, h = 14,  name = "The Floor Manager's Office" },
     stairwell = { x = 54, z = 124, w = 16, d = 16, h = 6,   name = "Stairwell 1" },
@@ -105,9 +105,34 @@ function W.build()
     for _, f in ipairs(W.things or {}) do f() end
 end
 
--- the enemies of every room that was not cleared in an earlier session
-function W.populate()
-    for room, list in pairs(W.populate_list) do G.enemies.populate(room, list) end
+-- the rooms next to each other (enemies exist only in the room the player is in and the rooms next to it)
+W.neighbors = {
+    lobby = { "hall" }, hall = { "lobby", "boiler" }, boiler = { "hall", "conveyor" }, conveyor = { "boiler", "gutter" }, gutter = { "conveyor", "ballroom" },
+    ballroom = { "gutter", "grotto" }, grotto = { "ballroom", "arena" }, arena = { "grotto", "stairwell" }, stairwell = { "arena" },
+}
+function W.sync_active(room)
+    local active = {}
+    if room then
+        active[room] = true
+        for _, n in ipairs(W.neighbors[room] or {}) do active[n] = true end
+        if room == "hall" and G.state.flags.secret_hall_south then active.grotto = true end
+        if room == "grotto" and G.state.flags.secret_hall_south then active.hall = true end
+    end
+    for r, list in pairs(W.populate_list) do
+        if active[r] then G.enemies.spawn_room(r, list) else G.enemies.despawn_room(r) end
+    end
+end
+function W.populate() W.sync_active(G.current_room or "lobby") end
+
+function G.on_room_cleared(room)
+    local s = G.state
+    s.cleared[room] = true
+    local A = G.announcer
+    if room == "hall" then
+        if G.state.kills <= 2 then A.award("pacifist_ish") end
+        A.say("The Hall of Mild Peril has been cleared. It is now just a Hall. Please file a complaint with the Hall.", { prio = 0, key = "cleared_hall", cooldown = 99999 })
+    elseif G.world.room_cleared_hook then G.world.room_cleared_hook(room) end
+    G.save()
 end
 
 -- ================================================================================================ housekeeping: the engine's debug keys cannot be unbound (docs/INPUT.md), so the game defends itself
@@ -145,12 +170,15 @@ function W.tick(t)
     if t % 180 == 0 then fx.rain(false) end
     G.traps.tick_all(t)
     if W.tick_belt then W.tick_belt(t) end
+    if W.arena_tick then W.arena_tick(t) end
     if W.tick_gutter then W.tick_gutter(t) end
     if t % 15 == 0 and G.state and G.state.class and not G.player.dead then W.track_room(t) end
 end
 
 -- which room is the player in: announcements, music, safe zones, checkpoints
 G.current_room = nil
+local function zone(id, x0, z0, x1, z1) W.zones[#W.zones + 1] = { id = id, x0 = x0, z0 = z0, x1 = x1, z1 = z1, on_enter = function() G.player.set_checkpoint(id) end, repeatable = true } end
+zone("hall", 66, 2, 72, 8); zone("boiler", 112, 20, 114, 24); zone("ballroom", 34, 80, 37, 84); zone("arena", 26.5, 108, 30, 112)
 function W.track_room(t)
     local px, py, pz = player.pos()
     local lx, ly, lz = G.to_local(px, py, pz)
@@ -161,10 +189,9 @@ function W.track_room(t)
         if id then W.enter_room(id, old) end
     end
     for _, z in ipairs(W.zones) do
-        if lx >= z.x0 and lx <= z.x1 and lz >= z.z0 and lz <= z.z1 and not z.fired then
-            z.fired = true
-            z.on_enter()
-        end
+        local inside = lx >= z.x0 and lx <= z.x1 and lz >= z.z0 and lz <= z.z1
+        if inside and not z.fired then z.fired = true; z.on_enter()
+        elseif not inside and z.fired and z.repeatable then z.fired = false end
     end
 end
 
@@ -175,14 +202,19 @@ function W.enter_room(id, old)
     A.say_key("room." .. id, { prio = 0, key = "room_" .. id, cooldown = 36000 })
     if id == "ballroom" then A.award("zero_g") end
     if G.music and G.music.on_room then G.music.on_room(id) end
+    if id == "arena" and G.boss and not G.state.flags.boss_dead then after(120, G.boss.begin) end
     G.safe = (id == "stairwell")
     if id == "stairwell" then G.player.set_checkpoint("stairwell") end
+    W.sync_active(id)
     if W.on_enter_room then W.on_enter_room(id, old) end
 end
 
 W.checkpoints = {
     lobby     = { x = 3.5, y = 0.1, z = 11 },
     hall      = { x = 68.5, y = 0.1, z = 6.5 },
+    boiler    = { x = 113, y = 0.1, z = 22 },
+    ballroom  = { x = 36, y = 0.1, z = 82 },
+    arena     = { x = 28.5, y = 0.1, z = 110.5 },
     stairwell = { x = 58, y = 0.1, z = 132 },
 }
 

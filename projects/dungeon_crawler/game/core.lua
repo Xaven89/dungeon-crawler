@@ -77,6 +77,31 @@ function G.pillar(cx, cz, r, y0, y1, mat, tex)
     if tex then edit.texture_box(x - R, ya, z - R, x + R, yb, z + R, tex) end
 end
 
+-- a vertical disc of air (a round room), and a ring of a material between two radii (metres)
+function G.cyl_clear(cx, cz, r, y0, y1)
+    local R = vox(r)
+    local x, z, ya, yb = G.wx(cx), G.wz(cz), G.wy(y0), G.wy(y1) - 1
+    for dz = -R, R do
+        local w = floor(math.sqrt(R * R - dz * dz) + 0.5)
+        edit.clear(x - w, ya, z + dz, x + w, yb, z + dz)
+    end
+end
+function G.ring(cx, cz, r0, r1, y0, y1, mat, tex)
+    local R0, R1 = vox(r0), vox(r1)
+    local x, z, ya, yb = G.wx(cx), G.wz(cz), G.wy(y0), G.wy(y1) - 1
+    for dz = -R1, R1 do
+        local w1 = floor(math.sqrt(R1 * R1 - dz * dz) + 0.5)
+        if math.abs(dz) >= R0 then
+            edit.box(x - w1, ya, z + dz, x + w1, yb, z + dz, mat)
+        else
+            local w0 = floor(math.sqrt(R0 * R0 - dz * dz) + 0.5)
+            edit.box(x - w1, ya, z + dz, x - w0 - 1, yb, z + dz, mat)
+            edit.box(x + w0 + 1, ya, z + dz, x + w1, yb, z + dz, mat)
+        end
+    end
+    if tex then edit.texture_box(x - R1, ya, z - R1, x + R1, yb, z + R1, tex) end
+end
+
 -- A room: carves the interior and lines it (floor, ceiling and four wall skins, 25 cm thick). r = { x, z, w, d, h, y = 0, floor, wall, ceil, ftex, wtex, ctex }
 function G.room(r)
     local y = r.y or 0
