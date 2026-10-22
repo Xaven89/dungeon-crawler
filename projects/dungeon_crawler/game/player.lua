@@ -106,6 +106,7 @@ function P.pick_class(id)
     G.announcer.award("check_in")
     G.announcer.say_key("class." .. id, { prio = 2 })
     after(300, function() G.announcer.say_key("class.go", { prio = 0 }) ; if G.world.open_lobby_gate then G.world.open_lobby_gate() end end)
+    after(900, function() G.announcer.say_key("honk.intro", { prio = 0 }); if G.companion then G.companion.honk() end end)
     G.save()
     return true
 end
@@ -284,7 +285,7 @@ function P.targets_in_cone(reach, cos_half, max_n)
                 local d = math.sqrt(dx * dx + dy * dy + dz * dz)
                 if d <= reach + inst.radius then
                     local dot = (dx * fx + dy * fy + dz * fz) / max(d, 0.001)
-                    if dot >= cos_half or d < inst.radius + 0.6 then out[#out + 1] = { inst = inst, dist = d, dot = dot } end
+                    if dot >= cos_half or d < inst.radius + 0.6 or G.autoaim then out[#out + 1] = { inst = inst, dist = d, dot = dot } end
                 end
             end
         end

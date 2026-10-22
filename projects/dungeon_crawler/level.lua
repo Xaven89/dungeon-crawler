@@ -16,6 +16,8 @@ include("game/rooms/arena.lua")
 include("game/rooms/stairwell.lua")
 include("game/shop.lua")
 include("game/boss.lua")
+include("game/companion.lua")
+include("game/music.lua")
 include("game/hud.lua")
 
 local G = Game
@@ -26,7 +28,7 @@ function on_start()
     G.enemies.define_fx()
     G.world.build()
     G.world.populate()
-    G.sfx.preload({ "voice_blip", "swing", "hit", "hurt" })
+    G.sfx.preload({ "voice_blip", "swing", "hit", "hurt", "honk", "coin", "levelup", "achievement" })
     local s = G.state
     if not s.class then
         local x, y, z = G.world.start_position()
@@ -64,6 +66,8 @@ function on_tick(t)
     G.announcer.tick(t)
     G.player.tick(t)
     G.enemies.tick(t)
+    G.companion.tick(t)
+    G.music.tick(t)
     if G.world.tick then G.world.tick(t) end
 end
 
