@@ -77,9 +77,9 @@ include("engine/equipment.lua")
 -- the contestant's body by class: the kit's rigged figures (finer voxels than the world, docs/ANIMATION.md "Voxel scale"); the Hero model before a class is chosen.
 -- What is equipped (items.lua) is drawn on it (docs/EQUIPMENT.md): the kit's item models, merged into the body, no extra bodies.
 local BODIES = { janitor = "human_man_warrior", pyro = "human_demon_girl", bard = "human_woman_adventurer", accountant = "human_man_adventurer" }
-local WEAPON_LOOK = { mop = "models/items/mop.vxm", torch_used = "models/items/torch.vxm", lute = "models/items/lute.vxm", stapler = "models/items/stapler.vxm", sword_mild = "iron_sword.vxm", excalibur = "iron_sword.vxm", dagger_cd = "iron_sword.vxm", spoon = "iron_sword.vxm",
+local WEAPON_LOOK = { mop = "mop.vxm", torch_used = "torch.vxm", lute = "lute.vxm", stapler = "stapler.vxm", sword_mild = "iron_sword.vxm", excalibur = "iron_sword.vxm", dagger_cd = "iron_sword.vxm", spoon = "iron_sword.vxm",
                       mace_pa = "battle_axe.vxm", axe_ot = "battle_axe.vxm", rolling = "battle_axe.vxm" }
-local HAND_FROM_FILE = {}      -- (the tools' own `hand` blocks have no `swing` clip yet: ENGINE_FEEDBACK Phase 13; first person keeps models/sword.vxm)
+local HAND_FROM_FILE = { ["mop.vxm"] = true, ["torch.vxm"] = true, ["lute.vxm"] = true, ["stapler.vxm"] = true }
 local CLASS_HAT = { pyro = "wizard_hat.vxm" }
 function G.kit()
     local s, kit = G.state, {}
