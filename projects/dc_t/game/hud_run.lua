@@ -19,8 +19,16 @@ function H.run_screen(w, h, input)
     if txt and txt ~= H.seed_text then H.seed_text = txt end
     if uikit.button("run_roll", tr("run.roll"), w / 2 + 120, 284, 200, 46) then H.seed_text = tostring(G.run.entropy_seed(input.x, input.y)) end
     local seed = tonumber(H.seed_text) or 1
-    local cw, ch = 520, 330
-    local x1, x2, y = w / 2 - cw - 30, w / 2 + 30, 380
+    -- the difficulty: three buttons
+    H.diff = H.diff or "normal"
+    ui.text(w / 2 - 330, 340, tr("run.diff"), { size = 26, color = "#eef1f8" })
+    for i, d in ipairs({ "easy", "normal", "hard" }) do
+        local bx = w / 2 - 160 + (i - 1) * 170
+        local sel = (H.diff == d)
+        if uikit.button("diff_" .. d, tr("run.diff." .. d), bx, 332, 160, 40, { color = sel and C.gold or nil }) then H.diff = d end
+    end
+    local cw, ch = 520, 300
+    local x1, x2, y = w / 2 - cw - 30, w / 2 + 30, 400
     for i, spec in ipairs({ { x1, "orientation", "#6fd0ff", false }, { x2, "dungeon", "#ff8a3c", true } }) do
         local x = spec[1]
         local hover = uikit.over(x, y, cw, ch)
@@ -30,7 +38,7 @@ function H.run_screen(w, h, input)
         local ly = y + 82
         for _, ln in ipairs(H.wrap(tr("run." .. spec[2] .. ".blurb"), 22, cw - 50)) do ui.text(x + 26, ly, ln, { size = 22, color = "#dfe4f0" }); ly = ly + 28 end
         if uikit.button("run_" .. spec[2], tr("run.go"), x + 60, y + ch - 80, cw - 120, 56, { color = spec[3] }) then
-            ui.run(string.format("Game.run.start(%d, %s)", seed, tostring(spec[4])))
+            ui.run(string.format("Game.run.start(%d, %s, %q)", seed, tostring(spec[4]), H.diff or "normal"))
         end
     end
     ui.text(w / 2, y + ch + 36, tr("run.hint"), { size = 20, color = C.dim, align = "center" })

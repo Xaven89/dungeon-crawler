@@ -448,3 +448,7 @@ rival.intro.2,"Meet {1}: another crawler, another ratings favourite, another rea
 rival.again.1,"{1} again. You did not finish this last time. Neither did {1}. This is the sequel."
 rival.dead.1,"{1} is dead. The bounty of {2} gold has been paid to you, minus a handling fee that is also {2} gold. Typo. Anyway."
 rival.dead.2,"Another contestant retired. {2} gold bounty collected. The audience wants to know if you felt anything. Please do not answer on camera."
+run.diff,DIFFICULTY
+run.diff.easy,Gentle
+run.diff.normal,Standard
+run.diff.hard,Cruel

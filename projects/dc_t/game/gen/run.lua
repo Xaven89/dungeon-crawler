@@ -37,10 +37,10 @@ local function reset_state()
 end
 
 -- the run screen's answer: `skip` = start on a generated floor instead of the Orientation
-function R.start(seed, skip)
+function R.start(seed, skip, diff)
     if G.screen ~= "run" then return end
     reset_state()
-    G.state.run = { mode = skip and "gen" or "orientation", seed = seed, floor = 1, started = time.tick() }
+    G.state.run = { mode = skip and "gen" or "orientation", seed = seed, floor = 1, started = time.tick(), diff = diff or "normal" }
     G.state.checkpoint = "lobby"
     if not skip and G.floorgen.active then
         G.screen = "loading"
@@ -139,3 +139,7 @@ function R.end_run(src)
     G.run.over = { src = tostring(src or "something"), floor = R.floor_no(), seed = (R.cur() or {}).seed }
 end
 function R.new_after_over() if G.screen == "runover" then G.screen = "run"; G.hud.seed_text = nil end end
+
+-- the difficulty of the run: enemy health / damage and the audience
+R.DIFF = { easy = { hp = 0.8, dmg = 0.75, views = 0.9 }, normal = { hp = 1, dmg = 1, views = 1 }, hard = { hp = 1.35, dmg = 1.3, views = 1.25 } }
+function R.diff() local r = R.cur(); return R.DIFF[(r and r.diff) or "normal"] or R.DIFF.normal end

@@ -166,7 +166,9 @@ F.register("warlord", {
         local kind = (ctx.floor >= 3) and "cyclops" or "troll"
         local extra = { hp = (kind == "troll") and 1.8 or 1 }
         -- from floor 3 a rival crawler may hold the room instead (the one you did not kill follows you from floor to floor)
-        if ctx.floor >= 3 and G.hash(ctx.seed % 100000, ctx.floor, room.index) < 0.55 then
+        local first
+        for _, id in ipairs(ctx.plan.order) do if ctx.plan.rooms[id].theme == "warlord" then first = id; break end end
+        if ctx.floor >= 3 and first == room.id and G.hash(ctx.seed % 100000, ctx.floor, 3) < 0.7 then
             local names = { "Skullface Tamara", "Reginald Redundant", "Big Dolly", "Wendell the Unpaid", "Madame Overdraft", "The Intern Who Knew Too Much" }
             kind = ({ "rival_samurai", "rival_adventurer", "rival_witch" })[1 + floor(G.hash(ctx.floor, room.index, 5) * 3) % 3]
             extra = { name = names[1 + floor(G.hash(ctx.seed % 100000, ctx.floor, 77) * #names) % #names], hp = 1 }

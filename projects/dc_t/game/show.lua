@@ -79,7 +79,7 @@ end
 function S.viewers()
     local sh = S.st()
     local f = (G.run and G.run.floor_no() or 1)
-    return floor((200000 + sh.followers * 12) * (1 + f * 0.15) * (1 + sh.buzz / 80) * G.contracts.viewers())
+    return floor((200000 + sh.followers * 12) * (1 + f * 0.15) * (1 + sh.buzz / 80) * G.contracts.viewers() * G.run.diff().views)
 end
 
 function S.tick(t)
