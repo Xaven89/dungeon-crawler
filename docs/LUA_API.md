@@ -259,3 +259,6 @@ ui.button(label, x, y, w, h) -> clicked      ui.mouse() -> {x, y, down, clicked}
 
 ### Props that touch nothing fall
 A voxel (or a group of voxels) that is not connected through solid voxels to an **anchor** material (the `anchor` flag of `materials.csv`: stone, the ground and the like) becomes a loose body and falls when the tick starts, so a sconce, a sign letter or a crystal built one voxel away from its wall drops to the floor. Build props touching their support, or give the support an anchor material. `status` shows the `bodies` count (a jump after `on_start` is this).
+
+### The sky
+`sky.set{ time = 0.75, speed = 0, fog = 2 }` sets the clock (0..1: 0 sunrise, 0.25 noon, 0.5 sunset, 0.75 midnight), how fast it runs (0 stands still, 1 is a day in ten minutes, up to 60) and a multiplier of the fog density; every key is optional (`time` alone keeps a running clock running and stands still otherwise). `sky.get()` gives `{time, speed, fog}`. Render only: nothing in the simulation reads the sky, so it is the same on every peer and in a replay (counted in ticks). `project.cfg` has `time`, `time_speed` and `fog` for the start; a biome's mood multiplies the fog again.

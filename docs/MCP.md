@@ -139,3 +139,7 @@ The three arrangements of the demo, as tool calls (a field is read back with `gr
 - **Twist tube** (the floor turns while you walk along): `gravity_add {type: "spline", mode: "up", pin_camera_up: true, points: [[10, 20, 70], [20, 20, 70], ...], ups: [[0, 1, 0], [0, 1, 1], [0, 0, 1], [0, -1, 0]], inner: 3, outer: 4.2, strength: 9.81, priority: 20}`: `ups` is the up direction at each control point, interpolated along the spline.
 - **Weightless pocket**: `{type: "null", pos, half, outer: 2}`; **a small planet**: `{type: "point", pos, strength: 5, inner: radius, outer: radius + 6, falloff: "inverse_square", ref: radius, blend: "add"}`.
 In the editor the Gravity window makes a box, sphere, tube or weightless zone from the selected box (docs/EDITOR_MODE.md "Gravity zones").
+
+
+### Pictures: `hud`, `settle`
+`screenshot {hud: true}` draws the level script's `on_hud` over the picture (an idle input; docs/HUD.md). `screenshot {settle: N}` (0..600) is how many frames the lighting gets before the picture: the global illumination traces a few thousand probes a frame and an MCP session renders only the frames of its pictures, so the default is 90 after the camera moved more than 6 m since the last picture and 6 when it stayed (a first picture of a room is otherwise lit by the sky and a torch's light has not spread). `input_action {name, down, player}` presses a custom input action (docs/INPUT.md).
