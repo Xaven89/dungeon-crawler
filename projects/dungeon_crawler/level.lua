@@ -69,9 +69,8 @@ function G.close_end() G.screen = nil end
 
 -- the body (third person / pictures from outside) and the sword in the hand (first person); both are render only
 function G.setup_player_models()
-    -- (pcall: --check-project's dry run has no player models: "this session has no player models")
-    pcall(player.model, "models/hero.vxm", { idle = "idle", walk = "walk", attack = "attack" })
-    pcall(player.hand_model, "models/sword.vxm", { offset = { 0.35, -0.05, 1.0 }, turn = 0, idle = "idle" })
+    player.model("models/hero.vxm", { idle = "idle", walk = "walk", attack = "attack" })
+    player.hand_model("models/sword.vxm", { offset = { 0.35, -0.05, 1.0 }, turn = 0, idle = "idle" })
 end
 
 function on_tick(t)
