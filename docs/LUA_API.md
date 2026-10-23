@@ -133,6 +133,7 @@ re-stamped over the old version. The path is relative to the script. One undo st
 
 ## Rigged models
 ```lua
+-- units: model.spawn, edit.*, prefab.place, world.* take VOXELS (1/16 m); agent.spawn, fx.*, player.teleport, sound.*, camera and bodies take METRES
 m = model.spawn("models/walker.vxm", x, y, z [, rotation [, { scale = 0.6, visual = true }]])   -- voxel corner; every part becomes a driven body; `visual` draws it only, `scale` overrides the file's voxel scale (docs/ANIMATION.md "Voxel scale")
 model.play(m, "walk" [, speed [, loop]])    model.stop(m)    model.move(m, x, y, z)    model.remove(m)
 model.procedural(m, { walk = { legs = {"leg_l", "leg_r"}, arms = {"arm_l", "arm_r"} }, look = { part = "head" }, springs = {{ part = "tail" }} })   -- rules over the clip, by part name (docs/ANIMATION.md)

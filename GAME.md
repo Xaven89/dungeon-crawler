@@ -111,3 +111,6 @@ The dungeon is described in metres in a local frame (x east, z south, y up from 
 - `game/gore.lua`: `G.gore.splat/wound/clean/mop/sweep`; materials 96-99 (`passable = 1`); every wound and death splatters, `G.state.stains` remembers the spots (cap 200).
 - Cleaning: the Janitor's mop swung at nothing cleans 1.5 m in front, Mop Sweep (ability) 4.5 m around; 1 gold per spot, achievement `clean_sweep` after 40 spots, GLEE comments (`gore.clean.*`).
 - `fx.splat` position is in world METRES (see ENGINE_FEEDBACK Phase 7).
+
+## Player bodies
+The contestant's third-person body is a kit figure by class (`BODIES` in level.lua; files in `models/figures/`): janitor = human_man_warrior, pyro = human_demon_girl, bard = human_woman_adventurer, accountant = human_man_adventurer. Before a class is chosen the Hero model is used. Playthrough (pyro) replays to hash `14e372d14e0f8b96`.

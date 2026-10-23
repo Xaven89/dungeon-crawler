@@ -39,8 +39,9 @@ def s8(s):
     return bytes([len(b)]) + b
 
 class Creature:
-    def __init__(self, name, size):
+    def __init__(self, name, size, scale=1.0):
         self.name, self.size = name, tuple(size)
+        self.scale = scale  # world voxels per voxel of this model (Rig::scale, docs/ANIMATION.md "Voxel scale")
         self.vox = {}      # (x, y, z) -> (material, paint, texture, part)
         self.parts = [("root", -1, (0.0, 0.0, 0.0))]  # name, parent index, pivot
         self.clips = []    # (name, duration, loop, {part: [(t, rot, pos, glow)]}, events)
@@ -82,12 +83,12 @@ class Creature:
         mats, texs = [], []
         for v in self.vox.values():
             if v[0] not in mats: mats.append(v[0])
-            if v[2] not in texs: texs.append(v[2])
+            if v[2] and v[2] not in texs: texs.append(v[2])
         raw = bytearray(sx * sy * sz * 4)
         pmap = bytearray(sx * sy * sz)
         for (x, y, z), (m, paint, tex, part) in self.vox.items():
             i = x + sx * (y + sy * z)
-            struct.pack_into("<HBB", raw, i * 4, mats.index(m) + 1, paint, texs.index(tex) + 1)
+            struct.pack_into("<HBB", raw, i * 4, mats.index(m) + 1, paint, texs.index(tex) + 1 if tex else 0)
             pmap[i] = self.index(part)
         out = bytearray(b"VXM4")
         out += struct.pack("<III", sx, sy, sz)
@@ -111,8 +112,10 @@ class Creature:
                     assert 0 <= t <= duration, (name, part, t)
                     out += struct.pack("<ffffffff", t, rot[0], rot[1], rot[2], pos[0], pos[1], pos[2], glow)
             if ev: events[name] = [{"t": t, "name": n} for t, n in ev]
-        if events:
-            text = json.dumps({"events": events}).encode()
+        if events or self.scale != 1.0:
+            doc = {"events": events} if events else {}
+            if self.scale != 1.0: doc["scale"] = self.scale
+            text = json.dumps(doc).encode()
             out += b"ANIM" + struct.pack("<HI", 1, len(text)) + text
         with open(path, "wb") as f: f.write(out)
         return len(self.vox)

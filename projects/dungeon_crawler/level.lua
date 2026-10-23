@@ -73,8 +73,11 @@ end
 function G.close_end() G.screen = nil end
 
 -- the body (third person / pictures from outside) and the sword in the hand (first person); both are render only
+-- the contestant's body by class: the kit's rigged figures (finer voxels than the world, docs/ANIMATION.md "Voxel scale"); the Hero model before a class is chosen
+local BODIES = { janitor = "human_man_warrior", pyro = "human_demon_girl", bard = "human_woman_adventurer", accountant = "human_man_adventurer" }
 function G.setup_player_models()
-    player.model("models/hero.vxm", { idle = "idle", walk = "walk", attack = "attack" })
+    local body = G.state and BODIES[G.state.class or ""]
+    player.model(body and ("models/figures/" .. body .. ".vxm") or "models/hero.vxm", { idle = "idle", walk = "walk", attack = "attack" })
     player.hand_model("models/sword.vxm", { offset = { 0.35, -0.05, 1.0 }, turn = 0, idle = "idle" })
 end
 

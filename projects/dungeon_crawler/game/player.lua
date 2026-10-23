@@ -104,6 +104,7 @@ function P.pick_class(id)
     s.class = id
     for k, v in pairs(c.stats) do s.stats[k] = v end
     s.equip.weapon = c.weapon
+    if G.setup_player_models then G.setup_player_models() end
     s.hp, s.mp = P.max_hp(), P.max_mp()
     s.gold = 10
     G.items.add("smoothie", 2)
