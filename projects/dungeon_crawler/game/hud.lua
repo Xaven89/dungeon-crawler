@@ -305,6 +305,7 @@ local function class_screen(w, h, input)
     ui.rect(0, 0, w, h, "#05060acc")
     ui.text(w / 2, 170, tr("ui.class_title"), { size = 64, color = C.gold, align = "center" })
     ui.text(w / 2, 245, tr("ui.class_hint"), { size = 24, color = C.dim, align = "center" })
+    ui.text(w / 2, h - 40, tr("ui.no_cursor_hint"), { size = 22, color = "#ffd24a", align = "center" })
     local cw, ch, gap = 410, 610, 24
     local total = #G.player.class_order * (cw + gap) - gap
     local x0 = (w - total) / 2
@@ -531,12 +532,7 @@ function H.draw(dt)
         elseif pressed(input, "o") or (input.keys and input.keys.escape and sc == nil) then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4
         elseif pressed(input, "j") then G.screen = (sc == "bag" and G.bag_tab == 3) and nil or "bag"; G.bag_tab = 3 end
     end
-    -- the mouse: when the pointer is free (a menu is up, or Esc / a focus change let it go) the OS cursor may be hidden by the engine, so draw our own; and when it is free in play, say how to get it back
-    if input.x and input.free then
-        local mx_, my_ = input.x, input.y
-        ui.line(mx_, my_, mx_, my_ + 22, "#000000", 6); ui.line(mx_, my_, mx_ + 15, my_ + 15, "#000000", 6); ui.line(mx_ + 15, my_ + 15, mx_ + 6, my_ + 15, "#000000", 6)
-        ui.line(mx_, my_, mx_, my_ + 20, "#ffffff", 3); ui.line(mx_, my_, mx_ + 13, my_ + 13, "#ffffff", 3); ui.line(mx_ + 13, my_ + 13, mx_ + 5, my_ + 13, "#ffffff", 3)
-    end
+    -- (the engine draws the OS cursor when the pointer is released with Esc: no cursor of our own, that made two)
     if input.free and not G.screen and s.class and not G.cutscene then
         local msg = tr("ui.capture")
         local tw = ui.measure(msg, 30) + 60
