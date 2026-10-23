@@ -349,6 +349,7 @@ function P.ability()
     P.next_ability = now + c.ability.cd
     s.mp = s.mp - c.ability.cost
     P.ability_tick = now
+    player.model_play(s.class == "janitor" and "attack" or "cast")      -- the body's pose in the third person (render only)
     local px, py, pz = player.pos()
     local E = G.enemies
     if s.class == "janitor" then
