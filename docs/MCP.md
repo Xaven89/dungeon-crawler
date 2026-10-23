@@ -33,7 +33,7 @@ A packaged build (`cpack`) has `./voxelith --mcp ...` (the launcher sets the lib
 | `lua {code, ticks=1}` | run Lua (the level API, `docs/LUA_API.md`): a single expression returns its value, `print` output is returned, errors come back with the line. Edits apply on the tick(s) that follow |
 | `run_script {script, max_ticks}` | the player's control language: `idle:60,turn:90,fwd:120,dig:14,boom:40,tp:2` (`read_docs script`) |
 | `screenshot {eye, target, fov, time_of_day}` | a PNG of the player's view, or of a free camera: `eye` / `target` in **metres**, `fov` in degrees (20..120), `time_of_day` 0..1 (0.25 noon, 0.5 sunset, 0.75 midnight); a free camera is level (its up is the gravity's up at the eye) |
-| `raycast {origin, direction, max_distance}` | first solid voxel along a ray: `origin` in **metres**, `direction` any length, `max_distance` in metres; answers the cell (voxels), the empty cell in front, the normal, the distance (metres) and the material. No hit within `max_distance` is `hit: false` |
+| `raycast {origin, direction, max_distance, through_passable?}` | first solid voxel along a ray: `origin` in **metres**, `direction` any length, `max_distance` in metres; answers the cell (voxels), the empty cell in front, the normal, the distance (metres) and the material. No hit within `max_distance` is `hit: false`; `through_passable = true` steps through walk-through voxels (stains, docs/GORE.md) |
 | `query_voxels {points, units}` | material and solidity at points: `units` is `voxels` (default) or `metres`; `loaded: false` outside the streamed area |
 | `describe` | a text picture around the player: distance and material along ten rays, what it stands on, the nearest bodies, fire |
 | `bodies {limit}` | the loose physics bodies, largest first |

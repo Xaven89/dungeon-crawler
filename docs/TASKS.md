@@ -157,3 +157,12 @@ Audio, saves with versions + `project.store`, controller + key bindings, determi
 - A door whose box does not match its saved state when the world is rebuilt: a start without a world save now ignores `.events/state.txt` (done); open: re-sync a door whose box and state disagree in a world that *was* saved (or save the node states inside the world save).
 
 - Particles, done (2026-10-23): `mote` kind (`ParticleClass::Mote`, emitter `kind = "mote"`), `fx.mote`, `fx.text` (a label of motes facing the viewer, 5 x 7 font), `fx.particle_taa` / `particle_taa`. Open: a text particle that turns with the camera every frame (a billboard in the particle pass, not a plane fixed at creation), a text size below about a third of a voxel per font pixel is only legible near.
+
+## Style analysis of the other converted packs (noted from the user 2026-10-23, not started; wait for the more detailed models)
+The trees were analysed and written down (docs/TREE_STYLE.md, tools/make_trees.py: measured proportions, structure, palette roles, a seeded generator in that style). The other packs of docs/ASSET_CATALOG.md were only converted and categorised. When the more detailed (finer-voxel) models exist (per-object voxel scale, characters at 3.75 cm), do the same for each style, so future content can be extended coherently:
+- **Desert houses** (`buildings/desert`): wall thickness, storey height, window and door sizes, roof/parapet/balcony rules, palette roles (sand, dark wood, terracotta, brass), the loose parts (walls, arch, pillar, stairs) as a modular kit.
+- **Forest pack** (`nature/forest`): crown shapes, bark, fern/grass blade shapes, rock shapes, colour per vertex rules; compare with the trees' style (they differ: blobby crowns vs stippled balls).
+- **Characters** (`figures`): proportions (head/torso/limbs in voxels), T-pose layout, how faces, hands and gear are drawn, palette use per class (human / monster), part boundaries for a rig.
+- **Furniture, props, kitchen, chests, fences, pub set**: scale rules, material use, wood/metal/glass colour roles.
+- **Mushrooms and graveyard**: shape grammar and palettes.
+For each: measure (do not guess), write `docs/<NAME>_STYLE.md` (measurements, palette roles with RGB and kit materials, recipes, a checklist) and a seeded generator in `tools/` that proves the recipe, as for the trees; keep a shared "world style" index so species/props from different packs sit together (scale, palette saturation, voxel noise).

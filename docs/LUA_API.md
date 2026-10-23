@@ -118,6 +118,9 @@ Voxels, deterministic from the parameters and the loaded ground, stamped as edit
 ## Prefabs
 ```lua
 id = prefab.place("models/castle.vxm", x, y, z [, rotation [, name [, carve_air]]])   -- minimum corner, voxels; rotation 0..23; tracked
+world.blocks(x, y, z)  world.passable(x, y, z)   -- stored voxel that is in the way / a walk-through voxel (docs/GORE.md); `world.solid` is true for both; world.top(x, z, fromY, true) skips walk-through voxels
+edit.sphere(x, y, z, r, "blood", "coat")  edit.box(..., "blood", "coat" | "clear_if")   -- a one-voxel shell on the surfaces inside the shape / clear that material only
+fx.splat(x, y, z, radius, "blood" [, seed])   -- metres: a speckled spatter of a walk-through material on the surfaces around a point (docs/GORE.md)
 prefab.restamp(id)    prefab.remove(id)    id = prefab.find(name)   -- 0 when there is none; remove also takes the nodes "<name>.*" with it
 id, h = prefab.place("door", x, y, z, { rotation = 0, name = "front", slots = { panel = "glass" }, variant = "wide", params = { open = -90 } })   -- a MANIFEST prefab (models/door.prefab.lua): parts, material slots, sockets, nodes: docs/PREFABS.md
 ```
