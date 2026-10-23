@@ -164,7 +164,17 @@ F.register("warlord", {
         G.brazier(cx - 5, room.z + room.d - 3, { reach = 12 }); G.brazier(cx + 5, room.z + room.d - 3, { reach = 12 })
         ctx.crate(room, "gold", cx - 0.6, room.z + room.d - 2, "-z", 0.55)
         local kind = (ctx.floor >= 3) and "cyclops" or "troll"
-        ctx.add(room, kind, cx, room.z + room.d - 8, 0, { hp = (kind == "troll") and 1.8 or 1 })
+        local extra = { hp = (kind == "troll") and 1.8 or 1 }
+        -- from floor 3 a rival crawler may hold the room instead (the one you did not kill follows you from floor to floor)
+        local first
+        for _, id in ipairs(ctx.plan.order) do if ctx.plan.rooms[id].theme == "warlord" then first = id; break end end
+        if ctx.floor >= 3 and first == room.id and G.hash(ctx.seed % 100000, ctx.floor, 3) < 0.7 then
+            local names = { "Skullface Tamara", "Reginald Redundant", "Big Dolly", "Wendell the Unpaid", "Madame Overdraft", "The Intern Who Knew Too Much" }
+            kind = ({ "rival_samurai", "rival_adventurer", "rival_witch" })[1 + floor(G.hash(ctx.floor, room.index, 5) * 3) % 3]
+            extra = { name = names[1 + floor(G.hash(ctx.seed % 100000, ctx.floor, 77) * #names) % #names], hp = 1 }
+            if G.state.rival then extra.name = G.state.rival; extra.rematch = true; extra.hp = 1.3 end
+        end
+        ctx.add(room, kind, cx, room.z + room.d - 8, 0, extra)
         F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { kinds = { { "orc", 4 }, { "bandit", 3 }, { "imp", 2 } }, allow = function(x, z)
             if z >= room.z + room.d - 10 then return false end
             for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do if G.dist2(x, z, cx + dx, room.z + room.d * k / 3) < 1.8 then return false end end end

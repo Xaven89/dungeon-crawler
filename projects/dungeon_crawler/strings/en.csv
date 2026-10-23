@@ -443,3 +443,8 @@ achievement.reshuffle.line,"Achievement: 'Management Reshuffle'. Three bosses re
 achievement.hardcore_two.name,Exclusive Rights Holder
 achievement.hardcore_two.desc,Reach floor 3 with the Exclusive Broadcast Rights contract.
 achievement.hardcore_two.line,"Achievement: 'Exclusive Rights Holder'. You have not died. Yet. The audience is placing bets on 'yet'."
+rival.intro.1,"{1} is also a contestant. {1} is also very good at this. There is a bounty on {1}. There is a bounty on you. The show is not subtle."
+rival.intro.2,"Meet {1}: another crawler, another ratings favourite, another reason you will not sleep. Only one of you leaves this room with a sponsor."
+rival.again.1,"{1} again. You did not finish this last time. Neither did {1}. This is the sequel."
+rival.dead.1,"{1} is dead. The bounty of {2} gold has been paid to you, minus a handling fee that is also {2} gold. Typo. Anyway."
+rival.dead.2,"Another contestant retired. {2} gold bounty collected. The audience wants to know if you felt anything. Please do not answer on camera."

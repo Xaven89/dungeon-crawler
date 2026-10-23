@@ -342,6 +342,7 @@ F.register("prize", {
             if i == mimic then
                 T.crate_hooks[id] = function()
                     G.announcer.say_key("prize.mimic", { prio = 2 })
+                    G.announcer.award("mimic_food")
                     local lx, lz = cx - 7 + (i - 1) * 5.2, cz + 1.5
                     for k = 1, 5 do
                         local e = G.enemies.spawn(F.pick_kind(r, ctx.floor), lx + (k - 3) * 0.9, 0, lz + 1, { room = room.id, index = 90 + k })

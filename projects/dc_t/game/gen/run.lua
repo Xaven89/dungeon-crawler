@@ -73,6 +73,9 @@ end
 function R.floor_ready(n)
     local F = G.floorgen
     R.cur().building = nil
+    if n >= 3 then G.announcer.award("deep_three") end
+    if n >= 5 then G.announcer.award("deep_five") end
+    if n >= 3 and G.contracts.hardcore() then G.announcer.award("hardcore_two") end
     local p = F.layout
     local r = p.rooms[p.start]
     G.state.checkpoint = p.start

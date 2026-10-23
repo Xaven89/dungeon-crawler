@@ -39,6 +39,7 @@ function S.score(points, label)
     if after_ > before then
         sh.favorites = sh.favorites + (after_ - before); sh.fav_total = sh.fav_total + (after_ - before)
         G.player.popup(tr("show.favorite"), "#ffd24a", true)
+        G.announcer.award("favorite")
         G.sfx.play("achievement", nil, nil, nil, 0.6)
     end
     if label and points >= 8 then G.player.log("+" .. points .. " " .. label, "#ff8fd0") end
@@ -163,7 +164,7 @@ function S.open_recap()
     }
     local pts = r.points
     r.rank = (pts >= 450) and "S" or ((pts >= 250) and "A" or ((pts >= 120) and "B" or ((pts >= 50) and "C" or "D")))
-    G.announcer.award("hello_world")
+    if r.rank == "S" then G.announcer.award("rank_s") end
     r.line = tr("show.rank." .. r.rank)
     S.recap = r
     G.screen = "recap"

@@ -505,13 +505,13 @@ local function bag_screen(w, h, input)
         local col = 0
         for i, id in ipairs(G.announcer.order) do
             local got = s.ach[id]
-            local x = cx + 8 + col * 600
-            ui.rect(x, y, 580, 62, got and "#1e2230" or "#10121a", { radius = 10 })
-            ui.rect(x, y, 580, 62, got and "#ffcf4a" or "#2a2e3c", { radius = 10, outline = true, thickness = 2 })
-            ui.text(x + 14, y + 6, tr("achievement." .. id .. ".name"), { size = 22, color = got and "#ffffff" or "#6a7084" })
-            ui.text(x + 14, y + 34, tr("achievement." .. id .. ".desc"), { size = 16, color = got and "#b8c0d4" or "#4a5064" })
+            local x = cx + 8 + col * 400
+            ui.rect(x, y, 386, 60, got and "#1e2230" or "#10121a", { radius = 10 })
+            ui.rect(x, y, 386, 60, got and "#ffcf4a" or "#2a2e3c", { radius = 10, outline = true, thickness = 2 })
+            ui.text(x + 12, y + 5, tr("achievement." .. id .. ".name"), { size = 19, color = got and "#ffffff" or "#6a7084" })
+            ui.text(x + 12, y + 32, tr("achievement." .. id .. ".desc"), { size = 14, color = got and "#b8c0d4" or "#4a5064" })
             col = col + 1
-            if col == 2 then col = 0; y = y + 68 end
+            if col == 3 then col = 0; y = y + 66 end
         end
     end
     if uikit.button("bag_close", tr("ui.close"), px + pw - 170, py + ph - 56, 150, 40) or (input.keys and input.keys.escape) then G.screen = nil end

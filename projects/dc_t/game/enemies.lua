@@ -44,6 +44,13 @@ E.types = {
               anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "goblin_die", loot = "silver", loot_chance = 0.6, wander = 1.5 },
     cyclops = { model = "figures/monster_cyclop_pink", name = "Cyclops Auditor", hp = 520, dmg = 27, speed = 1.9, reach = 3.0, aggro = 18, xp = 220, gold = { 50, 90 }, cd = 100, height = 3.1, radius = 1.0, miniboss = true,
                 anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "gold", loot_chance = 1 },
+    -- rival crawlers (the show's other contestants: a named elite on some floors, with a bounty)
+    rival_samurai = { model = "figures/human_man_samurai", name = "Rival Crawler", hp = 380, dmg = 22, speed = 3.1, reach = 2.1, aggro = 18, xp = 260, gold = { 80, 140 }, cd = 55, height = 1.8, radius = 0.5, miniboss = true, rival = true,
+                      anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "gold", loot_chance = 1, inflict = { kind = "bleed", chance = 0.4, dur = 720 } },
+    rival_adventurer = { model = "figures/human_man_adventurer", name = "Rival Crawler", hp = 440, dmg = 20, speed = 2.5, reach = 2.0, aggro = 18, xp = 260, gold = { 80, 140 }, cd = 75, height = 1.8, radius = 0.5, miniboss = true, rival = true,
+                         anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm", off_hand = "round_shield.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "gold", loot_chance = 1 },
+    rival_witch = { model = "figures/human_woman_adventurer", name = "Rival Crawler", hp = 300, dmg = 18, speed = 1.9, reach = 12, aggro = 20, xp = 260, gold = { 80, 140 }, cd = 110, height = 1.8, radius = 0.5, miniboss = true, rival = true, ranged = true, keep = 9, cast = "ember",
+                    anim = "clip", die_clip = true, kit = { main_hand = "wooden_staff.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "gold", loot_chance = 1 },
     auditor = { model = "figures/monster_cyclop_pink", name = "The Chief Auditor", hp = 700, dmg = 25, speed = 1.9, reach = 3.1, aggro = 40, xp = 480, gold = { 180, 280 }, cd = 110, height = 3.1, radius = 1.0, boss = true,
                 anim = "clip", die_clip = true, meter = true, clips = { summon = "cast", throw = "cast", slam = "attack", roar = "cast" }, minion = "bandit", kit = { main_hand = "battle_axe.vxm" },
                 splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "platinum", loot_chance = 1 },
@@ -92,11 +99,11 @@ function E.spawn(kind, lx, ly, lz, opts)
     local id = agent.spawn{ x = G.mx(lx), y = G.my(ly) + 0.05, z = G.mz(lz), speed = speed, model = "models/" .. T.model .. ".vxm", creature = T.creature or kind,
                             animation = T.anim or "auto", turn_smoothing = 6 }
     if not id then return nil end
-    local name = T.name
+    local name = opts.name or T.name
     if opts.affix then name = ({ swift = "Swift ", armored = "Armored ", explosive = "Volatile " })[opts.affix] .. name end
     local inst = { id = id, mdl = id - 0x40000000, kind = kind, T = T, hp = T.hp * (opts.hp_mult or 1), max_hp = T.hp * (opts.hp_mult or 1), state = "idle",
                    next_attack = 0, stun_until = 0, room = opts.room, height = T.height, radius = T.radius, home = { lx, ly, lz }, born = time.tick(), name = name, index = opts.index,
-                   dmg_mult = opts.dmg_mult or 1, affix = opts.affix }
+                   dmg_mult = opts.dmg_mult or 1, affix = opts.affix, rematch = opts.rematch }
     if G.gen and G.gen.rules and G.floorgen.active then G.gen.rules.on_spawn(inst) end
     if T.kit and equipment then pcall(equipment.apply, equipment.agent(id), (function() local k = {}; for slot, f in pairs(T.kit) do k[slot] = { file = f } end; return k end)()) end
     E.list[id] = inst
@@ -119,7 +126,7 @@ function E.spawn_room(room, list)
         if e.captive and G.state.opened[e.captive] then rem = rem            -- (let out already)
         elseif not rem or rem[i] then
             local fl = (G.run and G.run.floor_no() or 1) - 1
-            local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = (1 + (G.state.level - 1) * 0.03) * (1 + fl * 0.2) * (e.hp or 1), dmg_mult = 1 + fl * 0.1, affix = e.affix, index = i })
+            local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = (1 + (G.state.level - 1) * 0.03) * (1 + fl * 0.2) * (e.hp or 1), dmg_mult = 1 + fl * 0.1, affix = e.affix, name = e.name, rematch = e.rematch, index = i })
             if inst then n = n + 1; if e.captive then inst.captive = e.captive; agent.stop(inst.id) end end
         end
     end
@@ -262,6 +269,14 @@ function E.kill(inst, opts)
     if inst.hp < -inst.max_hp * 0.8 then A.award("overkill") end
     if inst.kind == "slime" or inst.kind == "slime_toxic" then if (A.bump("slimes") or 0) >= 10 then A.award("squeegee") end end
     if G.show then G.show.on_kill(inst, opts) end
+    if T.rival then
+        local bounty = 150 + 100 * (G.run and G.run.floor_no() or 1)
+        s.gold = s.gold + bounty
+        P.log("+" .. bounty .. " gold (bounty on " .. inst.name .. ")", "#ffd24a")
+        s.rival = nil
+        A.say_key("rival.dead", { prio = 2 }, inst.name, bounty)
+    end
+    if T.boss and G.floorgen.active and (A.bump("gen_bosses") or 0) >= 3 then A.award("reshuffle") end
     if opts.source == "fire" or inst.burning then G.skills.bump("pyromania") end
     if opts.source == "barrel" then G.skills.bump("demolition") end
     if G.gen and G.gen.rules and G.floorgen.active then G.gen.rules.on_kill(inst) end
@@ -391,6 +406,12 @@ function E.aggro(inst, quiet)
     inst.state = "chase"
     inst.aggro_tick = time.tick()
     if inst.affix and not inst.warned then inst.warned = true; G.player.popup(inst.name:upper(), "#ff9a5a", true) end
+    if inst.T.rival and not inst.warned then
+        inst.warned = true
+        G.player.popup(inst.name:upper(), "#ff4fa3", true)
+        G.state.rival = inst.name
+        G.announcer.say_key(inst.rematch and "rival.again" or "rival.intro", { prio = 2 }, inst.name)
+    end
     local T = inst.T
     if T.ranged then agent.follow(inst.id, T.keep or 8) else agent.follow(inst.id, max(0.9, T.reach * 0.7)) end
     if not quiet and T.pack then

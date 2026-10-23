@@ -69,6 +69,7 @@ function C.sign(id)
         G.state.hp = min(G.state.hp, G.player.max_hp())
         G.announcer.say_key("contract.signed", { prio = 1 }, tr("contract." .. id .. ".name"))
         G.sfx.play("achievement", nil, nil, nil, 0.5, 0.8)
+        if #h >= 3 then G.announcer.award("contractor") end
         if G.show then G.show.score(15, nil) end
     else
         G.state.gold = G.state.gold + 40
