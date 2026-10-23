@@ -133,8 +133,8 @@ Not fixed / unclear: MCP `status` has no `game_mode` key (docs say it reports it
 ## Replay of a level with `prefab.place` / manifest prefabs / rigged agents  — fixed in phase 1
 Removed `Game.no_prefabs` and the `dev/flags.lua` dance. `tools/playthrough.py pyro` (class pick, the whole floor, the boss killed, the vending machine, the end screen) recorded 19,733 ticks with the closet door prefab, the sign board, the props and 17 kinds of agent; replayed with `voxelith --replay log --threads 3` (no `--project`): `session hash e3230cd343ca97e6 == the recorded hash`.
 
-## `events.on` several callbacks / `include_optional` / `gravity_target` in the check  — fixed in phase 1 (not retested one by one)
-`include_optional("dev/boot.lua")` replaces the pcall(include); the dry run now passes `events.gravity_target` without my pcall (`--check-project`: 0 errors). I kept my own `crate_hooks` table (it works); the several-callbacks change was not retested.
+## `events.on` several callbacks / `include_optional` / `gravity_target` in the check  — fixed in phase 1 
+`include_optional("dev/boot.lua")` replaces the pcall(include); the dry run now passes `events.gravity_target` without my pcall (`--check-project`: 0 errors). Retested by hand: two `events.on(node, "pressed", ...)` on one button, one press: both ran (A = 1, B = 1). I kept my own `crate_hooks` table (it works).
 
 ## Textures: the CLI is fixed, the MCP server is not
 `--check-project` and the headless CLI know `textures.json` now (no pcall needed there). But `voxelith --mcp --project projects/dungeon_crawler`: `texture_list` shows only the 16 built-ins (no `skull`, `rune_tile`, no `conveyor_on`), and with the pcall removed `on_start` stops at the first `edit.texture_box(..., "rune_tile")` ("unknown texture"), so the whole level is half built in an MCP session (and the running MCP server of this Claude Code session is still the old binary: `reload_level` of it answers with the old checker's errors). Same project in a windowed or headless CLI run: fine. I put the pcall around `edit.texture_box` back in game/core.lua for the MCP path only.
