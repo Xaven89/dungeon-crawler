@@ -201,8 +201,43 @@ def honk():
                                 "wing_r": [K(0), K(0.2, (0, 0, -40)), K(0.6, (0, 0, -40)), K(0.8)]}, [(0.2, "honk")])
     return c
 
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------ the contestant (the player's body in third person)
+def hero():
+    c = Creature("hero", (16, 40, 10))
+    skin = "skin_tan"
+    torso, head = biped(c, skin, pelvisY=19, legLen=9, shinLen=9, torsoH=12, headR=3.8, armLen=7, foreLen=7, width=5, limbR=1.0, paint_torso="hot_pink", cloth="dark_slate")
+    # a game-show contestant: a hot pink tracksuit, a number bib, a sweatband
+    c.box((4, 24, 5), (11, 29, 5), "white", "torso")
+    for i, x in enumerate((5, 7, 9)): c.box((x, 26 + (i % 2), 5), (x, 27 + (i % 2), 5), "black", "torso")
+    c.box((4, 35, 3), (11, 35, 8), "red", "head")
+    c.box((6, 33, 8), (6, 33, 8), "black", "head"); c.box((9, 33, 8), (9, 33, 8), "black", "head")
+    walk = {}
+    for side, ph in (("l", 0), ("r", 1)):
+        a = 35 * (1 if ph else -1)
+        walk["thigh_" + side] = [K(0, (a, 0, 0)), K(0.4, (-a, 0, 0)), K(0.8, (a, 0, 0))]
+        walk["upper_arm_" + side] = [K(0, (-a * 0.7, 0, 0)), K(0.4, (a * 0.7, 0, 0)), K(0.8, (-a * 0.7, 0, 0))]
+        walk["shin_" + side] = [K(0, (max(0, -a) * 0.8, 0, 0)), K(0.4, (max(0, a) * 0.8, 0, 0)), K(0.8, (max(0, -a) * 0.8, 0, 0))]
+    walk["torso"] = [K(0, (3, 0, 0)), K(0.4, (3, 0, 0)), K(0.8, (3, 0, 0))]
+    c.clip("walk", 0.8, True, walk)
+    c.clip("idle", 2.4, True, {"torso": [K(0), K(1.2, (2, 0, 0)), K(2.4)], "head": [K(0), K(1.2, (0, 8, 0)), K(2.4)]})
+    c.clip("attack", 0.5, False, {"upper_arm_r": [K(0), K(0.15, (-150, 0, -15)), K(0.28, (10, 0, 0)), K(0.5)], "forearm_r": [K(0), K(0.15, (-30, 0, 0)), K(0.28), K(0.5)],
+                                  "torso": [K(0), K(0.15, (-10, -12, 0)), K(0.28, (14, 12, 0)), K(0.5)]})
+    return c
+
+def sword():
+    """The weapon of the first-person view: modelled pointing up (+y), a hilt at the bottom, 1.4 m long. Clips: idle (rests tilted forward and to the left, a slow sway), swing (a slash across the view)."""
+    c = Creature("sword", (8, 22, 5))
+    blade = c.part("blade", "root", (3.5, 5, 2))
+    c.box((3, 6, 2), (4, 19, 3), "silver", blade); c.box((3, 20, 2), (4, 21, 3), "white", blade)
+    c.box((2, 6, 2), (5, 6, 3), "gold"); c.box((1, 5, 2), (6, 5, 3), "gold")
+    c.box((3, 1, 2), (4, 4, 3), "brown"); c.box((3, 0, 2), (4, 0, 3), "gold")
+    rest = (-35, 0, 20)
+    c.clip("idle", 3.0, True, {"root": [K(0, rest), K(1.5, (-33, 0, 24)), K(3.0, rest)]})
+    c.clip("swing", 0.45, False, {"root": [K(0, rest), K(0.12, (-10, 0, 75), (-4, 2, -2)), K(0.26, (-80, 0, -70), (6, -2, 8)), K(0.45, rest)]})
+    return c
+
 def all_models():
-    return [slime("slime", "light_green", "green", "dark_green"), slime("slime_toxic", "lime", "deep_green", "black"), intern(), goblin_sales(), rat(), spitter(), foreman(), manager(), honk()]
+    return [slime("slime", "light_green", "green", "dark_green"), slime("slime_toxic", "lime", "deep_green", "black"), intern(), goblin_sales(), rat(), spitter(), foreman(), manager(), honk(), hero(), sword()]
 
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "projects", "dungeon_crawler", "models")

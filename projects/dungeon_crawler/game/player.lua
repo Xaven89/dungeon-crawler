@@ -303,6 +303,7 @@ function P.attack()
     P.next_attack = now + w.cd
     P.swings = P.swings + 1
     P.swing_tick = now
+    pcall(player.hand_play, "swing"); pcall(player.model_play, "attack")          -- the sword in the first-person view and the body in the third (render only)
     G.sfx.play("swing", nil, nil, nil, 0.6, 0.9 + (P.swings % 3) * 0.1)
     do   -- a little arc of sparks in front of the hand (cosmetic)
         local px, py, pz = player.pos(); local fx_, fy_, fz_ = player.forward()

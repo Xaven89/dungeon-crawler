@@ -221,7 +221,7 @@ ui.hp,HP
 ui.mp,MP
 ui.dead_title,YOU DIED
 ui.dead_sub,Your demise has been rescheduled.
-ui.help,"LMB / F attack    RMB / Q ability    E interact    R heal    T mana    G throw    I bag    C sheet    J achievements"
+ui.help,"LMB / F attack    RMB / Q ability    E interact    R heal    T mana    G throw    I bag    C sheet    J achievements    O sound"
 ui.interact,[E]
 ui.shop,Vending Machine of Mild Relief
 ui.buy,BUY
@@ -247,3 +247,9 @@ ui.class.accountant.blurb,"Fast hands, sharp eyes. Audit marks a target: it take
 ui.weapon,Weapon
 ui.ability,Ability
 ui.mana,mana
+
+ui.settings,Settings
+ui.bus.music,Music
+ui.bus.sfx,Sound effects
+ui.bus.voice,GLEE's voice
+ui.settings_hint,"Volumes are saved with your run. Drag the sliders; 100% is as the show was mixed."

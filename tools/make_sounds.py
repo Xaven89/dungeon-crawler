@@ -95,7 +95,7 @@ def peak_norm(x, peak=0.9):
     return [v * peak / m for v in x]
 
 def write_chunks(name, x, out_dir, sr=MR, chunk=2.0, overlap=0.12, norm=0.8):
-    """Music as 2 second pieces: `sound.play` is positional (the source stays where the player was when it started), so game/music.lua plays one piece at a time at the player's head.
+    """(unused since phase 3: `sound.play{ loop = true, bus = "music" }` plays a whole file in a loop) Music as 2 second pieces.
     Every piece carries `overlap` seconds of the next one, faded out, and starts with a fade in of the same length: the sum is the original."""
     x = peak_norm(x, norm)
     n, o = int(chunk * sr), int(overlap * sr)
@@ -377,7 +377,7 @@ MUSIC = [("m_lobby", music_lobby), ("m_dungeon", music_dungeon), ("m_ballroom", 
 
 def main():
     for f in os.listdir(os.path.join(ROOT, "projects", "dungeon_crawler", "sounds")) if os.path.isdir(os.path.join(ROOT, "projects", "dungeon_crawler", "sounds")) else []:
-        if f.startswith("m_") and f.endswith(".wav"): os.remove(os.path.join(ROOT, "projects", "dungeon_crawler", "sounds", f))
+        if f.startswith("m_") and f[-6:-4].startswith("_") and f.endswith(".wav"): os.remove(os.path.join(ROOT, "projects", "dungeon_crawler", "sounds", f))   # the old 2 s pieces
     args = sys.argv[1:]
     only = []
     if "--only" in args:
@@ -390,8 +390,8 @@ def main():
         print("%-14s %.2f s" % (fn.__name__, d))
     for name, fn in MUSIC:
         if only and name not in only: continue
-        c = write_chunks(name, fn(), out)
-        print("%-14s %d pieces of 2 s" % (name, c))
+        d = write(name, fn(), out, sr=MR, norm=0.8)
+        print("%-14s %.2f s (a seamless loop: the notes wrap round the end)" % (name, d))
 
 if __name__ == "__main__":
     main()

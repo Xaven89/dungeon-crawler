@@ -352,7 +352,7 @@ local function bag_screen(w, h, input)
     local pw, ph = 1260, 820
     local px, py = (w - pw) / 2, (h - ph) / 2 - 30
     local cx, cy, cw, chh = panel(px, py, pw, ph, "")
-    local tabs = uikit.tabs("bag_tabs", { tr("ui.inventory") .. " (I)", tr("ui.character") .. " (C)", "Achievements (J)" }, G.bag_tab or 1, cx, cy, 640, 40)
+    local tabs = uikit.tabs("bag_tabs", { tr("ui.inventory") .. " (I)", tr("ui.character") .. " (C)", "Achievements (J)", tr("ui.settings") }, G.bag_tab or 1, cx, cy, 900, 40)
     if tabs ~= (G.bag_tab or 1) then G.bag_tab = tabs end
     local top = cy + 56
     if (G.bag_tab or 1) == 1 then
@@ -421,6 +421,17 @@ local function bag_screen(w, h, input)
         ui.text(cx + 8, y + 20, string.format("Weapon: %s   damage %d-%d   swing %.2fs   reach %.1fm", w_.name, w_.dmg[1], w_.dmg[2], w_.cd / 60, w_.reach), { size = 20, color = "#dfe4f0" })
         ui.text(cx + 8, y + 50, string.format("Max HP %d    Max MP %d    Armour %.1f    Crit %d%%    Gold bonus %d%%", P.max_hp(), P.max_mp(), P.defense(), floor(P.crit_chance() * 100), floor(P.gold_bonus() * 100)), { size = 20, color = "#dfe4f0" })
         ui.text(cx + 8, y + 90, string.format("Time played %d:%02d     Kills %d     Deaths %d", floor(s.playtime / 3600), floor(s.playtime / 60) % 60, s.kills, s.deaths), { size = 20, color = C.dim })
+    elseif G.bag_tab == 4 then
+        ui.text(cx + 8, top, tr("ui.settings"), { size = 30, color = C.gold })
+        local y = top + 70
+        for _, name in ipairs({ "music", "sfx", "voice" }) do
+            ui.text(cx + 8, y, tr("ui.bus." .. name), { size = 26, color = "#eef1f8" })
+            local v = uikit.slider("bus_" .. name, G.music.bus[name], 0, 1.5, cx + 300, y - 4, 520, 36, 0.05)
+            ui.text(cx + 850, y, string.format("%d%%", math.floor(v * 100 + 0.5)), { size = 24, color = C.gold })
+            if math.abs(v - G.music.bus[name]) > 0.001 then ui.run(string.format("Game.music.set_bus(%q, %.2f)", name, v)) end
+            y = y + 70
+        end
+        ui.text(cx + 8, y + 20, tr("ui.settings_hint"), { size = 20, color = C.dim })
     else
         ui.text(cx + 8, top, string.format("Achievements  %d / %d", s.ach_count or 0, #G.announcer.order), { size = 28, color = C.gold })
         local y = top + 44
@@ -514,6 +525,7 @@ function H.draw(dt)
     if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" then
         if pressed(input, "i") then G.screen = (sc == "bag" and (G.bag_tab or 1) == 1) and nil or "bag"; G.bag_tab = 1
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
+        elseif pressed(input, "o") then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4
         elseif pressed(input, "j") then G.screen = (sc == "bag" and G.bag_tab == 3) and nil or "bag"; G.bag_tab = 3 end
     end
     local drop = uikit.finish()

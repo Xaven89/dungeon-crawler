@@ -16,18 +16,21 @@ local function load_sound(name)
     end
     return v
 end
--- play a sound at a local position (metres); no position: at the player. Missing files are silent (the first call finds out).
+-- play a sound: at a local position (metres) in the world, or, with no position, 2D at the listener (no distance, no pan) on the sfx bus. `bus` and `loop` can be given in opts (a table as the last argument).
 function G.sfx.play(name, lx, ly, lz, vol, pitch)
     local idx = load_sound(name)
     if idx < 0 then return false end
-    local x, y, z
-    if lx then x, y, z = G.mx(lx), G.my(ly), G.mz(lz) else x, y, z = player.pos(); y = y + 1.6 end
-    return sound.play(idx, x, y, z, vol or 1, pitch or 1)
+    if lx then return sound.play{ file = "sounds/" .. name .. ".wav", at = { G.mx(lx), G.my(ly), G.mz(lz) }, volume = vol or 1, pitch = pitch or 1, bus = "sfx" } end
+    return sound.play{ file = "sounds/" .. name .. ".wav", volume = vol or 1, pitch = pitch or 1, bus = "sfx" }
+end
+-- a voice blip: 2D on the voice bus
+function G.sfx.voice(name, vol, pitch)
+    if load_sound(name) < 0 then return false end
+    return sound.play{ file = "sounds/" .. name .. ".wav", volume = vol or 1, pitch = pitch or 1, bus = "voice" }
 end
 function G.sfx.play_world(name, wx, wy, wz, vol, pitch)
-    local idx = load_sound(name)
-    if idx < 0 then return false end
-    return sound.play(idx, wx, wy, wz, vol or 1, pitch or 1)
+    if load_sound(name) < 0 then return false end
+    return sound.play{ file = "sounds/" .. name .. ".wav", at = { wx, wy, wz }, volume = vol or 1, pitch = pitch or 1, bus = "sfx" }
 end
 function G.sfx.preload(names) for _, n in ipairs(names) do load_sound(n) end end
 
@@ -109,7 +112,7 @@ function A.voice(msg)
     for i = 1, n, 3 do
         local c = text:byte(i) or 100
         local pitch = set.pitch * (0.78 + ((c * 7) % 40) / 100)
-        after(math.floor(i * 1.9), function() G.sfx.play(blip, nil, nil, nil, 0.35, pitch) end)
+        after(math.floor(i * 1.9), function() G.sfx.voice(blip, 0.5, pitch) end)
     end
 end
 
