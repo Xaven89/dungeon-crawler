@@ -150,15 +150,79 @@ local function build_corridors(p)
     end
 end
 
+-- boulder corridors: a pressure plate in the middle of a long straight corridor (from floor 2), a boulder that comes out of one end. Pure function of the plan.
+function F.trap_edges(p)
+    local out = {}
+    if p.floor < 2 then return out end
+    for i, e in ipairs(p.edges) do
+        if #e.segs == 1 and e.a ~= p.exit and e.b ~= p.exit then
+            local s = e.segs[1]
+            local along_x = (s[3] - s[1]) >= (s[4] - s[2])
+            local len = along_x and (s[3] - s[1]) or (s[4] - s[2])
+            if len >= 24 and G.hash(p.seed % 100000, p.floor, i) < 0.5 then
+                local cx, cz = (s[1] + s[3]) / 2, (s[2] + s[4]) / 2
+                local dir = (G.hash(p.seed % 100000, p.floor, i + 50) < 0.5) and 1 or -1       -- the boulder rolls towards +x / +z (dir = 1) or the other way
+                local from = along_x and { dir == 1 and s[1] + 2 or s[3] - 2, 1.7, cz } or { cx, 1.7, dir == 1 and s[2] + 2 or s[4] - 2 }
+                out[#out + 1] = { edge = i, along_x = along_x, cx = cx, cz = cz, from = from, dir = dir, id = "f" .. p.floor .. "trap" .. i }
+            end
+        end
+    end
+    return out
+end
+
+-- marble door frames where a corridor meets a room (voxels): two posts and a lintel, outside the 4 m opening
+local function build_frames(p)
+    for _, t in ipairs(F.trap_edges(p)) do G.fill(t.cx - 1.0, 0, t.cz - 1.0, t.cx + 1.0, 0.04, t.cz + 1.0, "hazard_y") end        -- the plate
+    for _, e in ipairs(p.edges) do
+        for _, d in ipairs(e.doors) do
+            local r = p.rooms[d.room]
+            if d.side == "E" or d.side == "W" then
+                local xw = (d.side == "E") and (r.x + r.w) or r.x
+                local x0, x1 = xw - 0.3, xw + 0.55
+                if d.side == "W" then x0, x1 = xw - 0.55, xw + 0.3 end
+                G.fill(x0, 0, d.z - 2.6, x1, 4.6, d.z - 2.0, "marble", "blocks"); G.fill(x0, 0, d.z + 2.0, x1, 4.6, d.z + 2.6, "marble", "blocks")
+                G.fill(x0, 4.5, d.z - 2.6, x1, 5.0, d.z + 2.6, "marble", "blocks")
+            else
+                local zw = (d.side == "S") and (r.z + r.d) or r.z
+                local z0, z1 = zw - 0.3, zw + 0.55
+                if d.side == "N" then z0, z1 = zw - 0.55, zw + 0.3 end
+                G.fill(d.x - 2.6, 0, z0, d.x - 2.0, 4.6, z1, "marble", "blocks"); G.fill(d.x + 2.0, 0, z0, d.x + 2.6, 4.6, z1, "marble", "blocks")
+                G.fill(d.x - 2.6, 4.5, z0, d.x + 2.6, 5.0, z1, "marble", "blocks")
+            end
+        end
+    end
+end
+
+local fired = {}
 local function corridor_things(p)
+    local T = G.traps
+    for _, t in ipairs(F.trap_edges(p)) do
+        local plate = events.volume{ name = t.id .. "_plate", box = { G.wx(t.cx - 1.0), G.wy(0), G.wz(t.cz - 1.0), G.wx(t.cx + 1.0) - 1, G.wy(0.5), G.wz(t.cz + 1.0) - 1 }, player = true, bodies = false }
+        events.on(plate, "enter", function()
+            if fired[t.id] then return end
+            fired[t.id] = true
+            G.announcer.say_key("trap.plate", { prio = 1 })
+            G.sfx.play("trap_click", t.cx, 0, t.cz)
+            after(60, function()
+                local dx, dz = 0, 0
+                if t.along_x then dx = t.dir else dz = t.dir end
+                T.release_boulder(t.from[1], t.from[2], t.from[3], dx, dz, 24, 11)
+                after(600, function() fired[t.id] = nil end)
+            end)
+        end)
+    end
     local n = 0
     for _, e in ipairs(p.edges) do
         for k, s in ipairs(e.segs) do
             local len = math.max(s[3] - s[1], s[4] - s[2])
             if len >= 10 then
-                n = n + 1
-                local cx, cz = (s[1] + s[3]) / 2, (s[2] + s[4]) / 2
-                G.torch(cx, 3.2, cz, { preset = "torch", reach = 10, intensity = 9, name = "f" .. p.floor .. "_corr" .. n })
+                local count = math.max(1, floor(len / 9))
+                for q = 1, count do
+                    n = n + 1
+                    local f = (q - 0.5) / count
+                    local cx, cz = s[1] + (s[3] - s[1]) * f, s[2] + (s[4] - s[2]) * f
+                    G.torch(cx, 3.2, cz, { preset = "torch", reach = 10, intensity = 9 * G.gen.rules.dark(), name = "f" .. p.floor .. "_corr" .. n })
+                end
             end
         end
     end
@@ -233,7 +297,7 @@ function F.start(seed, floor_n, on_done)
         local room = p.rooms[id]
         steps[#steps + 1] = function() room_voxels(p, room, ctx) end
     end
-    steps[#steps + 1] = function() build_corridors(p); F.build_gate(p) end
+    steps[#steps + 1] = function() build_corridors(p); build_frames(p); F.build_gate(p) end
     steps[#steps + 1] = function() F.make_things(p, true) end
     steps[#steps + 1] = function() G.rebuilding = false end
     F.job = { steps = steps, i = 0, n = #steps, done = on_done, floor = floor_n }

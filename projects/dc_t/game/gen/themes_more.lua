@@ -63,7 +63,10 @@ F.register("furnace", {
         T.hazard("lava", pl.x0, -3.4, pl.z0, pl.x1, 0.35, pl.z1, 28 + ctx.floor * 2)
         local tier = ctx.floor >= 3 and "gold" or "silver"
         ctx.crate(room, tier, cx - 0.6, cz - 0.4, "+z", 0)
-        F.populate(room, ctx, r, F.head_count(room, ctx.floor, r) - 1, { allow = outside(pl), margin = 1.2, kinds = { { "goblin", 4 }, { "spitter", 3 }, { "slime_toxic", 1 }, { "intern", 2 } } })
+        local corners = { { room.x + 2, room.z + 2 }, { room.x + room.w - 2, room.z + 2 }, { room.x + 2, room.z + room.d - 2 }, { room.x + room.w - 2, room.z + room.d - 2 } }
+        local out = outside(pl)
+        local function allow(x, z) for _, c in ipairs(corners) do if G.dist2(x, z, c[1], c[2]) < 2.1 then return false end end return out(x, z) end
+        F.populate(room, ctx, r, F.head_count(room, ctx.floor, r) - 1, { allow = allow, margin = 1.2, kinds = { { "goblin", 4 }, { "spitter", 3 }, { "slime_toxic", 1 }, { "intern", 2 } } })
     end,
 })
 

@@ -104,6 +104,11 @@ F.register("lair", {
             G.brazier(cx + math.cos(a) * 11, cz + math.sin(a) * 9, { reach = 16 })
         end
         G.dust(room.id .. "_dust", "dust_motes", { G.mx(cx), G.my(room.h / 2), G.mz(cz) }, { 12, room.h / 2, 10 })
+        for i = 0, 7 do
+            local a = i * math.pi / 4
+            G.lamp(cx + math.cos(a) * 14, cz + math.sin(a) * 11, room.h, 1.6, { reach = 15, intensity = 15 * G.gen.rules.dark() })
+        end
+        G.lamp(cx, cz, room.h, 2.0, { reach = 18, intensity = 16 * G.gen.rules.dark() })
     end,
 })
 
