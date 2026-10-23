@@ -95,3 +95,48 @@ function H.rule_label()
     if not (G.floorgen and G.floorgen.active) then return nil end
     return G.gen.rules.label()
 end
+
+-- three contracts
+function H.contract_screen(w, h, input)
+    uikit.open_screen()
+    ui.rect(0, 0, w, h, "#05060af0")
+    ui.text(w / 2, 90, tr("contract.title"), { size = 70, color = C.gold, align = "center" })
+    ui.text(w / 2, 175, tr("contract.sub"), { size = 24, color = C.dim, align = "center" })
+    local offer = G.contracts.offered or {}
+    local cw, ch, gap = 420, 520, 30
+    local total = #offer * (cw + gap) - gap
+    local x0 = (w - total) / 2
+    for i, id in ipairs(offer) do
+        local x, y = x0 + (i - 1) * (cw + gap), 230
+        local hover = uikit.over(x, y, cw, ch)
+        local col = (id == "exclusive") and "#ff4fa3" or "#ffcf4a"
+        ui.rect(x, y, cw, ch, hover and "#1b2030f2" or "#10131cf0", { radius = 16 })
+        ui.rect(x, y, cw, ch, col, { radius = 16, outline = true, thickness = hover and 5 or 3 })
+        local nm = tr("contract." .. id .. ".name"):upper()
+        ui.text(x + cw / 2, y + 20, nm, { size = (#nm > 18) and 24 or 32, color = col, align = "center" })
+        ui.text(x + 24, y + 90, tr("contract.you_get"), { size = 18, color = C.dim })
+        local ly = y + 118
+        for _, ln in ipairs(H.wrap(tr("contract." .. id .. ".good"), 24, cw - 50)) do ui.text(x + 24, ly, ln, { size = 24, color = "#7fe08a" }); ly = ly + 30 end
+        ly = ly + 24
+        ui.text(x + 24, ly, tr("contract.you_pay"), { size = 18, color = C.dim }); ly = ly + 28
+        for _, ln in ipairs(H.wrap(tr("contract." .. id .. ".bad"), 24, cw - 50)) do ui.text(x + 24, ly, ln, { size = 24, color = "#ff7a7a" }); ly = ly + 30 end
+        if uikit.button("sign_" .. id, tr("contract.sign"), x + 60, y + ch - 76, cw - 120, 54, { color = col }) then ui.run(string.format("Game.contracts.sign(%q)", id)) end
+    end
+    if uikit.button("sign_none", tr("contract.decline"), w / 2 - 200, h - 90, 400, 50) then ui.run("Game.contracts.sign(nil)") end
+end
+
+-- the run is over
+function H.runover_screen(w, h, input)
+    uikit.open_screen()
+    local s, o = G.state, G.run.over or {}
+    ui.rect(0, 0, w, h, "#100000f2")
+    ui.text(w / 2, 130, tr("runover.title"), { size = 100, color = "#ff4040", align = "center" })
+    ui.text(w / 2, 250, tr("runover.sub", o.src or "?"), { size = 28, color = "#ffd0d0", align = "center" })
+    local rows = { { "Seed", tostring(o.seed or "") }, { "Floor reached", tostring(o.floor or 1) }, { "Level", tostring(s.level) }, { "Kills", tostring(s.kills) }, { "Gold", G.format_int(s.gold) },
+                   { "Peak viewers", G.format_int(G.show.st().peak or 0) }, { "Followers", G.format_int(G.show.st().followers or 0) } }
+    for i, r in ipairs(rows) do
+        ui.text(w / 2 - 20, 320 + i * 44, r[1], { size = 28, color = C.dim, align = "right" })
+        ui.text(w / 2 + 20, 320 + i * 44, r[2], { size = 28, color = "#ffffff" })
+    end
+    if uikit.button("runover_new", tr("runover.new"), w / 2 - 200, h - 150, 400, 60, { color = C.gold }) then ui.run("Game.run.new_after_over()") end
+end

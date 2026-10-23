@@ -435,7 +435,7 @@ local function bag_screen(w, h, input)
         end
         if ev.right_click then
             local it = inv.bag[ev.right_click]
-            if it and G.state.checkpoint == "stairwell" then ui.run(string.format("Game.shop.sell(%q)", it.id)) end
+            if it and (G.safe or G.state.checkpoint == "stairwell") then ui.run(string.format("Game.shop.sell(%q)", it.id)) end
         end
         local used = 0
         for _, sl in ipairs(inv.bag) do if sl then used = used + 1 end end
@@ -457,6 +457,7 @@ local function bag_screen(w, h, input)
         end
         local w_ = P.weapon()
         ui.text(cx + 8, y + 20, string.format("Weapon: %s   damage %d-%d   swing %.2fs   reach %.1fm", w_.name, w_.dmg[1], w_.dmg[2], w_.cd / 60, w_.reach), { size = 20, color = "#dfe4f0" })
+        ui.text(cx + 8, y + 120, string.format("Contracts: %s", (#G.contracts.held() == 0) and "none" or (function() local n = {}; for _, id in ipairs(G.contracts.held()) do n[#n + 1] = tr("contract." .. id .. ".name") end return table.concat(n, ", ") end)()), { size = 18, color = "#ffcf4a" })
         ui.text(cx + 8, y + 50, string.format("Max HP %d    Max MP %d    Armour %.1f    Crit %d%%    Gold bonus %d%%", P.max_hp(), P.max_mp(), P.defense(), floor(P.crit_chance() * 100), floor(P.gold_bonus() * 100)), { size = 20, color = "#dfe4f0" })
         ui.text(cx + 8, y + 90, string.format("Time played %d:%02d     Kills %d     Deaths %d", floor(s.playtime / 3600), floor(s.playtime / 60) % 60, s.kills, s.deaths), { size = 20, color = C.dim })
     elseif G.bag_tab == 5 then
@@ -585,10 +586,12 @@ function H.draw(dt)
     elseif sc == "shop" then shop_screen(w, h, input)
     elseif sc == "death" then death_screen(w, h)
     elseif sc == "end" then end_screen(w, h, input)
-    elseif sc == "recap" then H.recap_screen(w, h, input) end
+    elseif sc == "recap" then H.recap_screen(w, h, input)
+    elseif sc == "contracts" then H.contract_screen(w, h, input)
+    elseif sc == "runover" then H.runover_screen(w, h, input) end
     H.announcer(w, h)
     -- keys (only when no modal asks for the pointer)
-    if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" and sc ~= "run" and sc ~= "loading" and sc ~= "recap" then
+    if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" and sc ~= "run" and sc ~= "loading" and sc ~= "recap" and sc ~= "contracts" and sc ~= "runover" then
         if pressed(input, "i") then G.screen = (sc == "bag" and (G.bag_tab or 1) == 1) and nil or "bag"; G.bag_tab = 1
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
         elseif pressed(input, "o") or (input.keys and input.keys.escape and sc == nil) then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4

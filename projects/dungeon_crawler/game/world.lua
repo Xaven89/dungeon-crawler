@@ -187,7 +187,7 @@ function W.tick(t)
     end
     -- the title, the class choice, the shop and the end screen hold the player where he stands (the bag does not: it is opened in a fight)
     local sc = G.screen
-    if sc == "title" or sc == "run" or sc == "loading" or sc == "class" or sc == "shop" or sc == "end" or G.cutscene then
+    if sc == "title" or sc == "run" or sc == "loading" or sc == "class" or sc == "shop" or sc == "end" or sc == "recap" or sc == "contracts" or sc == "runover" or G.cutscene then
         if not G.frozen_at then local px, py, pz = player.pos(); G.frozen_at = { px, py, pz } end
         player.teleport(G.frozen_at[1], G.frozen_at[2], G.frozen_at[3])
     else

@@ -29,6 +29,7 @@ include("game/music.lua")
 include("game/gen/safe.lua")
 include("game/gen/rules.lua")
 include("game/gen/floor.lua")
+include("game/gen/contracts.lua")
 include("game/gen/run.lua")
 include("game/gen/validate.lua")
 include("game/gen/themes.lua")
@@ -66,7 +67,7 @@ function on_start()
     else
         local cp = G.world.checkpoints[s.checkpoint] or G.world.checkpoints.lobby
         if not cp and G.floorgen.layout then local r = G.floorgen.layout.rooms[G.floorgen.layout.start]; cp = { x = r.x + r.w / 2, y = 0.1, z = r.z + r.d / 2 } end
-        player.teleport(G.mx(cp.x), G.my(cp.y), G.mz(cp.z))
+        if cp then player.teleport(G.mx(cp.x), G.my(cp.y), G.mz(cp.z)) end
     end
     include_optional("dev/boot.lua")      -- a developer's scratch script (not in git): sets up a situation for a screenshot, see tools/hudshot.sh
 end

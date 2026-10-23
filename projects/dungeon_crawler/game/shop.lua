@@ -15,9 +15,10 @@ function S.buy(i)
     local e = S.stock[i]
     local s = G.state
     if not e then return false end
-    if s.gold < e.price then G.announcer.say_key("shop.broke", { prio = 1, key = "broke", cooldown = 600 }); G.sfx.play("hurt", nil, nil, nil, 0.3, 1.4); return false end
+    local price = math.floor(e.price * G.contracts.shop_price() + 0.5)
+    if s.gold < price then G.announcer.say_key("shop.broke", { prio = 1, key = "broke", cooldown = 600 }); G.sfx.play("hurt", nil, nil, nil, 0.3, 1.4); return false end
     if not G.items.add(e.id, 1) then G.player.popup("BAG FULL", "#ff8080"); return false end
-    s.gold = s.gold - e.price
+    s.gold = s.gold - price
     G.sfx.play("coin")
     G.announcer.say_key("shop.buy", { key = "shop_buy", cooldown = 900 })
     G.announcer.award("shopper")
@@ -28,7 +29,7 @@ end
 function S.sell(id)
     local d = G.items.defs[id]
     if not d or d.kind == "quest" or G.items.count(id) < 1 then return false end
-    local price = math.max(1, math.floor(d.value / 2))
+    local price = math.max(1, math.floor(d.value / 2 * G.contracts.sell_price()))
     G.items.remove(id, 1)
     G.state.gold = G.state.gold + price
     G.player.log("sold for " .. price .. " gold", "#ffd24a")

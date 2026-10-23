@@ -62,6 +62,7 @@ end
 function R.begin_floor(n)
     local run = R.cur()
     run.floor = n
+    run.building = n                      -- (saved with the world: a start that finds this knows the build was cut off)
     G.screen = "loading"
     G.safe = false
     G.current_room = nil
@@ -70,6 +71,7 @@ end
 
 function R.floor_ready(n)
     local F = G.floorgen
+    R.cur().building = nil
     local p = F.layout
     local r = p.rooms[p.start]
     G.state.checkpoint = p.start
@@ -81,8 +83,10 @@ function R.floor_ready(n)
     for _, id in ipairs(p.rules or {}) do G.announcer.say_key("rule." .. id, { prio = 0 }) end
     if G.companion and G.companion.id then G.companion.respawn() end
     G.show.floor_begin()
+    if n > 1 then G.contracts.on_new_floor() end
     G.show.deliver(r)
     G.save()
+    after(150, function() if G.screen == nil and not G.player.dead then G.contracts.open(G.run.cur().seed, n) end end)
 end
 
 -- the stairs down (the button in the exit stairwell, or the end screen of the Orientation)
@@ -99,7 +103,15 @@ end
 function R.resume()
     local run = R.cur()
     if run and run.mode == "gen" and run.floor then
+        if run.building then
+            -- the game was closed while the floor was being built: the world holds half of it. Wipe everything and build it again.
+            G.floorgen.layout, G.floorgen.active = nil, false
+            G.world.populate_list = G.world.populate_list or {}
+            after(30, function() R.begin_floor(run.building) end)
+            return true
+        end
         G.floorgen.load(run.seed, run.floor)
+        if G.state.run_over then G.screen = "runover"; G.run.over = { src = G.state.run_over_src or "?", floor = run.floor, seed = run.seed } end
         return true
     end
     return false
@@ -111,3 +123,13 @@ function R.open_menu()
     G.screen = "run"
     G.hud.seed_text = nil
 end
+
+-- the run is over (a hardcore death): the summary, then the way into a new one
+function R.end_run(src)
+    G.player.dead = false
+    G.state.run_over, G.state.run_over_src = true, tostring(src or "something")
+    G.save()
+    G.screen = "runover"
+    G.run.over = { src = tostring(src or "something"), floor = R.floor_no(), seed = (R.cur() or {}).seed }
+end
+function R.new_after_over() if G.screen == "runover" then G.screen = "run"; G.hud.seed_text = nil end end

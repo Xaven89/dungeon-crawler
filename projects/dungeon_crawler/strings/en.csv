@@ -363,3 +363,39 @@ cond.bleed.1,"You are bleeding. This is not a metaphor. A bandage would be good,
 cond.septic.1,"You are septic: healing is half as good until a Smoothie or sushi clears you. Please do not ask what the smoothie is."
 cond.cured,"{1} cured"
 run.new,Leave this run: new seed
+contract.title,SPONSOR CONTRACTS
+contract.sub,"Three offers, one pen. Everything has a price and the price is in small print. Sign one or none."
+contract.you_get,YOU GET
+contract.you_pay,YOU PAY
+contract.sign,SIGN
+contract.decline,"Sign nothing (+40 gold for the pen)"
+contract.offer.1,"The sponsors have prepared a few contracts for you. They are very fair. The fine print is not on this page. It is on the next page. There is no next page."
+contract.signed.1,"{1}: signed, witnessed and filed under 'regret'. Congratulations."
+contract.declined.1,"You signed nothing. The sponsors are insulted. The pen is yours as compensation."
+contract.hazard_pay.name,Hazard Pay
+contract.hazard_pay.good,"+30% gold from everything"
+contract.hazard_pay.bad,"enemies hit 15% harder"
+contract.product_placement.name,Product Placement
+contract.product_placement.good,"+50% spectacle (the audience loves a logo)"
+contract.product_placement.bad,"-15% maximum health (the logo is heavy)"
+contract.union_dues.name,Union Dues
+contract.union_dues.good,"heal 35% of your health whenever a room is cleared"
+contract.union_dues.bad,"15% of your gold goes to the union on every new floor"
+contract.fine_print.name,The Fine Print
+contract.fine_print.good,"+3 strength"
+contract.fine_print.bad,"-3 constitution"
+contract.exclusive.name,Exclusive Broadcast Rights
+contract.exclusive.good,"double the viewers, +50% spectacle"
+contract.exclusive.bad,"if you die, the run is over: no respawn"
+contract.night_owl.name,Night Owl Package
+contract.night_owl.good,"+25% damage"
+contract.night_owl.bad,"-50% maximum mana"
+contract.bulk_discount.name,Bulk Discount
+contract.bulk_discount.good,"-30% prices at the vending machine"
+contract.bulk_discount.bad,"you get half as much when you sell"
+contract.glass_cannon.name,Glass Cannon Clause
+contract.glass_cannon.good,"+40% damage"
+contract.glass_cannon.bad,"-25% maximum health"
+runover.title,THE RUN IS OVER
+runover.sub,"Cancelled by {1}. The show goes on. Without you."
+runover.new,Pick a new episode

@@ -461,7 +461,7 @@ function E.on_anim(mdl, event, clip)
     if event == "hit" then
         local d = G.dist2(x, z, px, pz)
         if d <= inst.T.reach + 0.9 and abs(y - py) < 3 then
-            local dealt = G.player.hurt(inst.T.dmg * (inst.dmg_mult or 1) * (0.9 + G.rand() * 0.2), inst.name)
+            local dealt = G.player.hurt(inst.T.dmg * (inst.dmg_mult or 1) * G.contracts.edmg() * (0.9 + G.rand() * 0.2), inst.name)
             local inf = inst.T.inflict
             if inf and dealt and dealt > 0 and G.rand() < inf.chance then G.skills.afflict(inf.kind, inf.dur) end
         end

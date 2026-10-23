@@ -56,15 +56,15 @@ local S = function() return G.state end
 -- ---------------------------------------------------------------------------------------------- derived numbers
 function P.stat(name)
     local s = G.state
-    local v = s.stats[name] or 0
+    local v = (s.stats[name] or 0) + G.contracts.stat(name)
     for _, slot in pairs(s.equip) do
         local d = G.items.defs[slot]
         if d and d[name] then v = v + d[name] end
     end
     return v
 end
-function P.max_hp() return 50 + P.stat("con") * 8 + G.state.level * 10 end
-function P.max_mp() return 20 + P.stat("int") * 5 + G.state.level * 3 end
+function P.max_hp() return floor((50 + P.stat("con") * 8 + G.state.level * 10) * G.contracts.hp()) end
+function P.max_mp() return floor((20 + P.stat("int") * 5 + G.state.level * 3) * G.contracts.mp()) end
 function P.defense()
     local d = P.stat("con") * 0.2
     for _, id in pairs(G.state.equip) do local def = G.items.defs[id]; if def and def.def then d = d + def.def end end
@@ -75,7 +75,7 @@ function P.crit_chance() return 0.05 + P.stat("dex") * 0.012 end
 function P.gold_bonus()
     local b = 0
     for _, id in pairs(G.state.equip) do local d = G.items.defs[id]; if d and d.gold_bonus then b = b + d.gold_bonus end end
-    return b + (G.skills.gold_mult() - 1)
+    return b + (G.skills.gold_mult() - 1) + G.contracts.gold()
 end
 function P.xp_needed(level) return floor(60 * (level or G.state.level) ^ 1.4) end
 
@@ -212,6 +212,7 @@ function P.die(src)
     if s.deaths >= 3 then A.award("serial_victim") end
     if G.companion and G.companion.on_player_death then G.companion.on_player_death() end
     if G.enemies and G.enemies.on_player_death then G.enemies.on_player_death() end
+    if G.contracts.hardcore() then after(240, function() G.run.end_run(src) end); return end
     after(300, function() P.respawn() end)
     G.save()
 end
@@ -277,7 +278,7 @@ local function roll_damage(base_lo, base_hi, mult)
     local s = G.state
     local dmg = base_lo + G.rand() * (base_hi - base_lo)
     dmg = dmg * (1 + P.stat("str") * 0.05) + s.level * 0.8
-    dmg = dmg * (mult or 1) * G.skills.damage_mult()
+    dmg = dmg * (mult or 1) * G.skills.damage_mult() * G.contracts.dmg()
     local crit = G.rand() < P.crit_chance()
     if crit then dmg = dmg * 2 end
     return max(1, floor(dmg + 0.5)), crit

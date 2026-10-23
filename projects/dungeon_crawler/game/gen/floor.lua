@@ -430,6 +430,7 @@ function F.room_cleared(id)
     local room = p.rooms[id]
     if not room then return end
     G.announcer.say_key("room.cleared", { prio = 0, key = "cleared_" .. id, cooldown = 99999 }, room.name)
+    G.contracts.on_room_cleared()
     if room.role == "room" then
         G.state.checkpoint = id            -- (quietly: the next death starts in the last room that was cleared)
         G.state.flags["visited_" .. id] = true

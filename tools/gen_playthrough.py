@@ -46,7 +46,8 @@ print(G.enemies.alive_in('%s'), math.floor(G.state.hp), G.state.deaths)""" % (ro
             L(v, """local G=Game; local best, bd
 local px, py, pz = player.pos()
 for _, i in pairs(G.enemies.list) do if not i.dead and i.room == '%s' then local x, y, z = G.enemies.position(i); if x then local d = G.dist2(x, z, px, pz); if not bd or d < bd then best, bd = { x, y, z }, d end end end end
-if best and bd > 6 then player.teleport(best[1] + 1.8, best[2] + 0.1, best[3]) end""" % room, 1)
+local r = G.floorgen.layout.rooms['%s']; local cx, cz = G.mx(r.x + r.w / 2), G.mz(r.z + r.d / 2)
+if best and bd > 6 then local dx, dz = cx - best[1], cz - best[3]; local n = math.max(0.1, math.sqrt(dx*dx + dz*dz)); player.teleport(best[1] + dx / n * 2.2, best[2] + 0.1, best[3] + dz / n * 2.2) end""" % (room, room), 1)
         if out and out[0].split("\t")[0] == "0": break
     v.tool("input_action", name="attack", down=False, player=0)
     L(v, "Game.autoaim = false", 0)
@@ -60,7 +61,8 @@ def main():
         L(v, "Game.screen = 'run'; Game.run.start(%d, true)" % seed, 2)
         L(v, "Game.player.pick_class('%s')" % cls, 2)
         print("floor 1 built in", wait_floor(v), "s")
-        v.step(60)
+        v.step(200)
+        L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
         for fl in range(1, floors + 1):
             info = L(v, """local p = Game.floorgen.layout
 local ids = {}
@@ -90,9 +92,10 @@ end""", 5)
                 print(line); sys.stdout.flush(); report.append(line)
             print("  descending ...")
             if fl < floors:
-                L(v, "Game.run.descend()", 2)
+                L(v, "Game.run.descend(true)", 2)
                 print("floor %d built in" % (fl + 1), wait_floor(v), "s")
-                v.step(60)
+                v.step(200)
+                L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
         errs = [l.strip() for l in v.stderr_tail(600).splitlines() if "[error]" in l or "[warn" in l]
         print("engine errors / warnings:", errs[-6:] if errs else "none")
         print("state hash:", v.state_hash())

@@ -29,6 +29,7 @@ end
 function S.score(points, label)
     local sh = S.st()
     if G.floorgen and G.floorgen.active then points = points * G.gen.rules.spectacle() end
+    points = points * G.contracts.spectacle()
     sh.buzz = min(300, sh.buzz + points)
     sh.total = sh.total + points
     if sh.fs then sh.fs.points = sh.fs.points + points end
@@ -77,7 +78,7 @@ end
 function S.viewers()
     local sh = S.st()
     local f = (G.run and G.run.floor_no() or 1)
-    return floor((200000 + sh.followers * 12) * (1 + f * 0.15) * (1 + sh.buzz / 80))
+    return floor((200000 + sh.followers * 12) * (1 + f * 0.15) * (1 + sh.buzz / 80) * G.contracts.viewers())
 end
 
 function S.tick(t)
