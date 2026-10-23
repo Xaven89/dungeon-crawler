@@ -85,6 +85,9 @@ function V.report()
     for id, c in pairs(G.traps.crates) do
         if not V.reached(c.cx, c.cz + 0.9) and not V.reached(c.cx, c.cz - 0.9) and not V.reached(c.cx + 0.9, c.cz) and not V.reached(c.cx - 0.9, c.cz) then out[#out + 1] = "crate " .. id .. " is NOT reachable" end
     end
+    for id, c in pairs(G.world.checkpoints) do
+        if not V.reached(c.x, c.z) then out[#out + 1] = string.format("checkpoint of %s (%.1f, %.1f) is not on walkable ground", id, c.x, c.z) end
+    end
     local bad = 0
     for rid, list in pairs(G.world.populate_list) do
         for _, e in ipairs(list) do if not V.reached(e[2], e[3]) then bad = bad + 1; out[#out + 1] = string.format("enemy %s at %.1f, %.1f in %s is not on walkable ground", e[1], e[2], e[3], rid) end end

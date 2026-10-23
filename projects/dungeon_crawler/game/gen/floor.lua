@@ -271,14 +271,14 @@ local function stone(b) G.vfill(G.vox(b[1]), G.vox(b[2]), G.vox(b[3]), G.vox(b[4
 -- the voxels of one room by its theme
 local function room_voxels(p, room, ctx)
     local def = F.themes[room.theme]
-    if room.theme == "arrival" then G.gen.safe.voxels(room, {})
-    elseif room.theme == "stairwell" then G.gen.safe.voxels(room, { stairs = true })
+    if room.theme == "arrival" then G.gen.safe.voxels(room, ctx, {})
+    elseif room.theme == "stairwell" then G.gen.safe.voxels(room, ctx, { stairs = true })
     elseif def and def.voxels then def.voxels(room, ctx) end
 end
 local function room_things(p, room, ctx)
     local def = F.themes[room.theme]
-    if room.theme == "arrival" then G.gen.safe.things(room, {})
-    elseif room.theme == "stairwell" then G.gen.safe.things(room, { stairs = true, next_floor = p.floor + 1 })
+    if room.theme == "arrival" then G.gen.safe.things(room, ctx, {})
+    elseif room.theme == "stairwell" then G.gen.safe.things(room, ctx, { stairs = true, next_floor = p.floor + 1 })
     elseif def and def.things then def.things(room, ctx) end
 end
 
