@@ -28,8 +28,9 @@ function B.begin(lair)
     inst.intro_until = time.tick() + 420
     inst.next_attack, inst.next_slam, inst.next_throw, inst.next_summon, inst.next_geyser = 0, 0, 0, 0, 0
     B.inst, B.active, B.phase = inst, true, 1
-    A.say_key("boss.intro", { prio = 2 })
-    A.say_key("boss.intro", { prio = 0 })
+    local ik = (L_.kind == "golem") and "boss.intro_golem" or "boss.intro"
+    A.say_key(ik, { prio = 2 })
+    A.say_key(ik, { prio = 0 })
     G.sfx.play("boss_stinger")
     -- the cutscene: the editor camera (a free camera that leaves the player parked) in three STATIC shots with cuts (a camera that is moved every tick jittered: the editor camera re-finds
     -- the floor under its focus all the time), then the view goes back to the player's eyes. The player is held in place meanwhile (game/world.lua).
@@ -39,7 +40,7 @@ function B.begin(lair)
     after(150, function() shot(6.5, 10, 55) end)
     after(300, function() shot(4.8, 6, 20, 3.0) end)
     after(420, function() camera.mode("first"); G.cutscene = false end)
-    model.play(inst.mdl, "roar", 1, false, 4)
+    model.play(inst.mdl, (inst.T.clips and inst.T.clips.roar) or "roar", 1, false, 4)
     if G.music and G.music.set then G.music.set("boss") end
 end
 
@@ -52,7 +53,7 @@ end
 local function set_phase(inst, p)
     B.phase = p
     local A = G.announcer
-    model.play(inst.mdl, "roar", 1, false, 4)
+    model.play(inst.mdl, (inst.T.clips and inst.T.clips.roar) or "roar", 1, false, 4)
     G.sfx.play("boss_roar", G.to_local(E.position(inst)))
     if p == 2 then A.say_key("boss.p2", { prio = 2 }) else A.say_key("boss.p3", { prio = 2 }) end
     inst.attacking = true; inst.attack_until = time.tick() + 80
@@ -92,7 +93,7 @@ function B.summon(inst, x, y, z)
     for i = 1, 2 do
         local a = G.rand() * 6.283
         local lx, lz = G.to_local(x, y, z)
-        local e = E.spawn("intern", lx + math.cos(a) * 4, 0, lz + math.sin(a) * 4, { room = B.lair.room, index = 90 + i })
+        local e = E.spawn(inst.T.minion or "intern", lx + math.cos(a) * 4, 0, lz + math.sin(a) * 4, { room = B.lair.room, index = 90 + i })
         if e then E.aggro(e, true); n = n + 1; fx.play("poof", floor(units.vox(x + math.cos(a) * 4)), floor(units.vox(y)), floor(units.vox(z + math.sin(a) * 4)), 1.4) end
     end
     G.sfx.play("boss_roar", G.to_local(x, y, z), 0.7, 1.3)
@@ -127,8 +128,9 @@ function B.ai(inst, t, d, dy, info)
     end
     local function act(clip, dur)
         inst.attacking = true; inst.attack_until = t + dur
+        inst.pending = clip
         agent.stop(inst.id)
-        model.play(inst.mdl, clip, 1, false, 3)
+        model.play(inst.mdl, (T_.clips and T_.clips[clip]) or clip, 1, false, 3)
     end
     if phase >= 2 and t >= inst.next_summon and minions_alive() < 3 then
         inst.next_summon = t + 1300; act("summon", 130); return
@@ -153,7 +155,10 @@ end
 
 -- animation events of the boss: the throw, the summon, the slam, the roar
 function B.on_event(inst, event, x, y, z)
-    if event == "throw" then B.throw(inst, x, y, z)
+    if event == "cast" and inst.T.clips then       -- a kit figure: one `cast` event, the move says what it was
+        if inst.pending == "throw" then B.throw(inst, x, y, z) elseif inst.pending == "summon" then B.summon(inst, x, y, z) end
+    elseif event == "hit" and inst.T.clips and inst.pending == "slam" then E.shockwave(inst, x, y, z, 5, inst.T.dmg * 1.2)
+    elseif event == "throw" then B.throw(inst, x, y, z)
     elseif event == "summon" then B.summon(inst, x, y, z) end
 end
 

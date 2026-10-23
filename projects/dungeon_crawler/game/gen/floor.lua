@@ -92,10 +92,12 @@ local function make_ctx(p, building)
     local ctx = { plan = p, floor = p.floor, seed = p.seed, building = building }
     ctx.pop = G.world.populate_list
     function ctx.rng(room) return L.make_rng(p.seed, p.floor, 1000 + room.index) end
-    function ctx.add(room, kind, lx, lz, ly)
+    function ctx.add(room, kind, lx, lz, ly, extra)
         local l = ctx.pop[room.id]
         if not l then l = {}; ctx.pop[room.id] = l end
-        l[#l + 1] = { kind, lx, lz, ly or 0 }
+        local e = { kind, lx, lz, ly or 0 }
+        if extra then for k, v in pairs(extra) do e[k] = v end end
+        l[#l + 1] = e
     end
     -- where the corridors meet each room: ctx.doors[room.id] = { { side = "E", pos = z or x (metres) } ... }; nothing may stand in front of them
     ctx.doors = {}
@@ -316,8 +318,11 @@ local function build_gate(p)
 end
 F.build_gate = build_gate
 
+-- which boss waits on this floor: the Floor Manager on the first two, then by the seed
 function F.boss_kind(p)
-    return "manager"
+    if p.floor <= 2 then return "manager" end
+    local r = L.make_rng(p.seed, p.floor, 4242)
+    return ({ "manager", "golem" })[r.int(1, 2)]
 end
 
 function F.lair_of(p)

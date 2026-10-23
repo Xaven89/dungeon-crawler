@@ -398,6 +398,9 @@ function T.tick(t)
             if h.kind == "lava" then
                 if t % 18 == 0 then G.player.hurt(h.dmg, "the lava", { pierce = true }); fx.play("sparks", floor(units.vox(px)), floor(units.vox(py)), floor(units.vox(pz)), 1.0) end
                 if not T.lava_said then T.lava_said = true; G.announcer.say_key("trap.lava", { prio = 1, key = "lava", cooldown = 3000 }) end
+            elseif h.kind == "toxic" then
+                if t % 36 == 0 then G.player.hurt(h.dmg, "toxic sludge", { pierce = true }) end
+                if not G.state.counters.soggy then G.state.counters.soggy = 1; G.announcer.award("soggy") end
             elseif h.kind == "water" then
                 if not G.state.counters.soggy then G.state.counters.soggy = 1; G.announcer.award("soggy") end
             end

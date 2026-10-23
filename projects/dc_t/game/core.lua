@@ -199,7 +199,7 @@ function G.lamp(xm, zm, y_ceil, drop, opts)
         G.fill(xm - 0.2, y_ceil - drop - 0.4, zm - 0.2, xm + 0.2, y_ceil - drop, zm + 0.2, opts.mat or "lantern")
         G.fill(xm - 0.25, y_ceil - drop - 0.05, zm - 0.25, xm + 0.25, y_ceil - drop, zm + 0.25, "metal")
     end
-    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 1.0, 0.67, 0.33 }, reach = opts.reach or 15, flicker = true })
+    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 1.0, 0.67, 0.33 }, reach = opts.reach or 15, intensity = opts.intensity, flicker = true })
 end
 
 -- a floor brazier / standing fire bowl

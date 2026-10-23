@@ -310,7 +310,7 @@ local function hud_boss(w, h)
     if not B or not B.active or not B.inst or B.inst.dead then return end
     local bw = 900
     local x, y = (w - bw) / 2, h - 230
-    ui.text(w / 2, y - 36, tr("ui.boss"), { size = 30, color = "#ff7a7a", align = "center" })
+    ui.text(w / 2, y - 36, (B.inst.name or tr("ui.boss")):upper(), { size = 30, color = "#ff7a7a", align = "center" })
     bar(x, y, bw, 26, B.inst.hp / B.inst.max_hp, "#c03030", nil, nil)
     local ph = B.phase or 1
     for i = 1, 3 do ui.circle(x + bw - 20 - (3 - i) * 22, y - 18, 6, i <= ph and "#ff5050" or "#403040") end

@@ -30,6 +30,22 @@ E.types = {
                 splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", ragdoll = true, loot = "silver", loot_chance = 1, slam = true },
     manager = { model = "manager", name = "The Floor Manager", hp = 620, dmg = 20, speed = 1.7, reach = 3.2, aggro = 40, xp = 400, gold = { 150, 250 }, cd = 110, height = 3.9, radius = 1.2, boss = true,
                 splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", ragdoll = true, loot = "platinum", loot_chance = 1 },
+    -- the rigged kit figures (docs/ANIMATION.md, EQUIPMENT.md): drawn with finer voxels, they play the clips idle / walk / run / attack (event `hit`) / cast (event `cast`) / hit / die and carry things.
+    -- `kit` is what they hold (equipment slots), `die_clip` replaces the ragdoll (a drawn-only model cannot go limp)
+    orc = { model = "figures/monster_orc_captain_green", name = "Orc Compliance Officer", hp = 110, dmg = 15, speed = 2.1, reach = 2.0, aggro = 14, xp = 40, gold = { 5, 15 }, cd = 85, height = 2.0, radius = 0.55,
+            anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm", off_hand = "round_shield.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "goblin", loot_chance = 0.5, wander = 2, pack = true },
+    bandit = { model = "figures/human_man_warrior", name = "Disgruntled Contractor", hp = 80, dmg = 12, speed = 2.6, reach = 1.9, aggro = 15, xp = 32, gold = { 3, 11 }, cd = 65, height = 1.8, radius = 0.5,
+               anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "drop", loot_chance = 0.45, wander = 2, pack = true },
+    samurai = { model = "figures/human_man_samurai", name = "Redundant Samurai", hp = 120, dmg = 18, speed = 2.9, reach = 2.0, aggro = 16, xp = 55, gold = { 6, 18 }, cd = 60, height = 1.8, radius = 0.5,
+                anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "silver", loot_chance = 0.5, wander = 1.5 },
+    imp = { model = "figures/human_demon_girl", name = "Intern from Marketing", hp = 70, dmg = 13, speed = 1.4, reach = 12, aggro = 15, xp = 38, gold = { 4, 12 }, cd = 140, height = 1.8, radius = 0.5, ranged = true, keep = 8, cast = "ember",
+            anim = "clip", die_clip = true, kit = { main_hand = "wooden_staff.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "drop", loot_chance = 0.5, wander = 1.5 },
+    troll = { model = "figures/monster_troll_blue", name = "Troll of the Night Shift", hp = 230, dmg = 24, speed = 1.6, reach = 2.5, aggro = 14, xp = 85, gold = { 10, 28 }, cd = 105, height = 2.6, radius = 0.8,
+              anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "goblin_die", loot = "silver", loot_chance = 0.6, wander = 1.5 },
+    cyclops = { model = "figures/monster_cyclop_pink", name = "Cyclops Auditor", hp = 520, dmg = 27, speed = 1.9, reach = 3.0, aggro = 18, xp = 220, gold = { 50, 90 }, cd = 100, height = 3.1, radius = 1.0, miniboss = true,
+                anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "gold", loot_chance = 1 },
+    golem = { model = "figures/monster_gold_golem", name = "The Golden Parachute", hp = 1000, dmg = 30, speed = 1.7, reach = 3.4, aggro = 40, xp = 520, gold = { 200, 320 }, cd = 110, height = 3.4, radius = 1.3, boss = true,
+              anim = "clip", die_clip = true, clips = { summon = "cast", throw = "cast", slam = "attack", roar = "cast" }, minion = "orc", splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "platinum", loot_chance = 1 },
 }
 
 function E.define_fx()
@@ -69,11 +85,16 @@ function E.spawn(kind, lx, ly, lz, opts)
     local T = E.types[kind]
     if not T then error("unknown enemy " .. tostring(kind)) end
     opts = opts or {}
-    local id = agent.spawn{ x = G.mx(lx), y = G.my(ly) + 0.05, z = G.mz(lz), speed = T.speed, model = "models/" .. T.model .. ".vxm", creature = kind,
+    local speed = T.speed * ((opts.affix == "swift") and 1.45 or 1)
+    local id = agent.spawn{ x = G.mx(lx), y = G.my(ly) + 0.05, z = G.mz(lz), speed = speed, model = "models/" .. T.model .. ".vxm", creature = T.creature or kind,
                             animation = T.anim or "auto", turn_smoothing = 6 }
     if not id then return nil end
+    local name = T.name
+    if opts.affix then name = ({ swift = "Swift ", armored = "Armored ", explosive = "Volatile " })[opts.affix] .. name end
     local inst = { id = id, mdl = id - 0x40000000, kind = kind, T = T, hp = T.hp * (opts.hp_mult or 1), max_hp = T.hp * (opts.hp_mult or 1), state = "idle",
-                   next_attack = 0, stun_until = 0, room = opts.room, height = T.height, radius = T.radius, home = { lx, ly, lz }, born = time.tick(), name = T.name, index = opts.index }
+                   next_attack = 0, stun_until = 0, room = opts.room, height = T.height, radius = T.radius, home = { lx, ly, lz }, born = time.tick(), name = name, index = opts.index,
+                   dmg_mult = opts.dmg_mult or 1, affix = opts.affix }
+    if T.kit and equipment then pcall(equipment.apply, equipment.agent(id), (function() local k = {}; for slot, f in pairs(T.kit) do k[slot] = { file = f } end; return k end)()) end
     E.list[id] = inst
     E.by_model[inst.mdl] = inst
     if T.wander and not opts.still then agent.wander(id, T.wander) end
@@ -92,7 +113,8 @@ function E.spawn_room(room, list)
     local n = 0
     for i, e in ipairs(list) do
         if not rem or rem[i] then
-            local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = 1 + (G.state.level - 1) * 0.03, index = i })
+            local fl = (G.run and G.run.floor_no() or 1) - 1
+            local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = (1 + (G.state.level - 1) * 0.03) * (1 + fl * 0.2) * (e.hp or 1), dmg_mult = 1 + fl * 0.1, affix = e.affix, index = i })
             if inst then n = n + 1 end
         end
     end
@@ -142,6 +164,7 @@ local function wpos(inst)
 end
 
 function E.damage(inst, amount, opts)
+    if inst.affix == "armored" and amount > 0 then amount = amount * 0.65 end
     if inst.dead then return end
     opts = opts or {}
     local P = G.player
@@ -232,9 +255,14 @@ function E.kill(inst, opts)
     if x then
         G.gore.wound(inst, x, y + inst.height * 0.4, z, true)
         fx.play(((T.splat or "splat_red"):gsub("^splat", "gore")), floor(x * 16), floor((y + inst.height * 0.4) * 16), floor(z * 16), T.boss and 2.2 or (T.miniboss and 1.6 or 1.1))
-        if T.ragdoll then
+        if T.die_clip then
+            model.play(inst.mdl, "die", 1, false, 6)
+        elseif T.ragdoll then
             local fx_, fy_, fz_ = player.forward()
             model.ragdoll(inst.mdl, true, fx_ * 120, 60, fz_ * 120)
+        end
+        if inst.affix == "explosive" then
+            after(20, function() fx.explosion(floor(x * 16), floor((y + 0.6) * 16), floor(z * 16), 20, 0.4); E.shockwave(inst, x, y, z, 3.2, 22) end)
         end
     end
     agent.stop(inst.id)
@@ -251,7 +279,7 @@ function E.kill(inst, opts)
     local function clear_it()
         if E.list[id] then E.list[id] = nil; E.by_model[mdl] = nil; agent.remove(id) end
     end
-    if T.ragdoll then
+    if T.ragdoll or T.die_clip then
         E.corpses[#E.corpses + 1] = clear_it
         if #E.corpses > 8 then table.remove(E.corpses, 1)() end
         after(2400, clear_it)
@@ -367,7 +395,7 @@ local function do_attack(inst, t)
     inst.attack_until = t + 40
     inst.state = "attack"
     agent.stop(inst.id)
-    model.play(inst.mdl, T.slam and G.rand() < 0.35 and "slam" or "attack", 1, false, 3)
+    model.play(inst.mdl, T.cast and "cast" or (T.slam and G.rand() < 0.35 and "slam" or "attack"), 1, false, 3)
 end
 
 function E.ai(inst, t)
@@ -426,13 +454,15 @@ function E.on_anim(mdl, event, clip)
     if event == "hit" then
         local d = G.dist2(x, z, px, pz)
         if d <= inst.T.reach + 0.9 and abs(y - py) < 3 then
-            G.player.hurt(inst.T.dmg * (0.9 + G.rand() * 0.2), inst.name)
+            G.player.hurt(inst.T.dmg * (inst.dmg_mult or 1) * (0.9 + G.rand() * 0.2), inst.name)
         end
         G.sfx.play("swing", G.to_local(x, y + 1, z), 0.5, 0.7)
     elseif event == "slam" then
         E.shockwave(inst, x, y, z, inst.T.boss and 6 or 4.2, inst.T.dmg * 1.3)
     elseif event == "spit" then
         E.spit(inst, x, y, z)
+    elseif event == "cast" and inst.T.cast then
+        E.spit(inst, x, y, z, inst.T.cast)
     end
     if inst.T.boss and G.boss and G.boss.on_event then G.boss.on_event(inst, event, x, y, z) end
     return true
@@ -445,15 +475,15 @@ function E.shockwave(inst, x, y, z, r, dmg)
     if G.dist2(x, z, px, pz) <= r and abs(py - y) < 2.2 then G.player.hurt(dmg, inst.name) end
 end
 
-function E.spit(inst, x, y, z)
+function E.spit(inst, x, y, z, mat)
     local px, py, pz = player.pos()
     local sx, sy, sz = x, y + 1.1, z
     local dx, dy, dz = px - sx, (py + 1.1) - sy, pz - sz
     local d = max(0.1, sqrt(dx * dx + dy * dy + dz * dz))
-    local b = body.ball(sx + dx / d * 0.7, sy, sz + dz / d * 0.7, 3, "toxic")
+    local b = body.ball(sx + dx / d * 0.7, sy, sz + dz / d * 0.7, 3, mat or "toxic")
     local sp = 11
     body.push(b, dx / d * sp * 40, (dy / d * sp + 2.4) * 40, dz / d * sp * 40)
-    E.projectiles[#E.projectiles + 1] = { body = b, born = time.tick(), dmg = inst.T.dmg, from = inst.name }
+    E.projectiles[#E.projectiles + 1] = { body = b, born = time.tick(), dmg = inst.T.dmg * (inst.dmg_mult or 1), from = inst.name, fx = (mat == "ember") and "splat_red" or "splat_toxic" }
     G.sfx.play("spit", G.to_local(x, y, z))
 end
 
@@ -465,7 +495,7 @@ function E.tick_projectiles(t)
         local gone = (not ok) or (t - p.born > 220)
         if ok and not gone and G.dist3(x, y, z, px, py + 1.0, pz) < 1.0 then
             G.player.hurt(p.dmg, p.from)
-            fx.play("splat_toxic", floor(x * 16), floor(y * 16), floor(z * 16), 0.8)
+            fx.play(p.fx or "splat_toxic", floor(x * 16), floor(y * 16), floor(z * 16), 0.8)
             gone = true
         end
         if gone then

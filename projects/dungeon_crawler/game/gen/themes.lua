@@ -10,8 +10,10 @@ local floor, max, min = math.floor, math.max, math.min
 -- weights by floor: { kind, first_floor, weight }
 local ROSTER = {
     { "rat", 1, 3 }, { "slime", 1, 3 }, { "intern", 1, 2 }, { "goblin", 1, 2 },
-    { "slime_toxic", 2, 2 }, { "spitter", 2, 2 },
+    { "slime_toxic", 2, 2 }, { "spitter", 2, 2 }, { "bandit", 2, 2 }, { "orc", 2, 2 },
+    { "imp", 3, 2 }, { "samurai", 4, 1.5 }, { "troll", 4, 2 },
 }
+local AFFIXES = { "swift", "armored", "explosive" }
 function F.pick_kind(rng, floor_n)
     local total = 0
     for _, e in ipairs(ROSTER) do if floor_n >= e[2] then total = total + e[3] end end
@@ -42,7 +44,9 @@ function F.populate(room, ctx, rng, n, opts)
             local x = rng.next() * total
             for _, k in ipairs(opts.kinds) do x = x - k[2]; if x <= 0 then kind = k[1]; break end end
         end
-        ctx.add(room, kind or F.pick_kind(rng, ctx.floor), q[1], q[2], opts.y or 0)
+        local extra
+        if ctx.floor >= 2 and rng.next() < min(0.3, 0.07 * (ctx.floor - 1)) then extra = { affix = AFFIXES[rng.int(1, 3)] } end
+        ctx.add(room, kind or F.pick_kind(rng, ctx.floor), q[1], q[2], opts.y or 0, extra)
     end
     return #placed
 end
@@ -125,5 +129,28 @@ F.register("hall", {
         F.lamps(room, 15, 13)
         F.populate(room, ctx, r, F.head_count(room, ctx.floor, r))
         if r.next() < 0.5 then ctx.crate(room, ctx.floor >= 3 and "silver" or "bronze", room.x + 3, room.z + 3, "+z") end
+    end,
+})
+
+-- ---------------------------------------------------------------------------------------------- warlord: a hall with a miniboss and his retinue (a gold crate behind them)
+F.register("warlord", {
+    names = { "The Warlord's Lounge", "Middle Management", "The Regional Office", "Hall of Brutal Efficiency" },
+    weight = function(f, room) return (f >= 2 and room.w >= 20 and room.d >= 18) and (0.8 + 0.25 * f) or 0 end,
+    voxels = function(room, ctx)
+        G.room{ x = room.x, z = room.z, w = room.w, d = room.d, h = room.h, floor = "obsidian", wall = "dungeon_brick", ceil = "dungeon_brick", ftex = "tiles", wtex = "blocks", ctex = "planks" }
+        local cx = room.x + room.w / 2
+        G.fill(cx - 3, 0, room.z + room.d - 6, cx + 3, 0.5, room.z + room.d - 1, "dark_wood"); G.fill(cx - 3, 0.5, room.z + room.d - 6, cx + 3, 0.55, room.z + room.d - 1, "carpet")
+        for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do G.pillar(cx + dx, room.z + room.d * k / 3, 0.8, 0, room.h, "dungeon_brick", "blocks") end end
+        for i = 1, 3 do G.fill(room.x + room.w * i / 4 - 0.6, 3.2, room.z + 0.05, room.x + room.w * i / 4 + 0.6, 6, room.z + 0.2, "neon_red") end        -- banners
+    end,
+    things = function(room, ctx)
+        local r = ctx.rng(room)
+        local cx = room.x + room.w / 2
+        F.sconces(room, ctx, 8, 3.3); F.lamps(room, 15, 12)
+        G.brazier(cx - 5, room.z + room.d - 3, { reach = 12 }); G.brazier(cx + 5, room.z + room.d - 3, { reach = 12 })
+        ctx.crate(room, "gold", cx - 0.6, room.z + room.d - 2, "-z", 0.55)
+        local kind = (ctx.floor >= 3) and "cyclops" or "troll"
+        ctx.add(room, kind, cx, room.z + room.d - 8, 0, { hp = (kind == "troll") and 1.8 or 1 })
+        F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { kinds = { { "orc", 4 }, { "bandit", 3 }, { "imp", 2 } }, allow = function(x, z) return z < room.z + room.d - 10 end })
     end,
 })

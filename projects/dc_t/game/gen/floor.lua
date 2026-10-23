@@ -55,6 +55,7 @@ function F.assign_themes(p)
                 local x = r.next() * total
                 for i, n in ipairs(names) do x = x - ws[i]; if x <= 0 then pick = n; break end end
             end
+            if F.force and F.themes[F.force] then pick = F.force end
             room.theme = pick
             used[pick] = (used[pick] or 0) + 1
         end
@@ -91,15 +92,36 @@ local function make_ctx(p, building)
     local ctx = { plan = p, floor = p.floor, seed = p.seed, building = building }
     ctx.pop = G.world.populate_list
     function ctx.rng(room) return L.make_rng(p.seed, p.floor, 1000 + room.index) end
-    function ctx.add(room, kind, lx, lz, ly)
+    function ctx.add(room, kind, lx, lz, ly, extra)
         local l = ctx.pop[room.id]
         if not l then l = {}; ctx.pop[room.id] = l end
-        l[#l + 1] = { kind, lx, lz, ly or 0 }
+        local e = { kind, lx, lz, ly or 0 }
+        if extra then for k, v in pairs(extra) do e[k] = v end end
+        l[#l + 1] = e
+    end
+    -- where the corridors meet each room: ctx.doors[room.id] = { { side = "E", pos = z or x (metres) } ... }; nothing may stand in front of them
+    ctx.doors = {}
+    for _, e in ipairs(p.edges) do
+        for _, d in ipairs(e.doors) do
+            local l = ctx.doors[d.room]; if not l then l = {}; ctx.doors[d.room] = l end
+            l[#l + 1] = { side = d.side, pos = d.z or d.x }
+        end
+    end
+    function ctx.near_door(room, x, z, r)
+        for _, d in ipairs(ctx.doors[room.id] or {}) do
+            local dx, dz
+            if d.side == "E" then dx, dz = room.x + room.w, d.pos elseif d.side == "W" then dx, dz = room.x, d.pos
+            elseif d.side == "S" then dx, dz = d.pos, room.z + room.d else dx, dz = d.pos, room.z end
+            if G.dist2(x, z, dx, dz) < r then return true end
+        end
+        return false
     end
     ctx.crate_n = 0
-    function ctx.crate(room, tier, lx, lz, face)
+    function ctx.crate(room, tier, lx, lz, face, ly)
         ctx.crate_n = ctx.crate_n + 1
-        G.traps.crate("f" .. p.floor .. "c" .. room.index .. "_" .. ctx.crate_n, tier, lx, 0, lz, face or "+z")
+        local id = "f" .. p.floor .. "c" .. room.index .. "_" .. ctx.crate_n
+        G.traps.crate(id, tier, lx, ly or 0, lz, face or "+z")
+        return id
     end
     return ctx
 end
@@ -183,6 +205,7 @@ end
 
 function F.start(seed, floor_n, on_done)
     local old = F.layout                       -- nil: the hand built Orientation floor is in the world
+    G.state.flags.boss_dead = nil              -- (the last floor's boss)
     local steps = {}
     G.gen.track.teardown(old and ("floor" .. old.floor) or "orientation")
     G.gen.track.scope = "floor" .. floor_n
@@ -295,8 +318,11 @@ local function build_gate(p)
 end
 F.build_gate = build_gate
 
+-- which boss waits on this floor: the Floor Manager on the first two, then by the seed
 function F.boss_kind(p)
-    return "manager"
+    if p.floor <= 2 then return "manager" end
+    local r = L.make_rng(p.seed, p.floor, 4242)
+    return ({ "manager", "golem" })[r.int(1, 2)]
 end
 
 function F.lair_of(p)
