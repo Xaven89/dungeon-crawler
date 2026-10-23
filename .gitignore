@@ -9,3 +9,5 @@ __pycache__/
 projects/*/dev/flags.lua
 bin/
 lib/
+.state/
+.events/

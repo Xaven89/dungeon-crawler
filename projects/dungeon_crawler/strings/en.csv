@@ -253,3 +253,4 @@ ui.bus.music,Music
 ui.bus.sfx,Sound effects
 ui.bus.voice,GLEE's voice
 ui.settings_hint,"Volumes are saved with your run. Drag the sliders; 100% is as the show was mixed."
+ui.capture,Click in the window to capture the mouse (Esc lets it go)

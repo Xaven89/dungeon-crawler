@@ -103,3 +103,4 @@ ui.bus.music,Musik
 ui.bus.sfx,Geraeusche
 ui.bus.voice,GLEEs Stimme
 ui.settings_hint,"Die Lautstaerken werden mit deinem Lauf gespeichert."
+ui.capture,Klicke ins Fenster um die Maus einzufangen (Esc gibt sie frei)

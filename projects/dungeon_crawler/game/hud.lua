@@ -332,6 +332,7 @@ local function class_screen(w, h, input)
 end
 
 local function title_screen(w, h)
+    uikit.open_screen()
     local t = time.tick()
     local a = math.min(1, t / 60, (330 - t) / 40)
     a = math.max(0, a)
@@ -529,6 +530,19 @@ function H.draw(dt)
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
         elseif pressed(input, "o") or (input.keys and input.keys.escape and sc == nil) then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4
         elseif pressed(input, "j") then G.screen = (sc == "bag" and G.bag_tab == 3) and nil or "bag"; G.bag_tab = 3 end
+    end
+    -- the mouse: when the pointer is free (a menu is up, or Esc / a focus change let it go) the OS cursor may be hidden by the engine, so draw our own; and when it is free in play, say how to get it back
+    if input.x and input.free then
+        local mx_, my_ = input.x, input.y
+        ui.line(mx_, my_, mx_, my_ + 22, "#000000", 6); ui.line(mx_, my_, mx_ + 15, my_ + 15, "#000000", 6); ui.line(mx_ + 15, my_ + 15, mx_ + 6, my_ + 15, "#000000", 6)
+        ui.line(mx_, my_, mx_, my_ + 20, "#ffffff", 3); ui.line(mx_, my_, mx_ + 13, my_ + 13, "#ffffff", 3); ui.line(mx_ + 13, my_ + 13, mx_ + 5, my_ + 13, "#ffffff", 3)
+    end
+    if input.free and not G.screen and s.class and not G.cutscene then
+        local msg = tr("ui.capture")
+        local tw = ui.measure(msg, 30) + 60
+        ui.rect(w / 2 - tw / 2, h / 2 + 150, tw, 60, "#0b0d14e0", { radius = 12 })
+        ui.rect(w / 2 - tw / 2, h / 2 + 150, tw, 60, "#ffd24a", { radius = 12, outline = true, thickness = 3 })
+        ui.text(w / 2, h / 2 + 164, msg, { size = 30, color = "#ffffff", align = "center" })
     end
     local drop = uikit.finish()
     if drop then ui.run(string.format("inventory.apply_move(%q, %q, %d, %q, %d, %q)", "player", drop.from_grid, drop.from, drop.to_grid, drop.to, drop.split or "")) end
