@@ -269,3 +269,6 @@ A voxel (or a group of voxels) that is not connected through solid voxels to an 
 
 ### Fire
 `world.burning(x, y, z)` is true while the voxel is on fire (the fire system's own list: exact and cheap, unlike looking for ember voxels with `world.material_at`). `fx.fire(x, y, z, radius)` lights flammable voxels in the radius; **how far a fire spreads is the material's `fire_spread` column** (column 24 of `materials.csv`, 0..255, default 255; grass has 15, so a grass fire stays a patch, docs/GUIDE.md "Materials"): a carpet made of a material with a high `fire_spread` burns through whatever the radius was, so give floor coverings a low one.
+
+### Motes, labels and particle history
+`fx.mote{ at, vel, life, size, material, count, spread }` (small cubes that fly straight: no gravity, no collision, no settling), `fx.text{ text, at, size, material, rise, life, toward, align }` (a label that faces the viewer, made of motes) and `fx.particle_taa(false)`: docs/EMITTERS.md "Motes and text in the world". Positions and sizes in metres. Emitters have `kind = "mote"`.
