@@ -1,6 +1,7 @@
 -- THE DESCENT: Season 7, Floor 1. The entry point: includes the modules and wires the engine callbacks. See GAME.md.
 include("game/core.lua")
 include("game/gen/layout.lua")
+include("game/gen/track.lua")
 include("game/items.lua")
 include("game/announcer.lua")
 include("game/player.lua")
@@ -24,7 +25,12 @@ include("game/shop.lua")
 include("game/boss.lua")
 include("game/companion.lua")
 include("game/music.lua")
+include("game/gen/safe.lua")
+include("game/gen/floor.lua")
+include("game/gen/run.lua")
+include("game/gen/themes.lua")
 include("game/hud.lua")
+include("game/hud_run.lua")
 
 local G = Game
 
@@ -34,8 +40,12 @@ function on_start()
     if G.state.class then G.state.flags.gate_lobby = true end          -- a contestant who has checked in is let through, whatever happened to the 5 s timer before
     G.enemies.define_fx()
     G.vnum.define()
-    G.world.build()
-    G.world.populate()
+    G.run.ensure()
+    local resumed = G.run.resume()
+    if not resumed then
+        G.world.build()
+        G.world.populate()
+    end
     G.music.load_settings()
     G.setup_player_models()
     G.sfx.preload({ "voice_blip", "swing", "hit", "hurt", "honk", "coin", "levelup", "achievement" })
@@ -44,12 +54,13 @@ function on_start()
         local x, y, z = G.world.start_position()
         player.teleport(x, y, z)
         G.screen = "title"
-        after(330, function() if not G.state.class then G.screen = "class" end end)
+        after(330, function() if not G.state.class and G.screen == "title" then G.screen = "run" end end)
         after(360, function() G.announcer.say_key("intro", {}) end)
         after(660, function() G.announcer.say_key("intro", {}) end)
         after(960, function() G.announcer.say_key("intro", {}) end)
     else
         local cp = G.world.checkpoints[s.checkpoint] or G.world.checkpoints.lobby
+        if not cp and G.floorgen.layout then local r = G.floorgen.layout.rooms[G.floorgen.layout.start]; cp = { x = r.x + r.w / 2, y = 0.1, z = r.z + r.d / 2 } end
         player.teleport(G.mx(cp.x), G.my(cp.y), G.mz(cp.z))
     end
     include_optional("dev/boot.lua")      -- a developer's scratch script (not in git): sets up a situation for a screenshot, see tools/hudshot.sh

@@ -1,0 +1,118 @@
+# THE DESCENT auf Deutsch: die Oberflaeche, die Erfolge und ein paar Ansagen von GLEE (alles andere faellt auf Englisch zurueck). Nur Latin-1 (docs/LOCALIZATION.md).
+title,DER ABSTIEG
+subtitle,Staffel 7 - Ebene 1: Das Willkommen-zurueck-Untergeschoss
+intro.1,"HERZLICH WILLKOMMEN, KANDIDAT NUMMER 4.471.902! Sie wurden fuer Staffel 7 von DER ABSTIEG ausgewaehlt, der beliebtesten Show in elf Galaxien und der einzigen, die Sie legal umbringen darf."
+intro.2,"Bitte bleiben Sie ruhig, sitzen Sie und halten Sie sich ueber der Erde. Was auch immer Ihnen zuerst gelingt."
+intro.3,"Treten Sie ans Anmeldeterminal und waehlen Sie eine Klasse. Weise. Oder schnell. Das Publikum bevorzugt schnell."
+class.janitor,"EIN HAUSMEISTER! Das Verlies ist dreckig und Sie bald auch. Diese Folge wird gesponsert von Herrn Quietsch's Industriereiniger: er wird Sie nicht retten."
+class.pyro,"EIN FEUERTEUFEL! Unsere Versicherungsabteilung ist gerade in Ohnmacht gefallen. Bitte zuenden Sie die Monster an und nicht das Studio."
+class.bard,"EIN BARDE! Wunderbar. Das Verlies hat eine Akustik. Noch nie hat jemand dort einen Ton getroffen und ueberlebt. Verzaubern Sie uns."
+class.accountant,"EIN BUCHHALTER! Die furchterregendste Klasse der Galaxie. Alles in diesem Verlies wird jetzt geprueft, auch Ihr Skelett."
+class.go,"Das Tor ist jetzt offen. Bitte schreien Sie geordnet und halten Sie alle Gliedmassen im Kandidaten."
+levelup.1,"STUFE {1}! Sie sind jetzt minimal schwerer zu toeten. Das Publikum hat Ihre Chancen von 'laecherlich' auf 'ein Schmunzeln wert' angehoben."
+death.1,"{1} hat Ihre Teilnahme beendet. Ihr Ableben wurde kostenlos verschoben."
+death.2,"TOT! Getoetet von {1}. Das Publikum gibt Ihnen 6 von 10 Punkten, fuer den Einsatz und fuer die Art, wie Sie gefallen sind."
+death.3,"Sie wurden von {1} besiegt. Keine Sorge: wir haben den Clip schon geschnitten. Mit Lachspur."
+respawn.1,"Willkommen zurueck! Ihre Leiche wurde recycelt. Teilweise."
+room.hall,"Die Halle der milden Gefahr. Sie ist ein Tutorial. Bitte beachten Sie: im Tutorial verstecken wir die spitzen Sachen."
+room.ballroom,"Der Schwerelosigkeits-Ballsaal! Bitte geben Sie Ihre Schwerkraft an der Garderobe ab. Tanzen ist Pflicht."
+room.arena,"Voraus: das Buero des Etagenleiters. Ich wuerde anklopfen. Waere ich Sie. Bin ich aber nicht. Ich habe einen sehr guten Platz."
+room.stairwell,"Treppenhaus Eins. Ein sicherer Raum. Nichts kann Ihnen etwas tun. Emotional sind Sie auf sich allein gestellt."
+guard.teleport.1,"Unerlaubte Teleportation erkannt. Das hier ist eine Spielshow, kein Reisebuero. Sie wurden dorthin zurueckgebracht, wo Sie standen."
+kill.boss.1,"DER ETAGENLEITER WURDE GEKUENDIGT. Mit sofortiger Wirkung. Ohne Abfindung."
+honk.intro,"Admiral Honk, eine Gans zweifelhaften Raenges und sicherer Groelle, hat sich freiwillig gemeldet, Sie zu begleiten. Es war keine freiwillige Situation."
+honk.1,"HONK. (Uebersetzung: 'Machen Sie das noch mal und ich lasse Sie vor das Kriegsgericht stellen.')"
+achievement.check_in.name,Kundenzufriedenheit ausstehend
+achievement.check_in.desc,Waehle im Eingangsfoyer eine Klasse.
+achievement.hello_world.name,Hallo, grausame Welt
+achievement.hello_world.desc,Verlasse das Eingangsfoyer.
+achievement.first_blood.name,Mindestlohn-Moerder
+achievement.first_blood.desc,Besiege deinen ersten Gegner.
+achievement.squeegee.name,Abzieher-Erloesung
+achievement.squeegee.desc,Besiege 10 Schleime.
+achievement.clean_sweep.name,Reiner Tisch
+achievement.clean_sweep.desc,Wische 40 Flecken auf.
+achievement.fashionably.name,Modisch tot
+achievement.fashionably.desc,Stirb zum ersten Mal.
+achievement.serial_victim.name,Serienopfer
+achievement.serial_victim.desc,Stirb dreimal.
+achievement.pyro.name,Unlizenzierter Pyrotechniker
+achievement.pyro.desc,Setze einen Gegner in Brand.
+achievement.zero_g.name,Schwerkraft ist nur ein Vorschlag
+achievement.zero_g.desc,Besuche den Schwerelosigkeits-Ballsaal.
+achievement.soggy.name,Nasser Hintern
+achievement.soggy.desc,Schwimme in der Gosse.
+achievement.loot_goblin.name,Beute-Kobold
+achievement.loot_goblin.desc,Oeffne 5 Kisten.
+achievement.crate_exp.name,Grosse Kisten-Erwartungen
+achievement.crate_exp.desc,Oeffne eine goldene Kiste.
+achievement.goose.name,Gaensefluesterer
+achievement.goose.desc,Lass Admiral Honk fuenf Gegner beissen.
+achievement.fine_print.name,Das Kleingedruckte gelesen
+achievement.fine_print.desc,Finde ein Geheimnis.
+achievement.hoarder.name,Hortender (Stufe: Drache)
+achievement.hoarder.desc,Trage 18 verschiedene Gegenstaende.
+achievement.shopper.name,Einkaufstherapie
+achievement.shopper.desc,Kaufe etwas am Automaten.
+achievement.boss_down.name,Feindliche Uebernahme
+achievement.boss_down.desc,Besiege den Etagenleiter.
+achievement.pacifist_ish.name,Fast pazifistisch
+achievement.pacifist_ish.desc,Beende die Halle mit hoechstens 2 Kills.
+achievement.overkill.name,Overkill (wahrscheinlich)
+achievement.overkill.desc,Verursache einen toedlichen Schlag weit ueber Bedarf.
+achievement.rolling_stone.name,Rollender Stein
+achievement.rolling_stone.desc,Ueberlebe die Felsbrocken-Falle.
+achievement.speedrunner.name,Leicht gehetzt
+achievement.speedrunner.desc,Schliesse die Ebene in unter 20 Minuten ab.
+ui.class_title,WAEHLE DEINE KLASSE
+ui.class_hint,Klicke eine Karte. Du kannst deine Meinung nicht aendern. Wir haben deine Unterschrift.
+ui.choose,WAEHLEN
+ui.inventory,Inventar
+ui.character,Charakter
+ui.points,Attributspunkte
+ui.equipped,Ausgeruestet
+ui.gold,Gold
+ui.dead_title,DU BIST TOT
+ui.dead_sub,Dein Ableben wurde verschoben.
+ui.help,"LMT / F Angriff    RMT / Q Faehigkeit    E Benutzen    R Heilen    T Mana    G Werfen    I Beutel    C Charakter    J Erfolge"
+ui.shop,Automat der milden Linderung
+ui.buy,KAUFEN
+ui.close,SCHLIESSEN
+ui.boss,DER ETAGENLEITER
+ui.save_done,GESPEICHERT
+ui.achievements,ERFOLG FREIGESCHALTET
+end.title,EBENE 1 GESCHAFFT
+end.sub,Ebene 2 wird von einem Team aeusserst motivierter Kobolde gebaut.
+
+ui.class.janitor.name,"HAUSMEISTER"
+ui.class.janitor.tag,"Panzer. Fegender. Unterbezahlt."
+ui.class.janitor.blurb,"Robust, langsam und professionell unbeeindruckt. Wischer-Schwung raeumt den Raum um dich und schiebt den Dreck zurueck."
+ui.class.pyro.name,"FEUERTEUFEL"
+ui.class.pyro.tag,"Glaskanone. Kerze."
+ui.class.pyro.blurb,"Zerbrechlich und festlich. Feuerblitz zuendet Dinge an, auch solche, die du nicht meintest."
+ui.class.bard.name,"BARDE"
+ui.class.bard.tag,"Unterstuetzung. Schall. Meist Schall."
+ui.class.bard.blurb,"Charmant und laut. Kraftakkord betaeubt alles in Hoerweite und hebt deine Stimmung (und deine Gesundheit)."
+ui.class.accountant.name,"BUCHHALTER"
+ui.class.accountant.tag,"Praezision. Papierkram. Schmerz."
+ui.class.accountant.blurb,"Flinke Haende, scharfe Augen. Pruefung markiert ein Ziel: es nimmt doppelten Schaden und zahlt mehr Gold aus."
+ui.weapon,Waffe
+ui.ability,Faehigkeit
+ui.mana,Mana
+
+ui.settings,Einstellungen
+ui.bus.music,Musik
+ui.bus.sfx,Geraeusche
+ui.bus.voice,GLEEs Stimme
+ui.settings_hint,"Die Lautstaerken werden mit deinem Lauf gespeichert."
+ui.capture,Klicke ins Fenster um die Maus einzufangen (Esc gibt sie frei)
+ui.flat_numbers,Schadenszahlen als flacher Text (statt Voxel-Partikeln)
+ui.descend,Hinunter zu Ebene {1}
+run.title,WAEHLE DEINE FOLGE
+run.seed,SEED
+run.roll,Neu wuerfeln
+run.go,Los
+run.orientation.name,EINFUEHRUNG
+run.dungeon.name,GLEICH HINUNTER
+loading.title,DIE EBENE DARUEBER STUERZT EIN
+loading.floor,EBENE {1}

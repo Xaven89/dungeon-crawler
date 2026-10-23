@@ -225,7 +225,7 @@ local function hud_world(w, h, input)
     local W = G.world
     local room = G.current_room and W.rooms[G.current_room]
     ui.text(26, 20, tr("title"), { size = 28, color = C.gold })
-    ui.text(26, 52, "FLOOR 1  " .. (room and room.name or "..."), { size = 20, color = C.dim })
+    ui.text(26, 52, (H.floor_label and H.floor_label() or "FLOOR 1") .. "  " .. (room and room.name or "..."), { size = 20, color = C.dim })
     -- the top right: the show's numbers
     local viewers = 11200431 + floor(t / 6) * 7 + s.kills * 1400 + s.deaths * 90000 + (s.ach_count or 0) * 25000
     ui.text(w - 26, 20, "VIEWERS  " .. G.format_int(viewers), { size = 24, color = "#ff6a8a", align = "right" })
@@ -243,8 +243,13 @@ function G.minimap(w, h)
     local pw, ph = 124 * sc + 16, 154 * sc + 16
     ui.rect(mx - 8, my - 8, pw, ph, "#0b0d14a0", { radius = 10 })
     local function center(r) return mx + (r.x + r.w / 2) * sc, my + (r.z + r.d / 2) * sc end
-    for _, l in ipairs(links) do
-        if s.flags["visited_" .. l[1]] and s.flags["visited_" .. l[2]] then
+    local lk = links
+    if G.floorgen and G.floorgen.active and G.floorgen.layout then
+        lk = {}
+        for _, e in ipairs(G.floorgen.layout.edges) do lk[#lk + 1] = { e.a, e.b } end
+    end
+    for _, l in ipairs(lk) do
+        if s.flags["visited_" .. l[1]] and s.flags["visited_" .. l[2]] and W.rooms[l[1]] and W.rooms[l[2]] then
             local ax, ay = center(W.rooms[l[1]]); local bx, by = center(W.rooms[l[2]])
             ui.line(ax, ay, bx, by, "#6a7388", 3)
         end
@@ -262,7 +267,8 @@ function G.minimap(w, h)
         end
     end
     if G.boss and G.boss.active and G.boss.inst and not G.boss.inst.dead then
-        local ax, ay = center(W.rooms.arena); ui.circle(ax, ay, 6, "#ff3030")
+        local br = W.rooms[G.boss.lair.room]
+        if br then local ax, ay = center(br); ui.circle(ax, ay, 6, "#ff3030") end
     end
     local px, py, pz = player.pos()
     local lx, ly, lz = G.to_local(px, py, pz)
@@ -519,7 +525,8 @@ local function end_screen(w, h, input)
         ui.text(w / 2 - 20, 360 + i * 46, r[1], { size = 30, color = C.dim, align = "right" })
         ui.text(w / 2 + 20, 360 + i * 46, r[2], { size = 30, color = "#ffffff" })
     end
-    if uikit.button("end_continue", "Keep exploring Floor 1", w / 2 - 190, 720, 380, 56) then ui.run("Game.close_end()") end
+    if uikit.button("end_descend", tr("ui.descend", (G.run.floor_no() or 1) + 1), w / 2 - 190, 650, 380, 56, { color = C.gold }) then ui.run("Game.run.descend()") end
+    if uikit.button("end_continue", "Keep exploring Floor " .. (G.run.floor_no() or 1), w / 2 - 190, 720, 380, 56) then ui.run("Game.close_end()") end
 end
 
 -- ---------------------------------------------------------------------------------------------- the entry point
@@ -537,6 +544,8 @@ function H.draw(dt)
     -- screens
     local sc = G.screen
     if sc == "title" then title_screen(w, h)
+    elseif sc == "run" then H.run_screen(w, h, input)
+    elseif sc == "loading" then H.loading_screen(w, h)
     elseif sc == "class" then class_screen(w, h, input)
     elseif sc == "bag" then bag_screen(w, h, input)
     elseif sc == "shop" then shop_screen(w, h, input)
@@ -544,7 +553,7 @@ function H.draw(dt)
     elseif sc == "end" then end_screen(w, h, input) end
     H.announcer(w, h)
     -- keys (only when no modal asks for the pointer)
-    if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" then
+    if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" and sc ~= "run" and sc ~= "loading" then
         if pressed(input, "i") then G.screen = (sc == "bag" and (G.bag_tab or 1) == 1) and nil or "bag"; G.bag_tab = 1
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
         elseif pressed(input, "o") or (input.keys and input.keys.escape and sc == nil) then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4

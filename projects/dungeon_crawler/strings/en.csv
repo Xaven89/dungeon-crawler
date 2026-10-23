@@ -261,3 +261,33 @@ ui.flat_numbers,Damage numbers as flat text (instead of voxel particles)
 gore.clean.1,"Mopping up after a massacre. Management would like you to know that it is billed at the standard rate. Which is nothing."
 gore.clean.2,"A clean floor. The next contestant will not appreciate it either."
 gore.clean.3,"I see you are tidying the crime scene. The crime scene is not grateful."
+ui.descend,Descend to Floor {1}
+run.title,PICK YOUR EPISODE
+run.sub,"Every seed is a different season of the dungeon. The same seed is the same dungeon, for everyone, forever."
+run.seed,SEED
+run.roll,Roll a new one
+run.go,Begin
+run.hint,The Orientation is the hand-built first floor. After it (or instead of it) the dungeon is made from your seed.
+run.orientation.name,ORIENTATION
+run.orientation.blurb,"Start in the Intake Lobby: the hand-built first floor with its bad ideas, its Floor Manager and its tutorial. Then the seeded dungeon begins."
+run.dungeon.name,STRAIGHT DOWN
+run.dungeon.blurb,"Skip the pleasantries. You wake up in the first room of a floor that was made from your seed, with a class and a weapon and no briefing."
+loading.title,THE FLOOR ABOVE IS COLLAPSING
+loading.floor,FLOOR {1}
+loading.1,"Please do not look behind you. There is no behind you."
+loading.2,"Your sponsors are reviewing your choices. They are not impressed."
+loading.3,"The dungeon is being unpacked. It was shipped flat."
+loading.4,"Remember: the stairs are the only thing in here that wants to help you."
+loading.5,"Floor construction is performed by the lowest bidder. This is the lowest bidder."
+floor.arrive.1,"FLOOR {1}, CONTESTANT. The previous floor has been recycled into this one. You will not recognise it. That is the point."
+floor.arrive.2,"Welcome to Floor {1}. It was built for you, personally, from a number. Do try to be worth the number."
+floor.arrive.3,"Floor {1}. The stairs are somewhere beyond a boss, as is traditional. I would wish you luck, but I have been told luck is not billable."
+floor.gate.1,"The gate to the stairwell is open. The boss is, regrettably, not. Please collect your crate."
+floor.gate.2,"Management has been terminated and the gate with it. Do hurry: floors do not stay open on principle."
+room.cleared.1,"{1} is clear. A moment of silence for the people who worked there. Moment over."
+room.cleared.2,"You have cleared {1}. The paperwork will be done by someone else, probably you."
+room.hall.1,"{1}. Please remain calm and stand where the arrows are. Not those arrows."
+room.hall.2,"You have entered {1}. Everything in it has been briefed about you."
+room.lair.1,"{1}. The smell of ambition and carpet cleaner. That is the boss."
+room.arrival.1,"{1}. A safe room. The one thing in this building that is exactly what it says it is."
+room.stairwell.1,"{1}. Stairs down at the end. Take them whenever you are ready, or whenever the floor tells you to."

@@ -113,7 +113,9 @@ function P.pick_class(id)
     G.sfx.play("levelup", nil, nil, nil, 0.7)
     G.announcer.award("check_in")
     G.announcer.say_key("class." .. id, { prio = 2 })
-    after(300, function() G.announcer.say_key("class.go", { prio = 0 }) ; if G.world.open_lobby_gate then G.world.open_lobby_gate() end end)
+    local gen = G.run and G.run.is_gen()
+    if gen then G.run.after_class() end
+    after(300, function() G.announcer.say_key("class.go", { prio = 0 }); if not gen and G.world.open_lobby_gate then G.world.open_lobby_gate() end end)
     after(900, function() G.announcer.say_key("honk.intro", { prio = 0 }); if G.companion then G.companion.honk() end end)
     G.save()
     return true
@@ -215,6 +217,7 @@ function P.respawn()
     local s = G.state
     local W = G.world
     local cp = W.checkpoints[s.checkpoint] or W.checkpoints.lobby
+    if not cp and G.floorgen and G.floorgen.layout then local r = G.floorgen.layout.rooms[G.floorgen.layout.start]; cp = { x = r.x + r.w / 2, y = 0.1, z = r.z + r.d / 2 } end
     player.teleport(G.mx(cp.x), G.my(cp.y), G.mz(cp.z))
     s.hp = floor(P.max_hp() * 0.6)
     s.mp = P.max_mp()

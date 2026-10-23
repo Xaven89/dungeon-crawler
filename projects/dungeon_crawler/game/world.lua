@@ -158,6 +158,7 @@ function W.populate() W.sync_active(G.current_room or "lobby") end
 function G.on_room_cleared(room)
     local s = G.state
     s.cleared[room] = true
+    if G.floorgen and G.floorgen.active then G.floorgen.room_cleared(room); G.save(); return end
     local A = G.announcer
     if room == "hall" then
         if G.state.kills <= 2 then A.award("pacifist_ish") end
@@ -169,6 +170,7 @@ end
 -- ================================================================================================ housekeeping: the engine's debug keys cannot be unbound (docs/INPUT.md), so the game defends itself
 
 function W.tick(t)
+    if G.floorgen then G.floorgen.tick(t) end
     -- the safety net: a vehicle, a blast or a fall can leave the player outside the dungeon or in the rock: put him back where he last stood safely
     if t % 10 == 0 and G.state and G.state.class and not G.player.dead and not vehicle.seated() then
         local px, py, pz = player.pos()
@@ -183,7 +185,7 @@ function W.tick(t)
     end
     -- the title, the class choice, the shop and the end screen hold the player where he stands (the bag does not: it is opened in a fight)
     local sc = G.screen
-    if sc == "title" or sc == "class" or sc == "shop" or sc == "end" or G.cutscene then
+    if sc == "title" or sc == "run" or sc == "loading" or sc == "class" or sc == "shop" or sc == "end" or G.cutscene then
         if not G.frozen_at then local px, py, pz = player.pos(); G.frozen_at = { px, py, pz } end
         player.teleport(G.frozen_at[1], G.frozen_at[2], G.frozen_at[3])
     else
@@ -219,6 +221,7 @@ function W.track_room(t)
 end
 
 function W.enter_room(id, old)
+    if G.floorgen and G.floorgen.active then return G.floorgen.enter_room(id, old) end
     local s, A = G.state, G.announcer
     s.flags["visited_" .. id] = true
     if id ~= "lobby" then A.award("hello_world") end
@@ -258,4 +261,11 @@ end
 
 function W.start_position()   -- where a new contestant wakes up: the west side of the lobby looking east at the gate
     return G.mx(3.5), G.my(0.1), G.mz(11)
+end
+-- the Orientation was built again for a new run: the contestant wakes up in the lobby
+function W.respawn_orientation()
+    local x, y, z = W.start_position()
+    player.teleport(x, y, z)
+    G.current_room = nil
+    W.last_safe = nil
 end

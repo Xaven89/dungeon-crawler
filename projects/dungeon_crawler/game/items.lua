@@ -95,6 +95,12 @@ function I.init()
     return I.inv
 end
 
+-- a new run: an empty bag
+function I.clear()
+    for i = 1, I.inv.bag_n do I.inv.bag[i] = false end
+    inventory.save(I.inv)
+end
+
 function I.add(id, n)
     local left = inventory.add(I.inv, id, n or 1)
     inventory.save(I.inv)

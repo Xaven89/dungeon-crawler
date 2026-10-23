@@ -114,6 +114,15 @@ function E.despawn_room(room)
     E.remaining[room] = rem
 end
 
+-- a new floor: nobody of the old one is left (the dead are gone with their rooms)
+function E.reset_floor()
+    for id in pairs(E.list) do pcall(agent.remove, id) end
+    E.list, E.by_model, E.remaining, E.spawned, E.corpses = {}, {}, {}, {}, {}
+    for _, l in ipairs(E.loot) do pcall(body.remove, l.body) end
+    for _, p in ipairs(E.projectiles) do pcall(body.remove, p.body) end
+    E.loot, E.projectiles = {}, {}
+end
+
 function E.alive_in(room)
     local n = 0
     for _, inst in pairs(E.list) do if inst.room == room and not inst.dead then n = n + 1 end end

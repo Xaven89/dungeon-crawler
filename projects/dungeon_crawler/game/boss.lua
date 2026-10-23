@@ -11,12 +11,16 @@ B.active = false
 B.started = false
 B.phase = 1
 B.inst = nil
+-- where the fight is: the Orientation's arena, or the lair of a generated floor ({ room, x, z, kind })
+B.lair = { room = "arena", x = 30, z = 136.5, kind = "manager" }
 
-function B.begin()
+function B.begin(lair)
+    if lair then B.lair = lair end
+    local L_ = B.lair
     if B.started or G.state.flags.boss_dead then return end
     B.started = true
     local A = G.announcer
-    local inst = E.spawn("manager", 30, 0, 136.5, { room = "arena", still = true, hp_mult = 1 + (G.state.level - 1) * 0.04 })
+    local inst = E.spawn(L_.kind or "manager", L_.x, 0, L_.z, { room = L_.room, still = true, hp_mult = (1 + (G.state.level - 1) * 0.04) * (L_.hp_mult or 1) })
     if not inst then B.started = false; return end
     inst.ai = B.ai
     inst.no_flinch = true
@@ -30,7 +34,7 @@ function B.begin()
     -- the cutscene: the editor camera (a free camera that leaves the player parked) in three STATIC shots with cuts (a camera that is moved every tick jittered: the editor camera re-finds
     -- the floor under its focus all the time), then the view goes back to the player's eyes. The player is held in place meanwhile (game/world.lua).
     camera.mode("editor"); G.cutscene = true
-    local function shot(zoom, pitch, yaw, fy) camera.focus(G.mx(30), G.my(fy or 2.4), G.mz(136.5)); camera.set{ zoom = zoom, pitch = pitch, yaw = yaw } end
+    local function shot(zoom, pitch, yaw, fy) camera.focus(G.mx(L_.x), G.my(fy or 2.4), G.mz(L_.z)); camera.set{ zoom = zoom, pitch = pitch, yaw = yaw } end
     shot(9, 14, 95)
     after(150, function() shot(6.5, 10, 55) end)
     after(300, function() shot(4.8, 6, 20, 3.0) end)
@@ -41,7 +45,7 @@ end
 
 local function minions_alive()
     local n = 0
-    for _, i in pairs(E.list) do if not i.dead and i.room == "arena" and not i.T.boss then n = n + 1 end end
+    for _, i in pairs(E.list) do if not i.dead and i.room == B.lair.room and not i.T.boss then n = n + 1 end end
     return n
 end
 
@@ -88,7 +92,7 @@ function B.summon(inst, x, y, z)
     for i = 1, 2 do
         local a = G.rand() * 6.283
         local lx, lz = G.to_local(x, y, z)
-        local e = E.spawn("intern", lx + math.cos(a) * 4, 0, lz + math.sin(a) * 4, { room = "arena", index = 90 + i })
+        local e = E.spawn("intern", lx + math.cos(a) * 4, 0, lz + math.sin(a) * 4, { room = B.lair.room, index = 90 + i })
         if e then E.aggro(e, true); n = n + 1; fx.play("poof", floor(units.vox(x + math.cos(a) * 4)), floor(units.vox(y)), floor(units.vox(z + math.sin(a) * 4)), 1.4) end
     end
     G.sfx.play("boss_roar", G.to_local(x, y, z), 0.7, 1.3)
@@ -106,9 +110,9 @@ function B.ai(inst, t, d, dy, info)
     end
     if G.player.dead then return end
     -- leashing: the player left the arena: he goes home and recovers
-    if G.current_room ~= "arena" then
+    if G.current_room ~= B.lair.room then
         if inst.state ~= "home" then
-            inst.state = "home"; agent.walk(inst.id, G.mx(30), G.my(0), G.mz(136.5)); B.active = false
+            inst.state = "home"; agent.walk(inst.id, G.mx(B.lair.x), G.my(0), G.mz(B.lair.z)); B.active = false
         end
         inst.hp = min(inst.max_hp, inst.hp + inst.max_hp * 0.01)
         return
@@ -163,11 +167,18 @@ function B.on_dead(inst)
     G.sfx.play("boss_die")
     if G.music and G.music.set then G.music.set("victory") end
     -- minions go with him
-    for _, i in pairs(E.list) do if not i.dead and i.room == "arena" then E.damage(i, 9999, { source = "restructuring" }) end end
+    for _, i in pairs(E.list) do if not i.dead and i.room == B.lair.room then E.damage(i, 9999, { source = "restructuring" }) end end
     after(180, function()
+        if B.lair.on_dead then B.lair.on_dead(); return end
         W.gate_open(W.AGATE, "gate_arena")
         A.say("The gate to Stairwell One is open. Please collect your platinum crate. Please do not ask where the keycard goes. It goes nowhere. It is laminated.", { prio = 1 })
         T.build_crate_now("boss_platinum", "platinum", 28.7, 0, 134, "-z")
     end)
     G.save()
+end
+
+-- a new floor: nobody is fighting
+function B.reset()
+    B.active, B.started, B.phase, B.inst = false, false, 1, nil
+    B.lair = { room = "arena", x = 30, z = 136.5, kind = "manager" }
 end

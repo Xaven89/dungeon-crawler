@@ -176,7 +176,7 @@ function G.sconce(xm, ym, zm, face, opts)
     opts = opts or {}
     local fx = ({ ["+x"] = 1, ["-x"] = -1 })[face] or 0
     local fz = ({ ["+z"] = 1, ["-z"] = -1 })[face] or 0
-    if project.first_run() then
+    if G.should_build() then
         local cx, cz, y = G.wx(xm), G.wz(zm), G.wy(ym)
         local function cell(d, k) return (d > 0) and k or (-1 - k) end         -- k voxels out from the wall along d
         local function B(k0, k1, hw, y0, y1, mat)
