@@ -15,6 +15,8 @@ tools/playthrough.py janitor                                                    
 ./voxelith --check-project projects/dungeon_crawler
 python3 tools/make_dungeon_models.py ; python3 tools/make_sounds.py                 # regenerate the creatures (models/*.vxm) and the sounds (sounds/*.wav)
 ```
+Damage numbers are `flame` particles in a 5x7 font that float up and burst (`game/vnum.lua`); never use `debris` / `grain` for effects: they settle into the world as real voxels.
+
 A new run: delete `projects/dungeon_crawler/world.vxs*`, `.state`, `.events`, `.prefabs` (the level builds its voxels only when `project.first_run()`; the progress is in `.state/store.json`).
 
 **Streaming (Sunshine / Moonlight):** click once in the window to capture the mouse for looking (Esc lets it go: it also opens the settings). In Moonlight use the *relative mouse mode* (Ctrl+Alt+Shift+M, or turn off "optimize mouse for remote desktop"), otherwise the absolute virtual mouse fights the engine's pointer warp. `tools/stream-descent.sh` is the Sunshine launcher (two app entries: continue / new run).

@@ -33,15 +33,17 @@ E.types = {
 }
 
 function E.define_fx()
+    -- (no `debris` / `grain` classes: they settle into the world as real voxels you can stand on; sparks fall and vanish, puffs drift)
     local function splat(name, mat, color_count)
         fx.define{ name = name, emitters = {
-            { class = "debris", material = mat, count = color_count or 16, speed = 34, speed_jitter = 0.6, spread = 0.9, life = 1.1, size = 1.3, radius = 2, direction = { 0, 1, 0 } },
+            { class = "spark", material = mat, count = color_count or 16, speed = 34, speed_jitter = 0.6, spread = 0.9, life = 1.0, size = 1.3, radius = 2, direction = { 0, 1, 0 } },
             { class = "puff", material = mat, count = 4, size = 5, duration = 0.25, darkness = 0.15, direction = { 0, 1, 0 }, speed = 9, spread = 0.7 } } }
     end
     splat("splat_goo", "goo", 22); splat("splat_toxic", "toxic", 22); splat("splat_bone", "bone", 14); splat("splat_red", "carpet", 14); splat("splat_spore", "glowcap", 14)
-    fx.define{ name = "chip_stone", emitters = { { class = "debris", material = "stone", count = 16, speed = 30, speed_jitter = 0.6, spread = 0.9, life = 0.8, size = 1.8, radius = 1.5 },
+    fx.define{ name = "chip_stone", emitters = { { class = "spark", material = "stone", count = 10, speed = 30, speed_jitter = 0.6, spread = 0.9, life = 0.6, size = 1.4, radius = 1.5 },
+                                                  { class = "puff", material = "stone", count = 3, size = 3, duration = 0.2, darkness = 0.2, direction = { 0, 1, 0 }, speed = 5, spread = 0.8 },
                                                   { class = "spark", material = "metal", count = 5, speed = 40, speed_jitter = 0.5, spread = 0.9, life = 0.3, size = 0.5, radius = 1 } } }
-    fx.define{ name = "chip_wood", emitters = { { class = "debris", material = "wood", count = 12, speed = 24, speed_jitter = 0.6, spread = 0.9, life = 0.8, size = 1.2, radius = 1 },
+    fx.define{ name = "chip_wood", emitters = { { class = "spark", material = "wood", count = 10, speed = 24, speed_jitter = 0.6, spread = 0.9, life = 0.7, size = 1.2, radius = 1 },
                                                  { class = "puff", material = "wood", count = 2, size = 3, duration = 0.2, darkness = 0.1, direction = { 0, 1, 0 }, speed = 5, spread = 0.7 } } }
     fx.define{ name = "chip_metal", emitters = { { class = "spark", material = "metal", count = 24, speed = 55, speed_jitter = 0.5, spread = 0.9, life = 0.5, size = 0.6, radius = 1 } } }
     fx.define{ name = "slash", emitters = { { class = "spark", material = "metal", count = 10, speed = 40, speed_jitter = 0.5, spread = 0.6, life = 0.4, size = 0.6, radius = 1, direction = { 0, 0.3, 1 } } } }
