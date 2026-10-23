@@ -42,7 +42,7 @@ Only a joystick device with at least 4 axes and 8 buttons that is not named like
 ## Game mode: a game is not the sandbox
 The engine starts as a sandbox: LMB digs, RMB builds, Z undoes the world (also your level's build), Y makes rain, N and M move the clock, 1 to 8 teleport to the demo's spots, F1 to F10 toggle renderer features. A game does not want any of it. **`game = on` in `project.cfg`** (or `--game`) switches the sandbox off:
 - the **actions** `dig build fly jetpack flip torch explode demolish ragdoll brush_up brush_down menu undo redo rain clock` lose their default sources (a line of `input.cfg` that names one brings it back: `dig = mouse:left`);
-- the **raw keys** that are not actions do nothing: the number keys 1 to 8 (teleports), M (stop the clock), F1 to F10 (the renderer toggles; `--debug-keys` brings these three back for the author), the editor keys. Tab opens nothing (`--ui` still starts the tool panels for the author);
+- the **raw keys** that are not actions do nothing: the number keys 1 to 8 (teleports), M (stop the clock), **T (the orbit autopilot: the camera flies off and the player stays)**, F1 to F10 (the renderer toggles; `--debug-keys` brings these three back for the author), the editor keys. Tab opens nothing (`--ui` still starts the tool panels for the author);
 - what stays: movement, E (use), Space, Shift, Ctrl, 0 / Home (the camera: first / third person), **F3** (the HUD text), **F5** (a screenshot to ~/share), **F11** (save), End (mute), Plus / Minus (look speed), Esc, F12, `--hud 1`.
 `status` reports `game_mode`. A recording keeps working: the actions that are gone are simply never pressed.
 

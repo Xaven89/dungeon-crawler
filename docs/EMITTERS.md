@@ -35,3 +35,7 @@ A definition is a logged action or a script's call, the spawn records come from 
 
 ## Not built
 Emitters attached to a moving body or an agent (a position follows a prefab, not a body), a size or colour curve over a particle's life (a flame shrinks, a puff grows, as the particle classes do), water drops and fountains (a `drop` kind that falls and splashes: the rain particles are the engine's `DropSystem`), a live preview strip (the world is the preview), collision on / off per emitter, wind.
+
+
+## What the particle kinds do (and what they leave behind)
+`flame` rises and shrinks, `spark` flies and falls, `puff` drifts up and grows (a 1 voxel puff is hard to see), `grain` and the debris of digging and blasts are **real matter**: they fall, and where they come to rest they **settle into the world as voxels** (sand piles up, a blast leaves rubble, a corpse that crumbles leaves gore): deliberate, and the reason a particle kind of a solid material cannot be used for floating text. A particle is at least one voxel (6.25 cm) and `fx.play` / emitters place it at a whole voxel. Not built (docs/TASKS.md): sub-voxel particles, a "mote" that flies on a constant velocity with no gravity, no settling and no shrink, a text particle that faces the camera (`fx.text`), and keeping particles out of the temporal anti-aliasing history (a fast 1 voxel particle can show a double image).

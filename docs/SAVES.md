@@ -25,3 +25,6 @@ It is written with the world save (the `save` action, F11, the exit save), read 
 
 ## Older engines and cut files
 An engine from before format 2 opening a version-2 `.vxs` reads the header record as garbage and shows 0 chunks (it does not damage the file as long as it is not saved over: keep a copy when switching back). A record cut off at the end of the file (a crash during a write) is trimmed on the next open; damage in the middle is not guessed at. A `#version` newer than the engine knows in `.events/state.txt`, `tracked.txt` or `store.json` is refused and **kept**: the file is not overwritten by the next save, and the log says so.
+
+## Node states and the world save
+The states of the event nodes (a door left open, a lever thrown: `<project>/.events/state.txt`) belong to the world they were saved with. A start that has **no world save** (it was deleted, or this is a new run) builds the level again and does **not** read them (the log says so): a door saved open would otherwise be declared open in a corridor whose bars the level has just built. `project.store` (the game's own progress) is separate and is read whenever the file is there.
