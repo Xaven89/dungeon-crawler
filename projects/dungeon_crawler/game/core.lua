@@ -47,7 +47,7 @@ function G.fill(x0, y0, z0, x1, y1, z1, mat, tex)
     local ax, ay, az, bx, by, bz = G.wx(x0), G.wy(y0), G.wz(z0), G.wx(x1) - 1, G.wy(y1) - 1, G.wz(z1) - 1
     if bx < ax or by < ay or bz < az then return end
     edit.box(ax, ay, az, bx, by, bz, mat)
-    if tex then pcall(edit.texture_box, ax, ay, az, bx, by, bz, tex) end     -- (pcall: the MCP server does not read the project's textures.json, phase 1 report)
+    if tex then edit.texture_box(ax, ay, az, bx, by, bz, tex) end
 end
 function G.clear(x0, y0, z0, x1, y1, z1)
     local ax, ay, az, bx, by, bz = G.wx(x0), G.wy(y0), G.wz(z0), G.wx(x1) - 1, G.wy(y1) - 1, G.wz(z1) - 1
@@ -99,7 +99,7 @@ function G.ring(cx, cz, r0, r1, y0, y1, mat, tex)
             edit.box(x + w0 + 1, ya, z + dz, x + w1, yb, z + dz, mat)
         end
     end
-    if tex then pcall(edit.texture_box, x - R1, ya, z - R1, x + R1, yb, z + R1, tex) end
+    if tex then edit.texture_box(x - R1, ya, z - R1, x + R1, yb, z + R1, tex) end
 end
 
 -- A room: carves the interior and lines it (floor, ceiling and four wall skins, 25 cm thick). r = { x, z, w, d, h, y = 0, floor, wall, ceil, ftex, wtex, ctex }
@@ -143,9 +143,12 @@ function G.torch(xm, ym, zm, opts)
     opts = opts or {}
     torch_n = torch_n + 1
     local name = opts.name or ("torch_" .. torch_n)
-    local col = opts.color or { 2.0, 1.05, 0.4 }
+    -- an emitter light's `color` is a radiance (docs/EMITTERS.md): a hue scaled to its largest part, times `intensity` (14 is a torch)
+    local col = opts.color or { 1.0, 0.55, 0.2 }
+    local m = math.max(col[1], col[2], col[3], 0.001)
+    col = { col[1] / m, col[2] / m, col[3] / m }
     emitter.create{ name = name, preset = opts.preset or "torch", pos = { G.mx(xm), G.my(ym), G.mz(zm) },
-                    light = { color = col, reach = opts.reach or 14, flicker = opts.flicker ~= false } }
+                    light = { color = col, intensity = opts.intensity or 11, reach = opts.reach or 14, flicker = opts.flicker ~= false } }
     G.torches[#G.torches + 1] = name
     return name
 end
@@ -178,7 +181,7 @@ function G.lamp(xm, zm, y_ceil, drop, opts)
         G.fill(xm - 0.2, y_ceil - drop - 0.4, zm - 0.2, xm + 0.2, y_ceil - drop, zm + 0.2, opts.mat or "lantern")
         G.fill(xm - 0.25, y_ceil - drop - 0.05, zm - 0.25, xm + 0.25, y_ceil - drop, zm + 0.25, "metal")
     end
-    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 2.4, 1.6, 0.8 }, reach = opts.reach or 15, flicker = true })
+    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 1.0, 0.67, 0.33 }, reach = opts.reach or 15, flicker = true })
 end
 
 -- a floor brazier / standing fire bowl

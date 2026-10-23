@@ -10,7 +10,7 @@ All names, jokes and texts are original (inspired by the tone and structure of a
 ```
 ./voxelith --manual --project projects/dungeon_crawler --hud 0                       # the game (needs a display and a Vulkan GPU); project.cfg has `game = on` (the sandbox keys are off)
 ./voxelith --mcp --project projects/dungeon_crawler --threads 3                      # the AI's way (.mcp.json is set up): screenshots do not contain the Lua HUD yet
-tools/hudshot.sh out.png 14 --script idle:3000                                      # windowed in a private Xvfb + ffmpeg grab: the way to SEE the HUD without a display (BOOT=file.lua sets up a situation)
+# MCP: screenshot {hud: true} draws on_hud over the picture (no display needed); project.cfg has `time = 0.75` (the sky must not light the dungeon)
 tools/playthrough.py janitor                                                        # a bot plays the whole floor through the MCP server, takes pictures into ~/share/tour, records and replays the session (hash check)
 ./voxelith --check-project projects/dungeon_crawler
 python3 tools/make_dungeon_models.py ; python3 tools/make_sounds.py                 # regenerate the creatures (models/*.vxm) and the sounds (sounds/*.wav)
@@ -66,7 +66,7 @@ game/boss.lua       the Floor Manager                                           
 game/announcer.lua  GLEE + sfx helper + achievements                            game/music.lua   the music director
 game/hud.lua        everything drawn                                            game/shop.lua    the vending machine
 models/*.vxm        creatures (generated) and kit props      sounds/*.wav (generated)      strings/en.csv de.csv
-tools/              make_dungeon_models.py make_sounds.py playthrough.py hudshot.sh xsend.py
+tools/              make_dungeon_models.py make_sounds.py playthrough.py xsend.py
 ```
 The dungeon is described in metres in a local frame (x east, z south, y up from the lobby floor); `Game.OX/OY/OZ` place it in the world (flat terrain, everything is carved into the stone under the plain).
 
@@ -76,7 +76,7 @@ The dungeon is described in metres in a local frame (x east, z south, y up from 
 
 ## Test log (what was run and seen)
 * `./voxelith --check-project projects/dungeon_crawler`: 0 errors (1 warning: the German file has fewer keys than the English one, they fall back).
-* Every area was loaded through the MCP server and looked at with free-camera screenshots (`~/share/tour/*.png`, `~/share/*.png`); the HUD screens with `tools/hudshot.sh` (class select, main HUD in the Hall with enemies and an announcer line, bag, shop, boss intro and bar, death, German).
+* Every area was loaded through the MCP server and looked at with free-camera screenshots (`~/share/tour/*.png`, `~/share/*.png`); the HUD screens with MCP `screenshot {hud: true}` (the earlier ones with an Xvfb grab) (class select, main HUD in the Hall with enemies and an announcer line, bag, shop, boss intro and bar, death, German).
 * `tools/playthrough.py janitor`: class pick, the gate opens, the bot fights through Hall → Boiler → Conveyor → Gutter → Ballroom → Grotto (not every enemy is reachable for a bot that cannot aim), reaches the boss, dies and respawns at checkpoints, buys at the vending machine and finishes the floor; the **recording replays to the same hash** (the pyromaniac run: `9fc4235cf96063fd`, 20,213 ticks, `== the recorded hash`; the bot writes `dev/flags.lua` so that the set dressing made with `prefab.place` is skipped, because the engine cannot replay prefabs: ENGINE_FEEDBACK.md).
 * Tested by hand through MCP: boulder trap (releases and crosses the hall in about 3 s), barrels chain-explode and crack the secret wall, drawbridge lowers, belt carries crates (1.6 m/s), gutter floods to 1.3 m, gravity flip carries the player up through the vent, vent tunnel and steps, closet door, death and respawn, save / load across two process runs (class, gold, level, checkpoint, inventory, opened crates, cleared rooms, achievements, world voxels), boss phases 1-3 and death (gate opens, achievement, keycard, platinum crate).
 * Performance (headless 1080p, 3 threads): the tick costs about 3 ms (budget 16.7); the GPU 9-15 ms in the busiest scenes on the RTX 3070 Laptop.

@@ -23,7 +23,7 @@ def L(v, code, ticks=1):
     return r.get("output", []), r
 
 def room_shot(v, name, eye, target, fov=80):
-    v.screenshot(os.path.join(SHARE, name + ".png"), eye=[OX + eye[0], OY + eye[1], OZ + eye[2]], target=[OX + target[0], OY + target[1], OZ + target[2]], fov=fov, time_of_day=0.75)
+    v.screenshot(os.path.join(SHARE, name + ".png"), eye=[OX + eye[0], OY + eye[1], OZ + eye[2]], target=[OX + target[0], OY + target[1], OZ + target[2]], fov=fov)
 
 def fight(v, room, max_ticks=2400, step=60):
     """Attack with auto-aim, heal when low, until nobody of that room is alive or the time is up. Returns a summary line."""

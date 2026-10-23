@@ -146,3 +146,22 @@ Launcher and .mcp.json no longer pass `--time 0.75`. MCP screenshots at the defa
 ## Smaller things seen while retesting
 - The bot's pictures still need `time_of_day: 0.75` to look right.
 - `ui.input().actions` is a table keyed by name (documented), `held` was not tried.
+
+# Phase 2 retest (engine update of 2026-10-23, second round)
+
+Removed from the game: the `pcall` around `edit.texture_box` (game/core.lua), `--time 0.75` / `time_of_day=0.75` (play.sh, hudshot.sh, .mcp.json, playthrough.py; project.cfg has `time = 0.75` now), tools/hudshot.sh (deleted). Changed: every emitter light now normalises my colour to its largest part and passes `intensity = 11` (torch-like), as the new radiance scale needs.
+
+## MCP + textures.json  — fixed in phase 2
+`texture_list` in a fresh MCP session shows 22 entries (the 16 built-ins + my own incl. skull / rune_tile / gold_stars + the belt variants); the whole level builds with no pcall; the arena's skull floor and the lobby crystal's rune plinth are visible in the pictures.
+
+## `status.game_mode`  — fixed in phase 2
+`game_mode: true`, `save_read_only: false`.
+
+## Closed rooms at noon and at midnight (~/share/phase2/*_noon.png, *_midnight.png)
+At the default settle the pictures are lit properly now: at noon the rooms under stone are warm and dark with their own lamps (lobby, hall, conveyor, arena look right: no blue fill); at midnight (project.cfg `time = 0.75`, `sky.set{ time = 0.25 }` for the noon set) the same. `project.cfg time = 0.75` is applied from tick 0 in MCP and CLI. Two small observations: (1) the arena at noon has a pale hazy band at mid-height on the far wall and a faint bluish glow at the door at the right end of the conveyor corridor (the sky shows through the 2-voxel-thick shell where the corridor meets the plain's edge? I did not investigate); (2) with the new light scale my old values (radiance 1..2) became far too dim and the first guess after normalising (intensity 14) was washed out in the small rooms: the arena at midnight is almost uniformly orange with 8 pillar torches + a core campfire. The docs' "x14 torch" is right, it just surprised me that `reach = 14` gives so much fill in a room of 35 m.
+
+## `screenshot {hud: true}`  — works; differences from my Xvfb grabs
+Class select, bag, shop, the Hall with enemies, announcer, popups, minimap, crosshair: all drawn (`~/share/phase2/hud_*.png`, 960x540). Differences: (a) it is drawn at the picture's size, so my fixed pixel layout (1080 units high) scales down and text gets small (the announcer wraps at "Whichever of tho"... because the typewriter had not finished: same as live); (b) the typewriter and the "tick"-driven animations are frozen at the state of that tick, so a picture can show a half-typed sentence: a `settle`-like option for HUD time would help; (c) `ui.measure` widths seem right; (d) no mouse hover, as documented. Nothing was wrong that would not also be wrong in the live window. tools/hudshot.sh is retired; Xvfb + ffmpeg stays useful for keys (tools/xsend.py).
+
+## Replay  — still exact
+`tools/playthrough.py pyro` (22 rooms-worth of fights, the boss killed through `input_action`, shop, end screen): 19,733 ticks, `replayed ... session hash ff701e070979aa1f  == the recorded hash` (replay without --project).

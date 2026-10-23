@@ -60,7 +60,7 @@ end
 -- lava geyser under the player: a warning of embers, then a blast
 function B.geyser(lx, lz)
     local name = "geyser_" .. time.tick()
-    emitter.create{ name = name, preset = "campfire", pos = { G.mx(lx), G.my(0.2), G.mz(lz) }, light = { color = { 1, 0.3, 0.1 }, reach = 8 } }
+    emitter.create{ name = name, preset = "campfire", pos = { G.mx(lx), G.my(0.2), G.mz(lz) }, light = { color = { 1, 0.3, 0.1 }, intensity = 20, reach = 8 } }
     G.sfx.play("rumble", lx, 0, lz, 0.7)
     after(80, function()
         emitter.remove(name)

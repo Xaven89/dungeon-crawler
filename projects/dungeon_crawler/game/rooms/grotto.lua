@@ -110,7 +110,7 @@ W.things[#W.things + 1] = function()
     for _, id in ipairs(order) do
         local c = chambers[id]
         emitter.create{ name = "grotto_flies_" .. id, preset = "fireflies", pos = { G.mx(c[1]), G.my(1.8), G.mz(c[2]) }, size = { c[3] * 0.6, 1.2, c[3] * 0.6 },
-                        light = { color = { 0.6, 1.0, 0.7 }, reach = 12, flicker = true } }
+                        light = { color = { 0.6, 1.0, 0.7 }, intensity = 12, reach = 12, flicker = true } }
         emitter.create{ name = "grotto_spores_" .. id, preset = "dust_motes", pos = { G.mx(c[1]), G.my(3), G.mz(c[2]) }, size = { c[3] * 0.7, 2.5, c[3] * 0.7 } }
     end
     G.torch(33, 1.6, 82, { reach = 9, color = { 1, 0.6, 0.3 } })
