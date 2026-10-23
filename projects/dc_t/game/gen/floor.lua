@@ -25,7 +25,7 @@ function F.register(name, def) def.name = name; F.themes[name] = def end
 local memo_key, memo
 function F.plan(seed, floor_n)
     local k = seed .. ":" .. floor_n
-    if memo_key ~= k then memo = L.generate(seed, floor_n); memo_key = k; F.assign_themes(memo) end
+    if memo_key ~= k then memo = L.generate(seed, floor_n); memo_key = k; F.assign_themes(memo); memo.rules = G.gen.rules.choose(seed, floor_n) end
     return memo
 end
 
@@ -85,6 +85,7 @@ function F.apply_tables(p)
     G.enemies.reset_floor()
     G.torches = {}
     if G.boss and G.boss.reset then G.boss.reset() end
+    G.gen.rules.apply(p)
 end
 
 -- ---------------------------------------------------------------------------------------------- the context a theme gets
@@ -343,6 +344,7 @@ function F.enter_room(id, old)
     local s, A = G.state, G.announcer
     s.flags["visited_" .. id] = true
     if room.role ~= "start" then A.award("hello_world") end
+    if G.gen.rules.muted_rooms[id] then A.say_key("rule.muted.enter", { prio = 1, key = "muted_" .. id, cooldown = 99999 }) end
     A.say_key("room." .. room.theme, { prio = 0, key = "room_" .. id, cooldown = 99999 }, room.name)
     if G.music and G.music.on_room then G.music.on_room(id) end
     G.safe = (room.role == "start" or room.role == "exit")

@@ -28,6 +28,7 @@ end
 -- points of spectacle: `label` pops up when it is worth showing
 function S.score(points, label)
     local sh = S.st()
+    if G.floorgen and G.floorgen.active then points = points * G.gen.rules.spectacle() end
     sh.buzz = min(300, sh.buzz + points)
     sh.total = sh.total + points
     if sh.fs then sh.fs.points = sh.fs.points + points end

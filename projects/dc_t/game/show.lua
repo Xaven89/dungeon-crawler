@@ -19,6 +19,7 @@ end
 -- the floor's own numbers (the recap): reset at every arrival
 function S.floor_begin()
     local s, sh = G.state, S.st()
+    sh.prev_points = sh.fs and sh.fs.points or 0
     sh.boxes = {}
     sh.fs = { t0 = time.tick(), kills = s.kills, gold = s.gold, deaths = s.deaths, followers = sh.followers, views = sh.views, crates = G.announcer.counters.crates or 0, best_hit = 0, best_combo = 0,
               worst_hit = 0, worst_src = "", points = 0, cleared = 0, stains = G.announcer.counters.cleaned or 0 }
@@ -27,6 +28,7 @@ end
 -- points of spectacle: `label` pops up when it is worth showing
 function S.score(points, label)
     local sh = S.st()
+    if G.floorgen and G.floorgen.active then points = points * G.gen.rules.spectacle() end
     sh.buzz = min(300, sh.buzz + points)
     sh.total = sh.total + points
     if sh.fs then sh.fs.points = sh.fs.points + points end
@@ -98,17 +100,20 @@ function S.deliver(room)
     local F = G.floorgen
     local p = F and F.layout
     if not p then return end
-    local n = min(3, sh.favorites)
+    local placed = 0
+    for _, b in ipairs(sh.boxes) do if b.room == room.id then placed = placed + 1 end end
+    local n = min(3 - placed, sh.favorites)
+    if n <= 0 then return end
     local f = p.floor
-    local peak = sh.fs and sh.fs.points or 0
+    local peak = max(sh.fs and sh.fs.points or 0, sh.prev_points or 0)
     local tier = (peak >= 260) and "gold" or ((peak >= 90) and "silver" or "bronze")
-    local first = true
     for k = 1, n do
+        local slot = placed + k
         local id = "f" .. f .. "spon" .. (sh.fav_total - sh.favorites + k)
         if not G.state.opened[id] then
-            local lx, lz = room.x + 14.6, room.z + 6.8 + SPOTS[k]
+            local lx, lz = room.x + 14.6, room.z + 6.8 + SPOTS[slot]
             local troll = G.hash(f, sh.fav_total, k) < 0.25
-            sh.boxes[#sh.boxes + 1] = { id = id, tier = tier, x = lx, z = lz, troll = troll, sponsor = 1 + floor(G.hash(f, k, 9) * #S.SPONSORS) % #S.SPONSORS }
+            sh.boxes[#sh.boxes + 1] = { id = id, room = room.id, tier = tier, x = lx, z = lz, troll = troll, sponsor = 1 + floor(G.hash(f, k, 9) * #S.SPONSORS) % #S.SPONSORS }
             S.declare(sh.boxes[#sh.boxes])
         end
     end

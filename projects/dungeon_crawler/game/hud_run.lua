@@ -89,3 +89,9 @@ function H.recap_screen(w, h, input)
     if uikit.button("recap_go", tr("ui.descend", (r.floor or 1) + 1), w / 2 - 190, h - 130, 380, 60, { color = C.gold }) then ui.run("Game.run.descend(true)") end
     if uikit.button("recap_back", tr("recap.back"), w / 2 - 190, h - 60, 380, 44) or (input.keys and input.keys.escape) then ui.run("Game.close_end()") end
 end
+
+-- the rules of the floor, in colour under the place (top left)
+function H.rule_label()
+    if not (G.floorgen and G.floorgen.active) then return nil end
+    return G.gen.rules.label()
+end

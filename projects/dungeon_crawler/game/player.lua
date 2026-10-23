@@ -347,6 +347,9 @@ function P.ability()
     local now = time.tick()
     local c = P.classes[s.class]
     if P.dead or not c or now < P.next_ability or G.screen then return false end
+    if G.floorgen and G.floorgen.active and G.gen.rules.in_muted() then
+        P.popup(tr("rule.muted.popup"), "#9aa0b4"); P.next_ability = now + 30; return false
+    end
     if s.mp < c.ability.cost then
         P.popup("NOT ENOUGH MANA", "#8899ff")
         return false

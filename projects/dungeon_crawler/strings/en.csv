@@ -341,3 +341,16 @@ recap.deaths,Deaths
 recap.lowlight,Lowlight (worst hit)
 recap.rank,SPECTACLE
 recap.back,Back to the stairwell
+rule.night.name,NIGHT SHIFT
+rule.dts.name,THE DTs
+rule.muted.name,QUIET FLOOR
+rule.crowd.name,CROWD PLEASER
+rule.night.1,"Tonight's rule: NIGHT SHIFT. The lights are on a budget and so is your line of sight. Everything in here can see you better than you can see it."
+rule.dts.1,"Tonight's rule: THE DTs. The monsters on this floor are going through withdrawal. It starts mild. Every few minutes it does not."
+rule.muted.1,"Tonight's rule: QUIET FLOOR. Some rooms have been fitted with sound-dampening foam. It also dampens spells. This was a coincidence, and a feature."
+rule.crowd.1,"Tonight's rule: CROWD PLEASER. A third more enemies and twice the applause. The audience asked for it. The audience is never in the room."
+rule.muted.enter.1,"This room is muted. Your abilities will not work here. Your weapon is exempt: it is not a spell, it is just rude."
+rule.muted.popup,THE ROOM SWALLOWS YOUR SPELL
+rule.dts.stage1.1,"DTs, stage one. The monsters have started to shake. They are hitting a little harder out of spite."
+rule.dts.stage2.1,"DTs, stage two. They are marked, they are faster, they have stopped speaking. This was the part of the briefing I skipped."
+rule.dts.stage3.1,"DTs, stage three. Whatever dies on this floor now hatches. I recommend not dying where it is hatching."

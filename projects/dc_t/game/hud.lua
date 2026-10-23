@@ -226,6 +226,8 @@ local function hud_world(w, h, input)
     local room = G.current_room and W.rooms[G.current_room]
     ui.text(26, 20, tr("title"), { size = 28, color = C.gold })
     ui.text(26, 52, (H.floor_label and H.floor_label() or "FLOOR 1") .. "  " .. (room and room.name or "..."), { size = 20, color = C.dim })
+    local rl = H.rule_label and H.rule_label()
+    if rl then ui.text(26, 78, rl, { size = 18, color = "#ff9a5a" }) end
     -- the top right: the show's numbers
     local sh = G.show.st()
     ui.text(w - 26, 20, tr("show.viewers") .. "  " .. G.format_int(sh.views > 0 and sh.views or G.show.viewers()), { size = 24, color = "#ff6a8a", align = "right" })

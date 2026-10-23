@@ -56,12 +56,12 @@ end
 function F.sconces(room, ctx, step, y)
     step = step or 8; y = y or 3.3
     for x = room.x + 4, room.x + room.w - 3, step do
-        if not ctx.near_door(room, x, room.z, 3) then G.sconce(x, y, room.z, "+z") end
-        if not ctx.near_door(room, x, room.z + room.d, 3) then G.sconce(x, y, room.z + room.d, "-z") end
+        if not ctx.near_door(room, x, room.z, 3) then G.sconce(x, y, room.z, "+z", { intensity = 11 * G.gen.rules.dark() }) end
+        if not ctx.near_door(room, x, room.z + room.d, 3) then G.sconce(x, y, room.z + room.d, "-z", { intensity = 11 * G.gen.rules.dark() }) end
     end
     for z = room.z + 4, room.z + room.d - 3, step do
-        if not ctx.near_door(room, room.x, z, 3) then G.sconce(room.x, y, z, "+x") end
-        if not ctx.near_door(room, room.x + room.w, z, 3) then G.sconce(room.x + room.w, y, z, "-x") end
+        if not ctx.near_door(room, room.x, z, 3) then G.sconce(room.x, y, z, "+x", { intensity = 11 * G.gen.rules.dark() }) end
+        if not ctx.near_door(room, room.x + room.w, z, 3) then G.sconce(room.x + room.w, y, z, "-x", { intensity = 11 * G.gen.rules.dark() }) end
     end
 end
 
@@ -69,14 +69,14 @@ end
 function F.lamps(room, intensity, reach)
     local nx, nz = max(1, floor(room.w / 8)), max(1, floor(room.d / 8))
     for i = 1, nx do for j = 1, nz do
-        G.lamp(room.x + room.w * (i - 0.5) / nx, room.z + room.d * (j - 0.5) / nz, room.h, 1.2, { reach = reach or 12, intensity = intensity })
+        G.lamp(room.x + room.w * (i - 0.5) / nx, room.z + room.d * (j - 0.5) / nz, room.h, 1.2, { reach = reach or 12, intensity = (intensity or 11) * G.gen.rules.dark() })
     end end
 end
 
 -- how many enemies a room of this size holds on this floor
 function F.head_count(room, floor_n, rng)
     local n = floor(room.w * room.d / 75) + rng.int(0, 2) + floor((floor_n - 1) / 2)
-    return max(3, min(n, 11))
+    return max(3, min(floor(n * G.gen.rules.count() + 0.5), 14))
 end
 
 -- ---------------------------------------------------------------------------------------------- the safe rooms and the lair are drawn by gen/safe.lua; these only name them

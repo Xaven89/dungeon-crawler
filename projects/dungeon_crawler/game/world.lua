@@ -172,6 +172,7 @@ end
 function W.tick(t)
     if G.floorgen then G.floorgen.tick(t) end
     if G.show then G.show.tick(t) end
+    if G.floorgen and G.floorgen.active then G.gen.rules.tick(t) end
     -- the safety net: a vehicle, a blast or a fall can leave the player outside the dungeon or in the rock: put him back where he last stood safely
     if t % 10 == 0 and G.state and G.state.class and not G.player.dead and not vehicle.seated() then
         local px, py, pz = player.pos()

@@ -78,6 +78,7 @@ function R.floor_ready(n)
     player.teleport(G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2))
     G.screen = nil
     G.announcer.say_key("floor.arrive", { prio = 2 }, n)
+    for _, id in ipairs(p.rules or {}) do G.announcer.say_key("rule." .. id, { prio = 0 }) end
     if G.companion and G.companion.id then G.companion.respawn() end
     G.show.floor_begin()
     G.show.deliver(r)

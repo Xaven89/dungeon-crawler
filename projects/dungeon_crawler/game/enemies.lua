@@ -94,6 +94,7 @@ function E.spawn(kind, lx, ly, lz, opts)
     local inst = { id = id, mdl = id - 0x40000000, kind = kind, T = T, hp = T.hp * (opts.hp_mult or 1), max_hp = T.hp * (opts.hp_mult or 1), state = "idle",
                    next_attack = 0, stun_until = 0, room = opts.room, height = T.height, radius = T.radius, home = { lx, ly, lz }, born = time.tick(), name = name, index = opts.index,
                    dmg_mult = opts.dmg_mult or 1, affix = opts.affix }
+    if G.gen and G.gen.rules and G.floorgen.active then G.gen.rules.on_spawn(inst) end
     if T.kit and equipment then pcall(equipment.apply, equipment.agent(id), (function() local k = {}; for slot, f in pairs(T.kit) do k[slot] = { file = f } end; return k end)()) end
     E.list[id] = inst
     E.by_model[inst.mdl] = inst
@@ -253,6 +254,7 @@ function E.kill(inst, opts)
     if inst.hp < -inst.max_hp * 0.8 then A.award("overkill") end
     if inst.kind == "slime" or inst.kind == "slime_toxic" then if (A.bump("slimes") or 0) >= 10 then A.award("squeegee") end end
     if G.show then G.show.on_kill(inst, opts) end
+    if G.gen and G.gen.rules and G.floorgen.active then G.gen.rules.on_kill(inst) end
     if inst.burning then A.award("pyro") end
     if x then
         G.gore.wound(inst, x, y + inst.height * 0.4, z, true)
@@ -432,7 +434,7 @@ function E.ai(inst, t)
         return
     end
     if inst.state == "idle" then
-        if d < inst.T.aggro and dy < 4 then
+        if d < inst.T.aggro * (inst.aggro_mult or 1) and dy < 4 then
             if has_los(info.x, info.y + 1.2, info.z, px, py + 1.4, pz) or d < 4 then E.aggro(inst) end
         end
     elseif inst.state == "chase" then
