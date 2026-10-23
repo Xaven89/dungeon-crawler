@@ -15,7 +15,7 @@ tools/playthrough.py janitor                                                    
 ./voxelith --check-project projects/dungeon_crawler
 python3 tools/make_dungeon_models.py ; python3 tools/make_sounds.py                 # regenerate the creatures (models/*.vxm) and the sounds (sounds/*.wav)
 ```
-Damage numbers are `flame` particles in a 3x5 font (one voxel per pixel) that float up and burst (`game/vnum.lua`); `debris` / `grain` particles settle into the world as real voxels: used on purpose for the gore of deaths (stains, bones and lumps that stay and are saved), never for hit effects. The lobby and arena gates are plain voxels removed by the script (`W.gate_open`), not event doors.
+Damage numbers are the engine's `fx.text` labels (letters 11 cm, crits 17 cm, at 3 m) that rise and burst into motes (`game/vnum.lua`; `particle_taa = off` in project.cfg keeps them free of ghost images); `debris` / `grain` particles settle into the world as real voxels: used on purpose for the gore of deaths (stains, bones and lumps that stay and are saved), never for hit effects. The lobby and arena gates are plain voxels removed by the script (`W.gate_open`), not event doors.
 
 **Testing:** windowed test runs write the project's save (`world.vxs`, `.state`, `.events`): run them on a copy of the project (`cp -r projects/dungeon_crawler /tmp/x/dc` and `--project /tmp/x/dc`), not on the folder that is streamed to be played.
 
