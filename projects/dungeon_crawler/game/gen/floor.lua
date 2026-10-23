@@ -78,6 +78,20 @@ function F.apply_tables(p)
         W.rooms[id] = { x = r.x, z = r.z, w = r.w, d = r.d, h = r.h, name = r.name, kind = r.theme, role = r.role }
         W.checkpoints[id] = { x = r.x + r.w / 2, y = 0.1, z = r.z + r.d / 2 }
     end
+    -- a place to wake up in a room that is not its middle (the middle of a furnace is lava, of a library a shelf): just inside the first door, on the free 4 m along the walls
+    for _, e in ipairs(p.edges) do
+        for _, d in ipairs(e.doors) do
+            local r = p.rooms[d.room]
+            if r.role == "room" or r.role == "boss" then
+                local c = W.checkpoints[d.room]
+                if not c.door then
+                    if d.side == "E" then c.x, c.z = r.x + r.w - 2.5, d.z elseif d.side == "W" then c.x, c.z = r.x + 2.5, d.z
+                    elseif d.side == "S" then c.x, c.z = d.x, r.z + r.d - 2.5 else c.x, c.z = d.x, r.z + 2.5 end
+                    c.door = true
+                end
+            end
+        end
+    end
     W.room_order = p.order
     W.neighbors = p.neighbors
     W.populate_list = {}
