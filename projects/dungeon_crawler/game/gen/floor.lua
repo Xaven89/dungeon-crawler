@@ -183,6 +183,7 @@ end
 
 function F.start(seed, floor_n, on_done)
     local old = F.layout                       -- nil: the hand built Orientation floor is in the world
+    G.state.flags.boss_dead = nil              -- (the last floor's boss)
     local steps = {}
     G.gen.track.teardown(old and ("floor" .. old.floor) or "orientation")
     G.gen.track.scope = "floor" .. floor_n

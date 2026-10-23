@@ -243,8 +243,13 @@ function G.minimap(w, h)
     local pw, ph = 124 * sc + 16, 154 * sc + 16
     ui.rect(mx - 8, my - 8, pw, ph, "#0b0d14a0", { radius = 10 })
     local function center(r) return mx + (r.x + r.w / 2) * sc, my + (r.z + r.d / 2) * sc end
-    for _, l in ipairs(links) do
-        if s.flags["visited_" .. l[1]] and s.flags["visited_" .. l[2]] then
+    local lk = links
+    if G.floorgen and G.floorgen.active and G.floorgen.layout then
+        lk = {}
+        for _, e in ipairs(G.floorgen.layout.edges) do lk[#lk + 1] = { e.a, e.b } end
+    end
+    for _, l in ipairs(lk) do
+        if s.flags["visited_" .. l[1]] and s.flags["visited_" .. l[2]] and W.rooms[l[1]] and W.rooms[l[2]] then
             local ax, ay = center(W.rooms[l[1]]); local bx, by = center(W.rooms[l[2]])
             ui.line(ax, ay, bx, by, "#6a7388", 3)
         end
@@ -262,7 +267,8 @@ function G.minimap(w, h)
         end
     end
     if G.boss and G.boss.active and G.boss.inst and not G.boss.inst.dead then
-        local ax, ay = center(W.rooms.arena); ui.circle(ax, ay, 6, "#ff3030")
+        local br = W.rooms[G.boss.lair.room]
+        if br then local ax, ay = center(br); ui.circle(ax, ay, 6, "#ff3030") end
     end
     local px, py, pz = player.pos()
     local lx, ly, lz = G.to_local(px, py, pz)
