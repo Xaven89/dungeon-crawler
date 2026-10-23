@@ -28,7 +28,7 @@ A packaged build (`cpack`) has `./voxelith --mcp ...` (the launcher sets the lib
 ## Tools
 | tool | what it does |
 |---|---|
-| `status` | tick, player (feet / eye / up / forward, walk or fly), world (chunks, bricks, pool), sim (bodies, awake, burning voxels, liquid cells, gravity fields) |
+| `status` | tick, `render` { gpu_ms, cpu_ms } (the last frame that was drawn: take a `screenshot` first to measure a scene), player (feet / eye / up / forward, walk or fly), world (chunks, bricks, pool), sim (bodies, awake, burning voxels, liquid cells, gravity fields) |
 | `step {ticks}` | advance the simulation (60 ticks = 1 s); fire spreads, water flows, bodies fall, Lua timers and `on_tick` run |
 | `lua {code, ticks=1}` | run Lua (the level API, `docs/LUA_API.md`): a single expression returns its value, `print` output is returned, errors come back with the line. Edits apply on the tick(s) that follow |
 | `run_script {script, max_ticks}` | the player's control language: `idle:60,turn:90,fwd:120,dig:14,boom:40,tp:2` (`read_docs script`) |

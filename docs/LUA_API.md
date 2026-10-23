@@ -49,7 +49,7 @@ edit.model("models/house.vxm", x, y, z [, rotation])    -- .vxm or MagicaVoxel .
 ```lua
 world.material_at(x, y, z)  --> "stone" / "air" / "unloaded" (outside the streamed area the world is not known; edits there wait until it loads)
 world.solid(x, y, z)        --> true / false
-world.top(x, z [, from_y])  --> y of the highest solid voxel of the column, -1 if none
+world.top(x, z [, from_y [, skip_walk_through]])  --> y of the highest solid voxel of the column (the voxel's own y: stand on y + 1), -1 if none; the 4th argument `true` skips walk-through voxels (stains), still the voxel's y
 ```
 Edits become visible one tick after the call, so a query right after `edit.*` still sees the old world.
 
@@ -278,3 +278,10 @@ A voxel (or a group of voxels) that is not connected through solid voxels to an 
 
 ### Motes, labels and particle history
 `fx.mote{ at, vel, life, size, material, count, spread }` (small cubes that fly straight: no gravity, no collision, no settling), `fx.text{ text, at, size, material, rise, life, toward, align }` (a label that faces the viewer, made of motes) and `fx.particle_taa(false)`: docs/EMITTERS.md "Motes and text in the world". Positions and sizes in metres. Emitters have `kind = "mote"`.
+
+
+## Gotchas
+
+- **An edit beyond the limits is an error.** `edit.box` / `edit.sphere` / `edit.carve` and the other shapes throw "the edit is beyond the limits: a sphere of radius 900 (the limit is 640); make it in pieces" (a box is at most 16384 voxels per axis and 2^30 in all); the engine logged it and carried on before, so the script never knew.
+- **`~` and `>>` (and the other bitwise operators) on a float that is not a whole number raise an error** in Lua 5.4 ("number has no integer representation"): the handler stops with a warning. Use `math.floor(x)` or `//` first.
+- **`uikit.text_input`'s `filter` is a Lua pattern of what to remove**: `%D` keeps only digits (docs/UI_KIT.md).

@@ -116,3 +116,88 @@ run.orientation.name,EINFUEHRUNG
 run.dungeon.name,GLEICH HINUNTER
 loading.title,DIE EBENE DARUEBER STUERZT EIN
 loading.floor,EBENE {1}
+run.title,WAEHLE DEINE FOLGE
+run.sub,"Jeder Seed ist eine andere Staffel des Dungeons. Derselbe Seed ist fuer alle immer derselbe Dungeon."
+run.seed,SEED
+run.roll,Neu wuerfeln
+run.go,Los
+run.hint,"Die Einfuehrung ist die handgebaute erste Ebene. Danach (oder statt dessen) entsteht der Dungeon aus deinem Seed."
+run.orientation.blurb,"Starte in der Eingangshalle: die handgebaute erste Ebene mit ihrem Boesen Chef und dem Tutorial. Danach beginnt der Seed-Dungeon."
+run.dungeon.blurb,"Ohne Umschweife: Du erwachst im ersten Raum einer Ebene, die aus deinem Seed gebaut wurde."
+run.diff,SCHWIERIGKEIT
+run.diff.easy,Sanft
+run.diff.normal,Normal
+run.diff.hard,Grausam
+run.new,Diesen Lauf verlassen: neuer Seed
+loading.1,"Bitte nicht umdrehen. Hinter dir ist nichts."
+loading.2,"Deine Sponsoren pruefen deine Entscheidungen. Sie sind nicht beeindruckt."
+loading.3,"Der Dungeon wird ausgepackt. Er wurde flach geliefert."
+loading.4,"Merke: Die Treppe ist das Einzige hier drin, das dir helfen will."
+loading.5,"Der Bau wird vom billigsten Anbieter erledigt. Das ist der billigste Anbieter."
+show.viewers,ZUSCHAUER
+show.followers,FOLLOWER
+show.favorites,FAVORITEN
+show.favorite,"EIN FAVORIT! (ein Sponsor schaut dich an)"
+show.kill,SPEKTAKEL
+show.boss,BOSS BESIEGT
+show.miniboss,MINIBOSS BESIEGT
+show.barrel,BUMM
+show.boulder,ROCK UND ROLL
+show.fire,FLAMBIERT
+show.combo,KOMBO x{1}
+recap.title,EBENE {1}: RUECKBLICK
+recap.sub,"Eine Nachricht deiner Produzenten, bezahlt von deinen Sponsoren."
+recap.time,Zeit auf der Ebene
+recap.kills,Besiegte Gegner
+recap.best_hit,Bester Treffer
+recap.combo,Beste Kombo
+recap.gold,Gold verdient
+recap.crates,Kisten geoeffnet
+recap.stains,Flecken gewischt
+recap.deaths,Tode
+recap.lowlight,Tiefpunkt (haertester Treffer)
+recap.rank,SPEKTAKEL
+recap.back,Zurueck zum Treppenhaus
+contract.title,SPONSORENVERTRAEGE
+contract.sub,"Drei Angebote, ein Stift. Alles hat einen Preis, und der Preis steht im Kleingedruckten."
+contract.you_get,DU BEKOMMST
+contract.you_pay,DU ZAHLST
+contract.sign,UNTERSCHREIBEN
+contract.decline,"Nichts unterschreiben (+40 Gold fuer den Stift)"
+contract.hazard_pay.name,Gefahrenzulage
+contract.hazard_pay.good,"+30% Gold aus allem"
+contract.hazard_pay.bad,"Gegner treffen 15% haerter"
+contract.product_placement.name,Produktplatzierung
+contract.product_placement.good,"+50% Spektakel"
+contract.product_placement.bad,"-15% maximale Gesundheit"
+contract.union_dues.name,Gewerkschaftsbeitrag
+contract.union_dues.good,"35% Gesundheit zurueck, wenn ein Raum geraeumt ist"
+contract.union_dues.bad,"15% deines Goldes gehen auf jeder neuen Ebene an die Gewerkschaft"
+contract.fine_print.name,Das Kleingedruckte
+contract.fine_print.good,"+3 Staerke"
+contract.fine_print.bad,"-3 Konstitution"
+contract.exclusive.name,Exklusive Senderechte
+contract.exclusive.good,"doppelt so viele Zuschauer, +50% Spektakel"
+contract.exclusive.bad,"stirbst du, ist der Lauf vorbei"
+contract.night_owl.name,Nachteulen-Paket
+contract.night_owl.good,"+25% Schaden"
+contract.night_owl.bad,"-50% maximales Mana"
+contract.bulk_discount.name,Mengenrabatt
+contract.bulk_discount.good,"-30% Preise am Automaten"
+contract.bulk_discount.bad,"beim Verkaufen bekommst du nur die Haelfte"
+contract.glass_cannon.name,Glaskanonen-Klausel
+contract.glass_cannon.good,"+40% Schaden"
+contract.glass_cannon.bad,"-25% maximale Gesundheit"
+runover.title,DER LAUF IST VORBEI
+runover.sub,"Abgesetzt von {1}. Die Show geht weiter. Ohne dich."
+runover.new,Neue Folge waehlen
+ui.skills,Fertigkeiten
+ui.skills_hint,"Fertigkeiten wachsen durch Tun: niemand bringt sie dir bei. Sie sehen alle zu."
+skill.up,FERTIGKEIT GESTEIGERT: {1} {2}
+cond.cured,{1} geheilt
+rule.night.name,NACHTSCHICHT
+rule.dts.name,DER ENTZUG
+rule.muted.name,RUHIGE EBENE
+rule.crowd.name,PUBLIKUMSLIEBLING
+rule.muted.popup,DER RAUM SCHLUCKT DEINEN ZAUBER
+boss.meter,PRUEFUNG

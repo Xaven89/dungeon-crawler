@@ -23,7 +23,7 @@ end
 |---|---|
 | `button(id, label, x, y, w, h, {disabled, tooltip, color})` | true when clicked (pressed and released on it, or Enter / A while focused) |
 | `checkbox(id, label, value, x, y, w)` / `slider(id, value, min, max, x, y, w, h, step)` / `tabs(id, labels, active, x, y, w, h)` | the new value |
-| `text_input(id, text, x, y, w, h, {hint, max, filter})` | `text, changed, submitted`: typing, Backspace, Delete, arrows, Home / End, Enter submits, Escape leaves |
+| `text_input(id, text, x, y, w, h, {hint, max, filter})` (`filter` is a Lua pattern of what to REMOVE from what is typed: `%D` keeps only digits) | `text, changed, submitted`: typing, Backspace, Delete, arrows, Home / End, Enter submits, Escape leaves |
 | `scroll(id, x, y, w, h, content_h, function(top) ... end)` | a clipped area with the wheel and a draggable bar; draw at `y + top` |
 | `slots(id, items, x, y, cols, {rows, size, gap, count, icon, tooltip, accept, hotkeys, count_text})` | a grid of slots; `items` is an array of `{id, count, ...}` / false; returns `{hover, click, right_click}` |
 | `move_stack(drop, max_stack)` | the standard stack rules for a drop (merge up to the stack size, swap different items, fill an empty slot, `split = "half"` or `"one"`) |
