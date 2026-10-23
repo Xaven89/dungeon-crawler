@@ -15,7 +15,7 @@ function H.run_screen(w, h, input)
     ui.text(w / 2, 220, tr("run.sub"), { size = 26, color = C.dim, align = "center" })
     if not H.seed_text then H.seed_text = tostring(G.run.entropy_seed(input.x, input.y)) end
     ui.text(w / 2 - 330, 292, tr("run.seed"), { size = 30, color = "#eef1f8" })
-    local txt = uikit.text_input("run_seed", H.seed_text, w / 2 - 200, 284, 300, 46, { hint = "123456", max = 9, filter = "digits" })
+    local txt = uikit.text_input("run_seed", H.seed_text, w / 2 - 200, 284, 300, 46, { hint = "123456", max = 9, filter = "%D" })
     if txt and txt ~= H.seed_text then H.seed_text = txt end
     if uikit.button("run_roll", tr("run.roll"), w / 2 + 120, 284, 200, 46) then H.seed_text = tostring(G.run.entropy_seed(input.x, input.y)) end
     local seed = tonumber(H.seed_text) or 1
