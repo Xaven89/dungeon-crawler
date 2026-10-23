@@ -63,6 +63,7 @@ function R.begin_floor(n)
     local run = R.cur()
     run.floor = n
     run.building = n                      -- (saved with the world: a start that finds this knows the build was cut off)
+    G.save()
     G.screen = "loading"
     G.safe = false
     G.current_room = nil
@@ -82,6 +83,7 @@ function R.floor_ready(n)
     G.announcer.say_key("floor.arrive", { prio = 2 }, n)
     for _, id in ipairs(p.rules or {}) do G.announcer.say_key("rule." .. id, { prio = 0 }) end
     if G.companion and G.companion.id then G.companion.respawn() end
+    if G.state.ally then G.ally.respawn() end
     G.show.floor_begin()
     if n > 1 then G.contracts.on_new_floor() end
     G.show.deliver(r)
@@ -111,6 +113,7 @@ function R.resume()
             return true
         end
         G.floorgen.load(run.seed, run.floor)
+        if G.state.ally then after(60, function() G.ally.respawn() end) end
         if G.state.run_over then G.screen = "runover"; G.run.over = { src = G.state.run_over_src or "?", floor = run.floor, seed = run.seed } end
         return true
     end

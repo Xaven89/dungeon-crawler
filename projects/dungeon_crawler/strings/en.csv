@@ -399,3 +399,9 @@ contract.glass_cannon.bad,"-25% maximum health"
 runover.title,THE RUN IS OVER
 runover.sub,"Cancelled by {1}. The show goes on. Without you."
 runover.new,Pick a new episode
+achievement.peta.name,Animal Rights Enthusiast
+achievement.peta.desc,Let a caged monster out and have it fight for you.
+achievement.peta.line,"Achievement: 'Animal Rights Enthusiast'. You freed something with teeth. It is grateful. It still has the teeth."
+ally.freed.1,"You let the {1} out. It looks at you. It looks at the guards. It has chosen a side, and the side has a handbag."
+ally.freed.2,"A {1} is free and has decided you are the nicest thing in the building. This will not last."
+room.captive.1,"{1}. There is something in the cage. Everything else in the room works for it, or against it. Hard to say."

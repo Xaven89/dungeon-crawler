@@ -113,10 +113,11 @@ function E.spawn_room(room, list)
     local rem = E.remaining[room]
     local n = 0
     for i, e in ipairs(list) do
-        if not rem or rem[i] then
+        if e.captive and G.state.opened[e.captive] then rem = rem            -- (let out already)
+        elseif not rem or rem[i] then
             local fl = (G.run and G.run.floor_no() or 1) - 1
             local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = (1 + (G.state.level - 1) * 0.03) * (1 + fl * 0.2) * (e.hp or 1), dmg_mult = 1 + fl * 0.1, affix = e.affix, index = i })
-            if inst then n = n + 1 end
+            if inst then n = n + 1; if e.captive then inst.captive = e.captive; agent.stop(inst.id) end end
         end
     end
     return n
@@ -140,6 +141,7 @@ end
 -- a new floor: nobody of the old one is left (the dead are gone with their rooms)
 function E.reset_floor()
     for id in pairs(E.list) do pcall(agent.remove, id) end
+    G.ally.inst = nil
     E.list, E.by_model, E.remaining, E.spawned, E.corpses = {}, {}, {}, {}, {}
     for _, l in ipairs(E.loot) do pcall(body.remove, l.body) end
     for _, p in ipairs(E.projectiles) do pcall(body.remove, p.body) end
@@ -148,7 +150,7 @@ end
 
 function E.alive_in(room)
     local n = 0
-    for _, inst in pairs(E.list) do if inst.room == room and not inst.dead then n = n + 1 end end
+    for _, inst in pairs(E.list) do if inst.room == room and not inst.dead and not inst.captive then n = n + 1 end end
     return n
 end
 
@@ -165,6 +167,7 @@ local function wpos(inst)
 end
 
 function E.damage(inst, amount, opts)
+    if inst.captive or (inst.ally and not (opts and opts.source == "test")) then return end
     if inst.affix == "armored" and amount > 0 then amount = amount * 0.65 end
     if opts and opts.source == "fire" then amount = amount * G.skills.fire_mult() end
     if inst.dead then return end
@@ -309,7 +312,7 @@ end
 
 function E.on_player_death()
     for _, inst in pairs(E.list) do
-        if not inst.dead then
+        if not inst.dead and not inst.ally and not inst.captive then
             inst.state = "idle"
             agent.stop(inst.id)
             if inst.T.wander then agent.wander(inst.id, inst.T.wander) end
@@ -419,10 +422,13 @@ function E.ai(inst, t)
         elseif t % 24 < E.AI_PERIOD then E.damage(inst, max(2, floor(inst.max_hp * 0.03)), { source = "fire" }) end
     end
     if inst.dead then return end
+    if inst.ally then return G.ally.ai(inst, t, d, dy, info) end
     if G.player.dead or G.safe then
         if inst.state ~= "idle" then inst.state = "idle"; agent.stop(inst.id); if inst.T.wander then agent.wander(inst.id, inst.T.wander) end end
         return
     end
+    if inst.captive then return end
+    if inst.ally then return G.ally.ai(inst, t, d, dy, info) end
     if inst.ai or inst.T.ai then return (inst.ai or inst.T.ai)(inst, t, d, dy, info) end
     if inst.state == "stunned" then
         if t >= inst.stun_until then inst.state = "idle"; E.aggro(inst, true) end
@@ -458,6 +464,10 @@ function E.on_anim(mdl, event, clip)
     local px, py, pz = player.pos()
     local x, y, z = wpos(inst)
     if not x then return true end
+    if inst.ally then
+        if event == "hit" or event == "cast" then G.ally.on_hit(inst) end
+        return true
+    end
     if event == "hit" then
         local d = G.dist2(x, z, px, pz)
         if d <= inst.T.reach + 0.9 and abs(y - py) < 3 then

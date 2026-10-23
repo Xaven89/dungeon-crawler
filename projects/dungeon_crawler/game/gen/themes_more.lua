@@ -353,3 +353,45 @@ F.register("prize", {
         F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { allow = function(x, z) return math.abs(z - cz) > 4 end })
     end,
 })
+
+-- ---------------------------------------------------------------------------------------------- captive: a caged monster and its guards
+F.register("captive", {
+    names = { "The Holding Cell", "Detention", "Exhibit B", "The Animal Rights Violation" },
+    weight = function(f, room) return (f >= 2 and room.w >= 18 and room.d >= 18) and 1.1 or 0 end,
+    voxels = function(room, ctx)
+        G.room{ x = room.x, z = room.z, w = room.w, d = room.d, h = room.h, floor = "flagstone", wall = "dungeon_brick", ceil = "dungeon_brick", ftex = "tiles", wtex = "blocks", ctex = "planks" }
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        -- the cage: 4 x 4 m, bars every 0.5 m, a roof of bars, a hatch of loose bars on the south face (the button sits on it)
+        local x0, z0, x1, z1 = cx - 2, cz - 2, cx + 2, cz + 2
+        G.fill(x0, 0, z0, x1, 0.15, z1, "metal")
+        for t = 0, 8 do
+            local u = t * 0.5
+            G.fill(x0 + u, 0, z0, x0 + u + 0.12, 3.2, z0 + 0.12, "metal"); G.fill(x0 + u, 0, z1 - 0.12, x0 + u + 0.12, 3.2, z1, "metal")
+            G.fill(x0, 0, z0 + u, x0 + 0.12, 3.2, z0 + u + 0.12, "metal"); G.fill(x1 - 0.12, 0, z0 + u, x1, 3.2, z0 + u + 0.12, "metal")
+        end
+        G.fill(x0, 3.2, z0, x1, 3.4, z1, "metal")
+        G.fill(x0 + 1.5, 0.9, z1 - 0.2, x0 + 1.9, 1.3, z1 + 0.1, "gold")      -- the lock
+    end,
+    things = function(room, ctx)
+        local r = ctx.rng(room)
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        F.sconces(room, ctx, 8, 3.3); F.lamps(room, 14, 12)
+        local id = "f" .. ctx.floor .. "cage" .. room.index
+        local kind = ({ "orc", "troll", "cyclops", "samurai" })[1 + (ctx.floor + room.index) % 4]
+        if ctx.floor < 3 and kind == "cyclops" then kind = "orc" end
+        ctx.add(room, kind, cx, cz, 0, { captive = id })
+        local x0, z0, x1, z1 = cx - 2, cz - 2, cx + 2, cz + 2
+        local lock = events.button{ name = id .. "_lock", box = { G.wx(x0 + 1.5), G.wy(0.9), G.wz(z1 - 0.2), G.wx(x0 + 1.9) - 1, G.wy(1.3), G.wz(z1 + 0.1) - 1 }, prompt = "Open the cage", on = "neon", off = "gold", press_ticks = 10 }
+        T.add_interact(id, x0 + 1.7, 1.1, z1 + 0.2, "Open the cage", 2.8, function() return not G.state.opened[id] end)
+        events.on(lock, "pressed", function()
+            if G.state.opened[id] then return end
+            G.state.opened[id] = true
+            G.clear(x0 + 1.0, 0.15, z1 - 0.2, x0 + 2.4, 3.2, z1 + 0.2)               -- the hatch: the bars of that part go
+            G.sfx.play("lever", cx, 1, z1)
+            for _, inst in pairs(G.enemies.list) do if inst.captive == id then G.ally.adopt(inst) end end
+            G.save()
+        end)
+        local cage = { { x0 - 1.5, z0 - 1.5, x1 + 1.5, z1 + 1.5 } }
+        F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { allow = clear_of(cage, 0), kinds = { { "bandit", 4 }, { "orc", 2 }, { "imp", 2 }, { "goblin", 2 } } })
+    end,
+})
