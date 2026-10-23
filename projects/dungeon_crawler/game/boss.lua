@@ -66,7 +66,7 @@ function B.geyser(lx, lz)
         emitter.remove(name)
         local wx, wy, wz = G.mx(lx), G.my(0.1), G.mz(lz)
         fx.explosion(floor(units.vox(wx)), floor(units.vox(wy)), floor(units.vox(wz)), 18, 0.5)
-        fx.fire(floor(units.vox(wx)), floor(units.vox(wy)), floor(units.vox(wz)), 22)
+        fx.fire(floor(units.vox(wx)), floor(units.vox(wy)), floor(units.vox(wz)), 8)
         G.sfx.play("explosion", lx, 0, lz, 0.9)
         local px, py, pz = player.pos()
         if G.dist2(wx, wz, px, pz) < 2.4 and math.abs(py - wy) < 2 then G.player.hurt(26, "a lava geyser", { pierce = true }) end

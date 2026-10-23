@@ -456,7 +456,37 @@ function E.tick_projectiles(t)
     end
 end
 
+-- fire hurts: anything standing in flames or embers (a cell at the feet or the knees) takes damage every half second and catches fire itself
+local burning = { flame = true, ember = true }
+-- is something burning at the feet (the floor layer, the cell above it, a cell to each side)? The carpet is one voxel thick: the burning voxel is the floor itself
+local function on_fire(x, y, z, h)
+    local cx, cz = floor(x * 16), floor(z * 16)
+    for _, oy in ipairs({ -0.02, 0.05, 0.4 }) do
+        local cy = floor((y + oy) * 16)
+        for _, o in ipairs({ { 0, 0 }, { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
+            if burning[world.material_at(cx + o[1], cy, cz + o[2])] then return true end
+        end
+    end
+    return false
+end
+
+function E.tick_fire(t)
+    if t % 30 ~= 0 then return end
+    for _, inst in pairs(E.list) do
+        if not inst.dead then
+            local x, y, z = E.position(inst)
+            if x and on_fire(x, y, z) then
+                E.damage(inst, max(3, floor(inst.max_hp * 0.04)), { source = "fire" })
+                if not inst.dead then E.ignite(inst) end
+            end
+        end
+    end
+    local px, py, pz = player.pos()
+    if not G.player.dead and not G.safe and on_fire(px, py, pz) then G.player.hurt(4, "the flames", { pierce = true }) end
+end
+
 function E.tick(t)
+    E.tick_fire(t)
     local n = 0
     for _, inst in pairs(E.list) do
         n = n + 1

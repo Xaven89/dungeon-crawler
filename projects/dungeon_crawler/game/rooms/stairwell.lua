@@ -11,7 +11,7 @@ W.builders[#W.builders + 1] = function()
     G.fill(58, 0, 128, 66, 0.05, 136, "carpet"); G.fill(57.9, 0, 127.9, 66.1, 0.05, 128, "gold"); G.fill(57.9, 0, 136, 66.1, 0.05, 136.1, "gold")
     G.fill(59, 0, 124, 65, 3.0, 125.2, "brick"); G.clear(60, 0, 124, 64, 1.8, 125.2); G.fill(60, 0, 124, 64, 0.2, 125, "obsidian")
     G.fill(58.4, 3.0, 124, 65.6, 3.4, 125.6, "marble")
-    for i = 0, 3 do
+    for _, i in ipairs({ 0, 3 }) do          -- (two bookcases at the corners: the middle two stood right in the entrance, z 130 to 134)
         local z = 126 + i * 3.5
         G.fill(54, 0, z, 55.2, 3.6, z + 3, "dark_wood")
         for sh = 0.4, 3.2, 0.7 do

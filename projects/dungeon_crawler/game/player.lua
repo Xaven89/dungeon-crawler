@@ -370,7 +370,7 @@ function P.ability()
             end
             if stop then break end
         end
-        fx.fire(floor(x * 16), floor(y * 16), floor(z * 16), 28)
+        fx.fire(floor(x * 16), floor(y * 16), floor(z * 16), 9)
         G.traps.blast(x, y, z, 3.5)
         fx.play("sparks", floor(x * 16), floor(y * 16), floor(z * 16), 1.4)
         fx.explosion(floor(x * 16), floor(y * 16), floor(z * 16), 10, 0.4)

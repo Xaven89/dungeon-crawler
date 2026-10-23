@@ -22,7 +22,8 @@ W.builders[#W.builders + 1] = function()
     G.text(41.5, 2.4, 2, "PLEASE DO NOT STEP ON THE PLATE", { facing = "+z", material = "hazard_y", size = 1, depth = 1 })
     G.text(34, 2.6, 20, "EXPLOSIVES: HANDLE WITH IRRESPONSIBILITY", { facing = "-z", material = "neon_red", size = 1, depth = 1 })
     -- the boulder's hatch in the east wall (a dark recess, just so that it can be seen)
-    G.fill(71.2, 0, 8.6, 72, 3.4, 13.4, "obsidian")
+    -- (the doorway to the Boiler Gallery is a frame of obsidian: jambs and a lintel; the first version was a solid slab that walled the hall off)
+    G.fill(71.2, 0, 8.6, 72, 3.4, 9.0, "obsidian"); G.fill(71.2, 0, 13.0, 72, 3.4, 13.4, "obsidian"); G.fill(71.2, 3.4, 8.6, 72, 4.0, 13.4, "obsidian")
     W.openings[#W.openings + 1] = { 29.6, 0, 9, 30.4, 4.4, 13 }                    -- the lobby corridor meets the hall
     -- the corridor east to the Boiler Gallery
     G.corridor{ x = 72, z = 11, len = 4, w = 4, h = 4, axis = "x", floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
@@ -34,6 +35,7 @@ W.builders[#W.builders + 1] = function()
     G.room{ x = 34.5, z = 28, w = 7, d = 7, h = 4, floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
     -- the closet's own walls cross the corridor: open them (a bug of the first version: the passage was sealed by the room's north and south skins)
     W.openings[#W.openings + 1] = { 36.6, 0, 27.6, 39.4, 3.4, 28.1 }; W.openings[#W.openings + 1] = { 36.6, 0, 34.9, 39.4, 3.4, 35.4 }
+    W.openings[#W.openings + 1] = { 36.6, 0, 44.3, 39.4, 3.4, 46.2 }                   -- where the two passages of the secret tunnel meet (the one's wall crossed the other)
     G.corridor{ x = 20, z = 46, len = 18.25, w = 2.6, h = 3.4, axis = "x", floor = "flagstone", wall = "dungeon_brick" }
     G.corridor{ x = 20, z = 46, len = 10, w = 2.6, h = 3.4, axis = "z", floor = "flagstone", wall = "dungeon_brick" }
     -- the hall-end checkpoint: a crystal on a plinth (north-east corner)

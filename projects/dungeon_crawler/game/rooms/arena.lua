@@ -47,7 +47,6 @@ W.builders[#W.builders + 1] = function()
     G.fill(49.5, 0, 130.0, 50.1, 4.1, 130.4, "metal"); G.fill(49.5, 0, 133.6, 50.1, 4.1, 134.0, "metal")             -- gate posts
     -- the gate: a portcullis slab that sinks into a slot in the floor (the door node moves exactly these voxels)
     local g = W.AGATE
-    G.vclear(g.x0 - 1, -66, g.z0, g.x1 + 2, -1, g.z1)
     for z = g.z0, g.z1, 5 do G.vfill(g.x0, 0, z, g.x1, g.h, math.min(z + 1, g.z1), "metal") end
     G.vfill(g.x0, 0, g.z0, g.x1, 3, g.z1, "metal"); G.vfill(g.x0, 30, g.z0, g.x1, 33, g.z1, "metal"); G.vfill(g.x0, 58, g.z0, g.x1, g.h, g.z1, "metal")
 end

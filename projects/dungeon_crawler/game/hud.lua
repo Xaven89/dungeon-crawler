@@ -144,10 +144,10 @@ local function hud_player(w, h, input)
     if frac > 0 then ui.rect(ax + 4, ay + 4 + 66 * (1 - frac), 66, 66 * frac, "#00000099", { radius = 10 }) end
     ui.text(ax + 37, ay + 24, "RMB", { size = 20, color = "#101418", align = "center" })
     ui.text(ax + 37, ay + 78, ab.name .. (ab.cost > 0 and (" " .. ab.cost) or ""), { size = 16, color = C.dim, align = "center" })
-    -- quick keys: R heal, T mana, G throw (the number keys are the engine's teleports)
+    -- quick keys: R heal, X mana, G throw (the number keys are the engine's teleports)
     local inv = G.items.inv
     local qx, qy = (w - 3 * 150) / 2 - 20, h - 92
-    local quick = { { "R", "heal", { "bandage", "smoothie", "sushi", "cheese" }, C.red }, { "T", "mana", { "energy", "cheese" }, C.blue }, { "G", "throw", { "firecracker" }, "#ffb040" } }
+    local quick = { { "R", "heal", { "bandage", "smoothie", "sushi", "cheese" }, C.red }, { "X", "mana", { "energy", "cheese" }, C.blue }, { "G", "throw", { "firecracker" }, "#ffb040" } }
     for i, q in ipairs(quick) do
         local n = 0
         for _, id in ipairs(q[3]) do n = n + G.items.count(id) end
@@ -386,7 +386,7 @@ local function bag_screen(w, h, input)
             string.format("XP %d / %d     Kills %d     Deaths %d", s.xp, P.xp_needed(), s.kills, s.deaths),
         }
         for i, ln in ipairs(lines) do ui.text(cx + 8, sy + 34 + (i - 1) * 28, ln, { size = 20, color = "#dfe4f0" }) end
-        ui.text(cx + 8, sy + 128, "Quick keys: R heal, T mana, G throw.", { size = 17, color = C.dim })
+        ui.text(cx + 8, sy + 128, "Quick keys: R heal, X mana, G throw.", { size = 17, color = C.dim })
         -- the bag
         local bx = cx + 520
         ui.text(bx, top, tr("ui.inventory"), { size = 26, color = C.gold })

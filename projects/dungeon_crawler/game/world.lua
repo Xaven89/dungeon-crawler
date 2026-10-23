@@ -73,7 +73,6 @@ local function build_lobby_voxels()
     G.fill(25, 0, 8.8, 26.4, 5, 9.2, "metal"); G.fill(25, 0, 12.8, 26.4, 5, 13.2, "metal")      -- gate posts
     G.fill(25, 4.5, 8.8, 26.4, 5.2, 13.2, "metal")                                               -- the lintel
     local g = W.GATE
-    G.vclear(g.x0 - 1, -76, g.z0, g.x1 + 3, -1, g.z1)                                                      -- the slot the portcullis sinks into
     for z = g.z0, g.z1, 4 do G.vfill(g.x0, 0, z, g.x1, g.h, math.min(z + 1, g.z1), "metal") end            -- bars
     G.vfill(g.x0, 0, g.z0, g.x1, 3, g.z1, "metal"); G.vfill(g.x0, 34, g.z0, g.x1, 37, g.z1, "metal"); G.vfill(g.x0, 68, g.z0, g.x1, g.h, g.z1, "metal")
     G.text(7.4, 6.4, 22, "GAUNTLET GATE - PLEASE SCREAM IN AN ORDERLY FASHION", { facing = "-z", material = "hazard_y", size = 1, depth = 1 })
@@ -108,6 +107,22 @@ function W.build()
     end
     build_lobby_things()
     -- a world saved by an earlier version still has the plugs in the secret passage: take them out once
+    -- one-time repairs of worlds saved by earlier versions (flag per repair)
+    if not G.should_build() and not G.state.flags.fix_v3 then
+        G.clear(36.6, 0, 44.3, 39.4, 3.4, 46.2)                         -- the secret tunnel's crossing
+        for _, i in ipairs({ 1, 2 }) do local z = 126 + i * 3.5; G.clear(53.9, 0, z, 55.8, 3.7, z + 3) end       -- the two bookcases in the stairwell's entrance
+        G.state.flags.fix_v3 = true
+    elseif G.should_build() then G.state.flags.fix_v3 = true end
+    if not G.should_build() and not G.state.flags.fix_gate_slots then
+        -- the portcullis slots in the floor (trenches across the corridors, left from the time the gates were event doors that sank into them)
+        G.vfill(W.GATE.x0 - 1, -76, W.GATE.z0, W.GATE.x1 + 3, -1, W.GATE.z1, "flagstone")
+        local a = W.AGATE; if a then G.vfill(a.x0 - 1, -66, a.z0, a.x1 + 2, -1, a.z1, "flagstone") end
+        G.state.flags.fix_gate_slots = true
+    elseif G.should_build() then G.state.flags.fix_gate_slots = true end
+    if not G.should_build() and not G.state.flags.fix_hall_hatch then
+        G.clear(71.1, 0, 9.0, 72.5, 4.0, 13.0)           -- the slab of obsidian that closed the doorway at the east end of the Hall
+        G.state.flags.fix_hall_hatch = true
+    elseif G.should_build() then G.state.flags.fix_hall_hatch = true end
     if not G.should_build() and not G.state.flags.fix_secret_walls then
         for _, o in ipairs({ { 36.6, 0, 27.6, 39.4, 3.4, 28.1 }, { 36.6, 0, 34.9, 39.4, 3.4, 35.4 } }) do G.clear(o[1], o[2], o[3], o[4], o[5], o[6]) end
         G.state.flags.fix_secret_walls = true
