@@ -1,1 +1,0 @@
--- scratch script for screenshots (tools/hudshot.sh BOOT=...): empty in git
