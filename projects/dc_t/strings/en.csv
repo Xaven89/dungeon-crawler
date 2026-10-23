@@ -354,3 +354,11 @@ rule.muted.popup,THE ROOM SWALLOWS YOUR SPELL
 rule.dts.stage1.1,"DTs, stage one. The monsters have started to shake. They are hitting a little harder out of spite."
 rule.dts.stage2.1,"DTs, stage two. They are marked, they are faster, they have stopped speaking. This was the part of the briefing I skipped."
 rule.dts.stage3.1,"DTs, stage three. Whatever dies on this floor now hatches. I recommend not dying where it is hatching."
+ui.skills,Skills
+ui.skills_hint,"Skills grow by doing: nobody is teaching you. They are all watching."
+skill.up,SKILL UP: {1} {2}
+skill.up.1,"{1} has reached level {2}. This is the part where I say I am proud of you. I am contractually required to say it."
+skill.up.2,"A new level of {1}: {2}. The sponsors have noted it. Their notes are mostly emojis."
+cond.bleed.1,"You are bleeding. This is not a metaphor. A bandage would be good, the stairwell would be better."
+cond.septic.1,"You are septic: healing is half as good until a Smoothie or sushi clears you. Please do not ask what the smoothie is."
+cond.cured,"{1} cured"

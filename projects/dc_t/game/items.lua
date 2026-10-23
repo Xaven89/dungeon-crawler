@@ -47,9 +47,9 @@ def("trophy",     { kind = "trinket", name = "Participation Trophy",      desc =
 def("monocle",    { kind = "trinket", name = "Monocle of Mild Suspicion", desc = "+3 INT. Sees through lies and some walls.",         int = 3, value = 70, rarity = "rare" })
 
 -- ---- consumables (use from the hotbar: 1..8)
-def("smoothie",   { kind = "consumable", name = "Mystery Smoothie",       desc = "Restores 40 health. Do not ask about the colour.",   heal = 40, value = 12 })
-def("bandage",    { kind = "consumable", name = "Bandage (Previously Owned)", desc = "Restores 25 health. Slightly warm.",              heal = 25, value = 6 })
-def("sushi",      { kind = "consumable", name = "Gas Station Sushi",      desc = "Restores 90 health. Roll the dice on tomorrow.",     heal = 90, value = 35, rarity = "uncommon" })
+def("smoothie",   { kind = "consumable", name = "Mystery Smoothie",       desc = "Restores 40 health and clears septic. Do not ask about the colour.", heal = 40, value = 12, cures = { "septic" } })
+def("bandage",    { kind = "consumable", name = "Bandage (Previously Owned)", desc = "Restores 25 health and stops the bleeding. Slightly warm.", heal = 25, value = 6, cures = { "bleed" } })
+def("sushi",      { kind = "consumable", name = "Gas Station Sushi",      desc = "Restores 90 health, cures bleeding and septic. Roll the dice on tomorrow.", heal = 90, value = 35, rarity = "uncommon", cures = { "bleed", "septic" } })
 def("energy",     { kind = "consumable", name = "Energy Drink (Extreme)", desc = "Restores 35 mana. Your heart files a complaint.",    mana = 35, value = 14 })
 def("firecracker", { kind = "consumable", name = "Firecracker of Opportunity", desc = "Throw at the thing in front of you. Loud.",      throw = "boom", value = 18 })
 def("cheese",     { kind = "consumable", name = "Wheel of Fate (Cheese)", desc = "Restores 60 health and 20 mana. Gouda choice.",      heal = 60, mana = 20, value = 40, rarity = "rare" })

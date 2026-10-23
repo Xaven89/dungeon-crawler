@@ -16,15 +16,15 @@ E.AI_PERIOD = 8
 E.types = {
     slime = { model = "slime", name = "Gutter Slime", hp = 28, dmg = 6, speed = 1.5, reach = 1.5, aggro = 10, xp = 12, gold = { 0, 3 }, cd = 95, height = 0.7, radius = 0.5, anim = "clip",
               splat = "splat_goo", hit_sfx = "squish", die_sfx = "squish_die", loot = "drop", loot_chance = 0.3, wander = 3 },
-    slime_toxic = { model = "slime_toxic", name = "Toxic Slime", hp = 46, dmg = 10, speed = 1.7, reach = 1.5, aggro = 11, xp = 24, gold = { 2, 6 }, cd = 85, height = 0.7, radius = 0.5, anim = "clip",
+    slime_toxic = { inflict = { kind = "septic", chance = 0.35, dur = 1800 }, model = "slime_toxic", name = "Toxic Slime", hp = 46, dmg = 10, speed = 1.7, reach = 1.5, aggro = 11, xp = 24, gold = { 2, 6 }, cd = 85, height = 0.7, radius = 0.5, anim = "clip",
                     splat = "splat_toxic", hit_sfx = "squish", die_sfx = "squish_die", loot = "drop", loot_chance = 0.4, wander = 3 },
-    intern = { model = "intern", name = "Skeletal Intern", hp = 44, dmg = 9, speed = 1.6, reach = 2.0, aggro = 13, xp = 22, gold = { 1, 5 }, cd = 110, height = 2.4, radius = 0.5,
+    intern = { inflict = { kind = "bleed", chance = 0.2, dur = 480 }, model = "intern", name = "Skeletal Intern", hp = 44, dmg = 9, speed = 1.6, reach = 2.0, aggro = 13, xp = 22, gold = { 1, 5 }, cd = 110, height = 2.4, radius = 0.5,
                splat = "splat_bone", hit_sfx = "bone", die_sfx = "bone_die", ragdoll = true, loot = "drop", loot_chance = 0.4, wander = 2 },
     goblin = { model = "goblin_sales", name = "Goblin Sales Associate", hp = 38, dmg = 8, speed = 2.1, reach = 1.9, aggro = 14, xp = 20, gold = { 2, 8 }, cd = 90, height = 1.75, radius = 0.5,
                splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", ragdoll = true, loot = "goblin", loot_chance = 0.5, wander = 2, pack = true },
-    rat = { model = "rat", name = "Cellar Rat", hp = 14, dmg = 4, speed = 3.2, reach = 1.2, aggro = 14, xp = 7, gold = { 0, 1 }, cd = 60, height = 0.7, radius = 0.35,
+    rat = { inflict = { kind = "septic", chance = 0.2, dur = 1500 }, model = "rat", name = "Cellar Rat", hp = 14, dmg = 4, speed = 3.2, reach = 1.2, aggro = 14, xp = 7, gold = { 0, 1 }, cd = 60, height = 0.7, radius = 0.35,
             splat = "splat_red", hit_sfx = "squeak", die_sfx = "squeak_die", loot = "drop", loot_chance = 0.1, wander = 4, pack = true },
-    spitter = { model = "spitter", name = "Mushroom Spitter", hp = 30, dmg = 8, speed = 1.0, reach = 11, aggro = 12, xp = 26, gold = { 2, 7 }, cd = 150, height = 1.4, radius = 0.5, ranged = true, keep = 7,
+    spitter = { inflict = { kind = "septic", chance = 0.3, dur = 1800 }, model = "spitter", name = "Mushroom Spitter", hp = 30, dmg = 8, speed = 1.0, reach = 11, aggro = 12, xp = 26, gold = { 2, 7 }, cd = 150, height = 1.4, radius = 0.5, ranged = true, keep = 7,
                 splat = "splat_spore", hit_sfx = "squish", die_sfx = "squish_die", ragdoll = true, loot = "drop", loot_chance = 0.4, wander = 1.5 },
     foreman = { model = "foreman", name = "Goblin Foreman", hp = 340, dmg = 17, speed = 1.9, reach = 2.7, aggro = 16, xp = 160, gold = { 40, 70 }, cd = 100, height = 2.9, radius = 0.9, miniboss = true,
                 splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", ragdoll = true, loot = "silver", loot_chance = 1, slam = true },
@@ -32,15 +32,15 @@ E.types = {
                 splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", ragdoll = true, loot = "platinum", loot_chance = 1 },
     -- the rigged kit figures (docs/ANIMATION.md, EQUIPMENT.md): drawn with finer voxels, they play the clips idle / walk / run / attack (event `hit`) / cast (event `cast`) / hit / die and carry things.
     -- `kit` is what they hold (equipment slots), `die_clip` replaces the ragdoll (a drawn-only model cannot go limp)
-    orc = { model = "figures/monster_orc_captain_green", name = "Orc Compliance Officer", hp = 110, dmg = 15, speed = 2.1, reach = 2.0, aggro = 14, xp = 40, gold = { 5, 15 }, cd = 85, height = 2.0, radius = 0.55,
+    orc = { inflict = { kind = "bleed", chance = 0.2, dur = 600 }, model = "figures/monster_orc_captain_green", name = "Orc Compliance Officer", hp = 110, dmg = 15, speed = 2.1, reach = 2.0, aggro = 14, xp = 40, gold = { 5, 15 }, cd = 85, height = 2.0, radius = 0.55,
             anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm", off_hand = "round_shield.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "goblin", loot_chance = 0.5, wander = 2, pack = true },
-    bandit = { model = "figures/human_man_warrior", name = "Disgruntled Contractor", hp = 80, dmg = 12, speed = 2.6, reach = 1.9, aggro = 15, xp = 32, gold = { 3, 11 }, cd = 65, height = 1.8, radius = 0.5,
+    bandit = { inflict = { kind = "bleed", chance = 0.3, dur = 600 }, model = "figures/human_man_warrior", name = "Disgruntled Contractor", hp = 80, dmg = 12, speed = 2.6, reach = 1.9, aggro = 15, xp = 32, gold = { 3, 11 }, cd = 65, height = 1.8, radius = 0.5,
                anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "drop", loot_chance = 0.45, wander = 2, pack = true },
-    samurai = { model = "figures/human_man_samurai", name = "Redundant Samurai", hp = 120, dmg = 18, speed = 2.9, reach = 2.0, aggro = 16, xp = 55, gold = { 6, 18 }, cd = 60, height = 1.8, radius = 0.5,
+    samurai = { inflict = { kind = "bleed", chance = 0.45, dur = 720 }, model = "figures/human_man_samurai", name = "Redundant Samurai", hp = 120, dmg = 18, speed = 2.9, reach = 2.0, aggro = 16, xp = 55, gold = { 6, 18 }, cd = 60, height = 1.8, radius = 0.5,
                 anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "silver", loot_chance = 0.5, wander = 1.5 },
     imp = { model = "figures/human_demon_girl", name = "Intern from Marketing", hp = 70, dmg = 13, speed = 1.4, reach = 12, aggro = 15, xp = 38, gold = { 4, 12 }, cd = 140, height = 1.8, radius = 0.5, ranged = true, keep = 8, cast = "ember",
             anim = "clip", die_clip = true, kit = { main_hand = "wooden_staff.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "drop", loot_chance = 0.5, wander = 1.5 },
-    troll = { model = "figures/monster_troll_blue", name = "Troll of the Night Shift", hp = 230, dmg = 24, speed = 1.6, reach = 2.5, aggro = 14, xp = 85, gold = { 10, 28 }, cd = 105, height = 2.6, radius = 0.8,
+    troll = { inflict = { kind = "bleed", chance = 0.3, dur = 720 }, model = "figures/monster_troll_blue", name = "Troll of the Night Shift", hp = 230, dmg = 24, speed = 1.6, reach = 2.5, aggro = 14, xp = 85, gold = { 10, 28 }, cd = 105, height = 2.6, radius = 0.8,
               anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "goblin_die", loot = "silver", loot_chance = 0.6, wander = 1.5 },
     cyclops = { model = "figures/monster_cyclop_pink", name = "Cyclops Auditor", hp = 520, dmg = 27, speed = 1.9, reach = 3.0, aggro = 18, xp = 220, gold = { 50, 90 }, cd = 100, height = 3.1, radius = 1.0, miniboss = true,
                 anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "gold", loot_chance = 1 },
@@ -166,6 +166,7 @@ end
 
 function E.damage(inst, amount, opts)
     if inst.affix == "armored" and amount > 0 then amount = amount * 0.65 end
+    if opts and opts.source == "fire" then amount = amount * G.skills.fire_mult() end
     if inst.dead then return end
     opts = opts or {}
     local P = G.player
@@ -247,13 +248,15 @@ function E.kill(inst, opts)
     if G.state.marked_bonus and inst.marked then gold = gold * 2 end
     gold = floor(gold * (1 + P.gold_bonus()) + (inst.marked and inst.marked > time.tick() and gold or 0))
     s.gold = s.gold + gold
-    if gold > 0 then P.log("+" .. gold .. " gold", "#ffd24a") end
+    if gold > 0 then P.log("+" .. gold .. " gold", "#ffd24a"); G.skills.bump("haggling", gold) end
     P.add_xp(floor(T.xp * (1 + 0.0 * s.level)), "kill")
     if x then G.sfx.play(T.die_sfx or "squish_die", G.to_local(x, y, z)) end
     -- overkill: more than twice the hp that was left
     if inst.hp < -inst.max_hp * 0.8 then A.award("overkill") end
     if inst.kind == "slime" or inst.kind == "slime_toxic" then if (A.bump("slimes") or 0) >= 10 then A.award("squeegee") end end
     if G.show then G.show.on_kill(inst, opts) end
+    if opts.source == "fire" or inst.burning then G.skills.bump("pyromania") end
+    if opts.source == "barrel" then G.skills.bump("demolition") end
     if G.gen and G.gen.rules and G.floorgen.active then G.gen.rules.on_kill(inst) end
     if inst.burning then A.award("pyro") end
     if x then
@@ -458,7 +461,9 @@ function E.on_anim(mdl, event, clip)
     if event == "hit" then
         local d = G.dist2(x, z, px, pz)
         if d <= inst.T.reach + 0.9 and abs(y - py) < 3 then
-            G.player.hurt(inst.T.dmg * (inst.dmg_mult or 1) * (0.9 + G.rand() * 0.2), inst.name)
+            local dealt = G.player.hurt(inst.T.dmg * (inst.dmg_mult or 1) * (0.9 + G.rand() * 0.2), inst.name)
+            local inf = inst.T.inflict
+            if inf and dealt and dealt > 0 and G.rand() < inf.chance then G.skills.afflict(inf.kind, inf.dur) end
         end
         G.sfx.play("swing", G.to_local(x, y + 1, z), 0.5, 0.7)
     elseif event == "slam" then
@@ -499,6 +504,7 @@ function E.tick_projectiles(t)
         local gone = (not ok) or (t - p.born > 220)
         if ok and not gone and G.dist3(x, y, z, px, py + 1.0, pz) < 1.0 then
             G.player.hurt(p.dmg, p.from)
+            if (p.fx or "splat_toxic") == "splat_toxic" and G.rand() < 0.3 then G.skills.afflict("septic", 1800) end
             fx.play(p.fx or "splat_toxic", floor(x * 16), floor(y * 16), floor(z * 16), 0.8)
             gone = true
         end

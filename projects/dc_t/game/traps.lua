@@ -237,6 +237,8 @@ function T.open_crate(id)
         local n = G.irange(tdef.rolls[1], tdef.rolls[2])
         local gold = G.irange(tdef.gold[1], tdef.gold[2])
         G.enemies.drop(cx, cy + 0.3, cz, "gold", gold)
+        n = n + G.skills.extra_rolls()
+        G.skills.bump("looting")
         if T.crate_loot[id] then n = #T.crate_loot[id] end
         for i = 1, n do
             local item = T.crate_loot[id] and T.crate_loot[id][i] or G.items.roll(tier, i * 31 + #id)
@@ -278,7 +280,7 @@ function T.explode_barrel(b, by_chain)
     G.enemies.damage_area(wx, wy, wz, 4.5, 70, "barrel")
     local px, py, pz = player.pos()
     local d = G.dist3(px, py + 0.9, pz, wx, wy, wz)
-    if d < 4.5 then G.player.hurt(floor(40 * (1 - d / 5.5)) + 8, "an explosive barrel", { pierce = true }) end
+    if d < 4.5 then G.player.hurt(floor((floor(40 * (1 - d / 5.5)) + 8) * G.skills.blast_taken()), "an explosive barrel", { pierce = true }) end
     for _, o in ipairs(T.barrels) do
         if o.alive and G.dist3(o.x, o.y, o.z, b.x, b.y, b.z) < 2.6 then after(8, function() T.explode_barrel(o, true) end) end
     end

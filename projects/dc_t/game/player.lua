@@ -75,7 +75,7 @@ function P.crit_chance() return 0.05 + P.stat("dex") * 0.012 end
 function P.gold_bonus()
     local b = 0
     for _, id in pairs(G.state.equip) do local d = G.items.defs[id]; if d and d.gold_bonus then b = b + d.gold_bonus end end
-    return b
+    return b + (G.skills.gold_mult() - 1)
 end
 function P.xp_needed(level) return floor(60 * (level or G.state.level) ^ 1.4) end
 
@@ -168,7 +168,7 @@ function P.hurt(amount, src, opts)
     opts = opts or {}
     if P.dead or G.safe or (P.grace or 0) > time.tick() or not s.class then return 0 end
     if not opts.pierce then
-        if G.hash(time.tick(), floor(amount), 7) < P.stat("dex") * 0.004 then
+        if G.hash(time.tick(), floor(amount), 7) < P.stat("dex") * 0.004 + G.skills.dodge_bonus() then
             P.popup("DODGE", "#cfe8ff")
             return 0
         end
@@ -177,6 +177,7 @@ function P.hurt(amount, src, opts)
     amount = floor(amount + 0.5)
     s.hp = s.hp - amount
     if G.show then G.show.on_hurt(amount, src) end
+    if src ~= "bleeding" then G.skills.bump("dodging") end
     P.flash = time.tick()
     P.last_hurt = time.tick()
     P.popup("-" .. amount, "#ff6060")
@@ -276,7 +277,7 @@ local function roll_damage(base_lo, base_hi, mult)
     local s = G.state
     local dmg = base_lo + G.rand() * (base_hi - base_lo)
     dmg = dmg * (1 + P.stat("str") * 0.05) + s.level * 0.8
-    dmg = dmg * (mult or 1)
+    dmg = dmg * (mult or 1) * G.skills.damage_mult()
     local crit = G.rand() < P.crit_chance()
     if crit then dmg = dmg * 2 end
     return max(1, floor(dmg + 0.5)), crit
@@ -323,6 +324,7 @@ function P.attack()
     for _, t in ipairs(targets) do
         local dmg, crit = roll_damage(w.dmg[1], w.dmg[2])
         G.enemies.damage(t.inst, dmg, { crit = crit, burn = w.burn, source = "player" })
+        G.skills.bump("brawling")
         hit = true
     end
     if not hit then
@@ -468,7 +470,8 @@ function P.use_item(id)
     if d.kind ~= "consumable" then return false end
     if d.heal and s.hp >= P.max_hp() and not d.mana and not d.throw then P.popup("ALREADY HEALTHY", "#cccccc"); return false end
     G.items.remove(id, 1)
-    if d.heal then P.heal(d.heal); G.sfx.play("heal") end
+    if d.heal then P.heal(floor(d.heal * G.skills.heal_factor() + 0.5)); G.sfx.play("heal") end
+    for _, c in ipairs(d.cures or {}) do G.skills.cure(c) end
     if d.mana then s.mp = min(P.max_mp(), s.mp + d.mana); P.log("+" .. d.mana .. " MP", "#7aa8ff"); G.sfx.play("heal", nil, nil, nil, 0.6, 1.3) end
     if d.throw then
         local ex, ey, ez, hx, hy, hz = G.look_ray(24, 0.25)
@@ -512,6 +515,7 @@ end
 function P.tick(t)
     local s = G.state
     if not s.class or P.dead then return end
+    G.skills.tick(t)
     s.playtime = s.playtime + 1
     if t % 30 == 0 then
         local out_of_combat = t - (P.last_hurt or -9999) > 480

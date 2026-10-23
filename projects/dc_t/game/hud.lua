@@ -228,6 +228,14 @@ local function hud_world(w, h, input)
     ui.text(26, 52, (H.floor_label and H.floor_label() or "FLOOR 1") .. "  " .. (room and room.name or "..."), { size = 20, color = C.dim })
     local rl = H.rule_label and H.rule_label()
     if rl then ui.text(26, 78, rl, { size = 18, color = "#ff9a5a" }) end
+    local cy_ = rl and 104 or 80
+    for _, kind in ipairs({ "bleed", "septic" }) do
+        if G.skills.has(kind) then
+            local left = floor((s.cond[kind] - t) / 60)
+            ui.text(26, cy_, string.format("%s  %ds", G.skills.COND[kind].name, left), { size = 20, color = G.skills.COND[kind].color })
+            cy_ = cy_ + 24
+        end
+    end
     -- the top right: the show's numbers
     local sh = G.show.st()
     ui.text(w - 26, 20, tr("show.viewers") .. "  " .. G.format_int(sh.views > 0 and sh.views or G.show.viewers()), { size = 24, color = "#ff6a8a", align = "right" })
@@ -380,7 +388,7 @@ local function bag_screen(w, h, input)
     local pw, ph = 1260, 820
     local px, py = (w - pw) / 2, (h - ph) / 2 - 30
     local cx, cy, cw, chh = panel(px, py, pw, ph, "")
-    local tabs = uikit.tabs("bag_tabs", { tr("ui.inventory") .. " (I)", tr("ui.character") .. " (C)", "Achievements (J)", tr("ui.settings") }, G.bag_tab or 1, cx, cy, 900, 40)
+    local tabs = uikit.tabs("bag_tabs", { tr("ui.inventory") .. " (I)", tr("ui.character") .. " (C)", "Achievements (J)", tr("ui.settings"), tr("ui.skills") .. " (K)" }, G.bag_tab or 1, cx, cy, 1100, 40)
     if tabs ~= (G.bag_tab or 1) then G.bag_tab = tabs end
     local top = cy + 56
     if (G.bag_tab or 1) == 1 then
@@ -451,6 +459,21 @@ local function bag_screen(w, h, input)
         ui.text(cx + 8, y + 20, string.format("Weapon: %s   damage %d-%d   swing %.2fs   reach %.1fm", w_.name, w_.dmg[1], w_.dmg[2], w_.cd / 60, w_.reach), { size = 20, color = "#dfe4f0" })
         ui.text(cx + 8, y + 50, string.format("Max HP %d    Max MP %d    Armour %.1f    Crit %d%%    Gold bonus %d%%", P.max_hp(), P.max_mp(), P.defense(), floor(P.crit_chance() * 100), floor(P.gold_bonus() * 100)), { size = 20, color = "#dfe4f0" })
         ui.text(cx + 8, y + 90, string.format("Time played %d:%02d     Kills %d     Deaths %d", floor(s.playtime / 3600), floor(s.playtime / 60) % 60, s.kills, s.deaths), { size = 20, color = C.dim })
+    elseif G.bag_tab == 5 then
+        ui.text(cx + 8, top, tr("ui.skills"), { size = 30, color = C.gold })
+        ui.text(cx + 8, top + 38, tr("ui.skills_hint"), { size = 18, color = C.dim })
+        local y = top + 80
+        for _, id in ipairs(G.skills.order) do
+            local d, lv, n = G.skills.defs[id], G.skills.level(id), G.skills.count(id)
+            local nxt = d.thr[lv + 1]
+            ui.rect(cx + 8, y, 1180, 74, "#161a26", { radius = 10 })
+            ui.rect(cx + 8, y, 1180, 74, lv > 0 and "#7fe0ff" or "#2a2e3c", { radius = 10, outline = true, thickness = 2 })
+            ui.text(cx + 24, y + 8, string.format("%s   %s", d.name, lv > 0 and ("LV " .. lv) or "-"), { size = 26, color = lv > 0 and "#ffffff" or "#6a7084" })
+            ui.text(cx + 24, y + 42, d.desc, { size = 17, color = C.dim })
+            local frac = nxt and (n - (d.thr[lv] or 0)) / (nxt - (d.thr[lv] or 0)) or 1
+            bar(cx + 800, y + 26, 340, 18, frac, "#7fe0ff", nil, nxt and string.format("%d / %d", n, nxt) or "MAX", 14)
+            y = y + 82
+        end
     elseif G.bag_tab == 4 then
         ui.text(cx + 8, top, tr("ui.settings"), { size = 30, color = C.gold })
         local y = top + 70
@@ -564,7 +587,8 @@ function H.draw(dt)
         if pressed(input, "i") then G.screen = (sc == "bag" and (G.bag_tab or 1) == 1) and nil or "bag"; G.bag_tab = 1
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
         elseif pressed(input, "o") or (input.keys and input.keys.escape and sc == nil) then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4
-        elseif pressed(input, "j") then G.screen = (sc == "bag" and G.bag_tab == 3) and nil or "bag"; G.bag_tab = 3 end
+        elseif pressed(input, "j") then G.screen = (sc == "bag" and G.bag_tab == 3) and nil or "bag"; G.bag_tab = 3
+        elseif pressed(input, "k") then G.screen = (sc == "bag" and G.bag_tab == 5) and nil or "bag"; G.bag_tab = 5 end
     end
     -- (the engine draws the OS cursor when the pointer is released with Esc: no cursor of our own, that made two)
     if input.free and not G.screen and s.class and not G.cutscene then

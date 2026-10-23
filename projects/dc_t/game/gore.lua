@@ -55,7 +55,8 @@ end
 function R.pay(n, cells)
     if n <= 0 then return end
     local s = G.state
-    local gold = math.max(1, floor((cells or 0) / 60))      -- a spatter of a death is a few hundred voxels
+    local gold = math.max(1, floor((cells or 0) / 60)) + n * G.skills.mop_bonus()
+    G.skills.bump("mopcraft", n)      -- a spatter of a death is a few hundred voxels
     s.gold = s.gold + gold
     G.player.log("+" .. gold .. " gold (cleaning)", "#6fd0ff")
     if G.show then G.show.score(n * 2, nil) end
@@ -67,14 +68,14 @@ end
 -- the mop swung at nothing: a metre and a half in front of the feet
 function R.mop(px, py, pz)
     local fx_, _, fz_ = player.forward()
-    local n, cells = R.clean(px + fx_ * 1.4, py + 0.3, pz + fz_ * 1.4, 1.5)
+    local n, cells = R.clean(px + fx_ * 1.4, py + 0.3, pz + fz_ * 1.4, 1.5 + 0.25 * G.skills.mop_bonus())
     if n > 0 then local lx, ly, lz = G.to_local(px, py, pz); G.sfx.play("sweep", lx, ly, lz, 0.5, 1.3); R.pay(n, cells) end
     return n
 end
 
 -- the janitor's Mop Sweep ability: the whole room around
 function R.sweep(px, py, pz)
-    local n, cells = R.clean(px, py + 0.5, pz, 4.5)
+    local n, cells = R.clean(px, py + 0.5, pz, 4.5 + 0.5 * G.skills.mop_bonus())
     R.pay(n, cells)
     return n
 end
