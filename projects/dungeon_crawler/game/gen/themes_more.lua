@@ -76,7 +76,7 @@ F.register("flooded", {
     weight = function(f, room) return (room.w >= 18 and room.d >= 18) and 2.0 or 0 end,
     voxels = function(room, ctx)
         G.room{ x = room.x, z = room.z, w = room.w, d = room.d, h = room.h, floor = "flagstone", wall = "mossy", ceil = "dungeon_brick", wtex = "big_bricks", ctex = "blocks" }
-        pool(room, ctx, "gutter_water", 1.5, -0.2)
+        pool(room, ctx, "gutter_water", 1.0, -0.2)
         for z = room.z + 3, room.z + room.d - 2, 7 do G.fill(room.x, room.h - 1.4, z, room.x + room.w, room.h - 0.8, z + 0.6, "metal") end
         for _, p in ipairs({ { 0.3, 0.3 }, { 0.7, 0.7 } }) do
             local x, z = room.x + room.w * p[1], room.z + room.d * p[2]
@@ -92,7 +92,7 @@ F.register("flooded", {
             G.torch(room.x + room.w * p[1] + 0.1, 1.5, room.z + room.d * p[2] + 0.1, { color = { 0.3, 1.0, 0.25 }, reach = 11, preset = "fireflies", name = room.id .. "_glow" .. i })
         end
         emitter.create{ name = room.id .. "_mist", preset = "steam_vent", pos = { G.mx(cx), G.my(0), G.mz(cz) }, rate = 10, size = { (pl.x1 - pl.x0) / 3, 0.3, (pl.z1 - pl.z0) / 3 } }
-        T.hazard("toxic", pl.x0, -1.8, pl.z0, pl.x1, -0.2, pl.z1, 4)
+        T.hazard("toxic", pl.x0, -1.3, pl.z0, pl.x1, -0.2, pl.z1, 4)
         ctx.crate(room, "silver", cx - 0.6, cz - 0.4, "+z", 0)
         F.populate(room, ctx, r, F.head_count(room, ctx.floor, r), { allow = outside(pl), margin = 1.2, kinds = { { "slime_toxic", 4 }, { "slime", 3 }, { "rat", 4 }, { "spitter", 1 } } })
     end,

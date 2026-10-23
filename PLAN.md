@@ -1,6 +1,6 @@
 # PLAN v2: THE DESCENT as a seeded, procedural dungeon
 
-Written 2026-10-23 while the user was away for ~8 hours (autonomous work: small steps, a screenshot after every visible step, a commit after every working step, everything noted in ENGINE_FEEDBACK.md / GAME.md).
+Status at the end of the first session: A, B and C are done except what GAME.md lists as limits; D has no daily seed (no date in the engine). Written 2026-10-23 while the user was away for ~8 hours (autonomous work: small steps, a screenshot after every visible step, a commit after every working step, everything noted in ENGINE_FEEDBACK.md / GAME.md).
 Inputs: the user's wish ("this setting and system as a procedural dungeon with different seeds"), the notes from the book (BOOK_NOTES.md, private), the engine's new features (rigged kit figures, equipment, walk-through gore).
 
 ## Goal
