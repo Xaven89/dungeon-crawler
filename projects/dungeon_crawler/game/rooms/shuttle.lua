@@ -11,8 +11,35 @@ W.things[#W.things + 1] = function()
     T.add_interact("shuttle", 34, 0.8, 15.5, "Drive the Complimentary Shuttle (E, then W A S D)", 3.2, function() return not vehicle.seated() end)
 end
 
+-- getting out: the engine puts the player at the side of the vehicle, which next to a wall is inside the wall or outside the dungeon: find a free standing place around the vehicle instead
+local function free_spot(cx, cy, cz)
+    for _, r in ipairs({ 2.2, 3.0, 1.6, 4.0 }) do
+        for k = 0, 11 do
+            local a = k * math.pi / 6
+            local x, z = cx + math.cos(a) * r, cz + math.sin(a) * r
+            local fy = nav.floor(x, cy + 0.6, z)
+            if fy and math.abs(fy - cy) < 1.2 then
+                local ok = true
+                for _, h in ipairs({ 0.3, 1.0, 1.7 }) do if world.solid(math.floor(units.vox(x)), math.floor(units.vox(fy + h)), math.floor(units.vox(z))) then ok = false end end
+                local lx, ly, lz = G.to_local(x, fy, z)
+                if ok and lx > 0.5 and lz > 0.5 and G.world.room_at(lx, lz) then return x, fy, z end
+            end
+        end
+    end
+end
+
 local hit_at = {}
+local was_seated = false
 function S.tick(t)
+    local seated = vehicle.seated()
+    if was_seated and not seated and S.id then
+        local info = vehicle.info(S.id)
+        if info then
+            local x, y, z = free_spot(info.x, info.y - 0.4, info.z)
+            if x then player.teleport(x, y + 0.05, z) end
+        end
+    end
+    was_seated = seated
     if not S.id or t % 6 ~= 0 then return end
     local info = vehicle.info(S.id)
     if not info then

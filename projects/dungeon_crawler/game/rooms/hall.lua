@@ -32,6 +32,8 @@ W.builders[#W.builders + 1] = function()
     G.paint(36, 0, 20, 40, 3.5, 20.25, "dark_slate")
     G.corridor{ x = 38, z = 20.25, len = 25.75, w = 2.6, h = 3.4, axis = "z", floor = "flagstone", wall = "dungeon_brick" }
     G.room{ x = 34.5, z = 28, w = 7, d = 7, h = 4, floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
+    -- the closet's own walls cross the corridor: open them (a bug of the first version: the passage was sealed by the room's north and south skins)
+    W.openings[#W.openings + 1] = { 36.6, 0, 27.6, 39.4, 3.4, 28.1 }; W.openings[#W.openings + 1] = { 36.6, 0, 34.9, 39.4, 3.4, 35.4 }
     G.corridor{ x = 20, z = 46, len = 18.25, w = 2.6, h = 3.4, axis = "x", floor = "flagstone", wall = "dungeon_brick" }
     G.corridor{ x = 20, z = 46, len = 10, w = 2.6, h = 3.4, axis = "z", floor = "flagstone", wall = "dungeon_brick" }
     -- the hall-end checkpoint: a crystal on a plinth (north-east corner)

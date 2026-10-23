@@ -106,6 +106,11 @@ function W.build()
         for _, o in ipairs(W.openings) do G.clear(o[1], o[2], o[3], o[4], o[5], o[6]) end
     end
     build_lobby_things()
+    -- a world saved by an earlier version still has the plugs in the secret passage: take them out once
+    if not G.should_build() and not G.state.flags.fix_secret_walls then
+        for _, o in ipairs({ { 36.6, 0, 27.6, 39.4, 3.4, 28.1 }, { 36.6, 0, 34.9, 39.4, 3.4, 35.4 } }) do G.clear(o[1], o[2], o[3], o[4], o[5], o[6]) end
+        G.state.flags.fix_secret_walls = true
+    elseif G.should_build() then G.state.flags.fix_secret_walls = true end
     for _, f in ipairs(W.things or {}) do f() end
 end
 
@@ -144,6 +149,18 @@ end
 -- ================================================================================================ housekeeping: the engine's debug keys cannot be unbound (docs/INPUT.md), so the game defends itself
 
 function W.tick(t)
+    -- the safety net: a vehicle, a blast or a fall can leave the player outside the dungeon or in the rock: put him back where he last stood safely
+    if t % 10 == 0 and G.state and G.state.class and not G.player.dead and not vehicle.seated() then
+        local px, py, pz = player.pos()
+        local lx, ly, lz = G.to_local(px, py, pz)
+        local outside = lx < -2 or lx > 126 or lz < -3 or lz > 154 or ly < -8 or ly > 16.5
+        local stuck = world.solid(math.floor(units.vox(px)), math.floor(units.vox(py + 1.6)), math.floor(units.vox(pz))) and world.solid(math.floor(units.vox(px)), math.floor(units.vox(py + 0.3)), math.floor(units.vox(pz)))
+        if outside or stuck then
+            local ls = W.last_safe or { W.start_position() }
+            player.teleport(ls[1], ls[2], ls[3])
+            G.announcer.say_key("guard.teleport", { prio = 1, key = "guard", cooldown = 600 })
+        elseif t % 30 == 0 and not G.screen then W.last_safe = { px, py, pz } end
+    end
     -- the title, the class choice, the shop and the end screen hold the player where he stands (the bag does not: it is opened in a fight)
     local sc = G.screen
     if sc == "title" or sc == "class" or sc == "shop" or sc == "end" then
@@ -195,6 +212,7 @@ function W.enter_room(id, old)
     if W.on_enter_room then W.on_enter_room(id, old) end
 end
 
+W.last_safe = nil
 W.checkpoints = {
     lobby     = { x = 3.5, y = 0.1, z = 11 },
     hall      = { x = 68.5, y = 0.1, z = 6.5 },
