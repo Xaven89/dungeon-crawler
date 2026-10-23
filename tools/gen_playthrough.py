@@ -81,7 +81,8 @@ print(p.floor, p.n, table.concat(ids, ','))""", 0)[0].split("\t")
                 if role == "boss":
                     v.step(300)
                 # the crates of the room
-                L(v, "local G=Game; local ix=G.floorgen.layout.rooms['%s'].index; for id, c in pairs(G.traps.crates) do if id:match('^f%%dc'..ix..'_') or id:match('^f%%dboss$') then G.traps.open_crate(id) end end" % rid, 60)
+                # (the crates in a sorted order: `pairs` over string keys is not the same order in two processes, and the order of opening decides the random numbers)
+                L(v, "local G=Game; local ix=G.floorgen.layout.rooms['%s'].index; local ids = {}; for id in pairs(G.traps.crates) do if id:match('^f%%dc'..ix..'_') or id:match('^f%%dboss$') then ids[#ids+1] = id end end; table.sort(ids); for _, id in ipairs(ids) do G.traps.open_crate(id) end" % rid, 60)
                 L(v, """local G=Game; local best
 for _, s in ipairs(G.items.inv.bag) do
   if s then local d = G.items.defs[s.id]

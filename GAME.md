@@ -137,3 +137,7 @@ A run is a seed. `G.state.run = { mode = "orientation" | "gen", seed, floor }`. 
 - **Cut-off builds**: `state.run.building` is saved before a floor is built; a start that finds it wipes and builds the floor again.
 - Gen run: respawn is just inside the first door of the room you cleared last, never in the middle (the middle can be lava).
 - Tests that ran at the end: `gen_validate` over seeds 1..28 x up to 4 floors (0 problems), `gen_playthrough` 5 floors (replay hash equal), `playthrough` of the Orientation (replay hash equal).
+
+### Replays (state at the end of round 2)
+- The Orientation bot (`tools/playthrough.py pyro`) replays to its hash (`357537bcdbc523a8` at the last run). `tools/gen_playthrough.py SEED CLASS N` replays to its hash for N up to 5 floors (seed 99: 1 to 5 floors verified); **6 floors of seed 99 do not** (live `f9362e3a0c2d96cc`, replay `ec7ee81ff4c742a9`, recording kept in /tmp/repro_replay while the session lasts). Reported to the engine side (ENGINE_FEEDBACK Phase 17); the cause is not known. Found and fixed on the way: merged weapons on enemy agents changed the simulation (now `mode = "attach"`).
+- The bot opens crates in sorted order (a `pairs` over string keys is not the same order in two processes: never let that order decide anything in the game's own logic either).
