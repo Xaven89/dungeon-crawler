@@ -158,9 +158,6 @@ local function hud_player(w, h, input)
         ui.text(x0 + 52, qy + 10, q[2], { size = 22, color = n > 0 and "#dfe4f0" or "#5a6074" })
         ui.text(x0 + 52, qy + 36, "x" .. n, { size = 22, color = n > 0 and C.gold or "#5a6074" })
     end
-    if pressed(input, "r") then ui.run("Game.player.quick('heal')") end
-    if pressed(input, "t") then ui.run("Game.player.quick('mana')") end
-    if pressed(input, "g") then ui.run("Game.player.quick('throw')") end
 end
 
 local function hud_world(w, h, input)
@@ -518,16 +515,9 @@ function H.draw(dt)
         if pressed(input, "i") then G.screen = (sc == "bag" and (G.bag_tab or 1) == 1) and nil or "bag"; G.bag_tab = 1
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
         elseif pressed(input, "j") then G.screen = (sc == "bag" and G.bag_tab == 3) and nil or "bag"; G.bag_tab = 3 end
-        if not G.screen then
-            if pressed(input, "q") or input.right_clicked then ui.run("Game.player.ability()") end
-            if (input.clicked or pressed(input, "f") or pressed(input, "space") and false) and time.tick() >= G.player.next_attack then
-                H.attack_held = true
-            end
-        end
     end
     local drop = uikit.finish()
     if drop then ui.run(string.format("inventory.apply_move(%q, %q, %d, %q, %d, %q)", "player", drop.from_grid, drop.from, drop.to_grid, drop.to, drop.split or "")) end
-    if H.attack_held then H.attack_held = false; ui.run("Game.player.attack()") end
 end
 
 function on_hud(dt) H.draw(dt) end

@@ -25,7 +25,6 @@ include("game/hud.lua")
 local G = Game
 
 function on_start()
-    pcall(include, "dev/flags.lua")        -- optional switches for tests (tools/playthrough.py writes `Game.no_prefabs = true`: recordings cannot replay prefab.place, see ENGINE_FEEDBACK.md)
     G.load()
     G.items.init()
     G.enemies.define_fx()
@@ -45,7 +44,7 @@ function on_start()
         local cp = G.world.checkpoints[s.checkpoint] or G.world.checkpoints.lobby
         player.teleport(G.mx(cp.x), G.my(cp.y), G.mz(cp.z))
     end
-    pcall(include, "dev/boot.lua")      -- a developer's scratch script (not in git): sets up a situation for a screenshot, see tools/hudshot.sh
+    include_optional("dev/boot.lua")      -- a developer's scratch script (not in git): sets up a situation for a screenshot, see tools/hudshot.sh
 end
 
 function G.save_now()
@@ -69,11 +68,22 @@ function G.close_end() G.screen = nil end
 function on_tick(t)
     G.announcer.tick(t)
     G.player.tick(t)
+    if input.down("attack") then G.player.attack() end        -- hold the button to keep swinging
     G.enemies.tick(t)
     G.companion.tick(t)
     G.music.tick(t)
     if G.world.tick then G.world.tick(t) end
     if t % 1800 == 900 and G.state.class then G.save() end        -- progress is kept every 30 s (the world itself is saved on exit / F11)
+end
+
+-- the game's own input actions (input.cfg `action.NAME = mouse / key / pad`): logged, so a recording replays them
+function on_action(name, down, pl)
+    if not down or not G.state.class then return end
+    if name == "attack" then G.player.attack()
+    elseif name == "ability" then G.player.ability()
+    elseif name == "quick_heal" then G.player.quick("heal")
+    elseif name == "quick_mana" then G.player.quick("mana")
+    elseif name == "quick_throw" then G.player.quick("throw") end
 end
 
 function on_anim(m, event, clip)

@@ -55,9 +55,9 @@ W.things[#W.things + 1] = function()
     -- the flip field reaches up into the first metres of the service tunnel (y to 15.4), so that whoever falls up through the vent keeps falling up until he is under the tunnel's roof
     local flip = gravity.add{ type = "uniform", name = "ballroom_flip", dir = { 0, 1, 0 }, strength = 9.81, priority = 20, pos = { G.mx(57), G.my(7.7), G.mz(82) }, half = { 9.5, 7.7, 9.5 }, enabled = false }
     W.gravity.null, W.gravity.flip = null, flip
-    local okt, target = pcall(events.gravity_target, { name = "ballroom_flip_target", field = flip, presets = { { { 0, 1, 0 }, 9.81 } } })   -- (--check-project runs without a gravity system)
+    local target = events.gravity_target{ name = "ballroom_flip_target", field = flip, presets = { { { 0, 1, 0 }, 9.81 } } }
     local lever = events.lever{ name = "ballroom_lever", box = { G.wx(41.8), G.wy(0.9), G.wz(95.2), G.wx(42.2) - 1, G.wy(1.5), G.wz(95.6) - 1 }, prompt = "Flip gravity", on = "neon", off = "metal" }
-    if okt then events.connect(lever, "on", target, "enable"); events.connect(lever, "off", target, "disable") end
+    events.connect(lever, "on", target, "enable"); events.connect(lever, "off", target, "disable")
     events.on(lever, "on", function() G.announcer.say_key("trap.gravity", { prio = 1, key = "grav", cooldown = 3000 }); G.sfx.play("lever", 42, 1, 95.4) end)
     T.add_interact("ballroom_lever", 42, 1.2, 95.4, "Flip gravity (the lever)", 2.4)
     -- light: the windows, chandeliers and a few braziers

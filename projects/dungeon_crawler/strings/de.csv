@@ -72,7 +72,7 @@ ui.equipped,Ausgeruestet
 ui.gold,Gold
 ui.dead_title,DU BIST TOT
 ui.dead_sub,Dein Ableben wurde verschoben.
-ui.help,"F Angriff    Q Faehigkeit    E Benutzen    R Heilen    T Mana    G Werfen    I Beutel    C Charakter    J Erfolge"
+ui.help,"LMT / F Angriff    RMT / Q Faehigkeit    E Benutzen    R Heilen    T Mana    G Werfen    I Beutel    C Charakter    J Erfolge"
 ui.shop,Automat der milden Linderung
 ui.buy,KAUFEN
 ui.close,SCHLIESSEN

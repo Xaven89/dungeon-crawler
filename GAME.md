@@ -8,8 +8,8 @@ All names, jokes and texts are original (inspired by the tone and structure of a
 
 ## How to run
 ```
-./voxelith --manual --project projects/dungeon_crawler --time 0.75 --hud 0         # the game (needs a display and a Vulkan GPU). --time 0.75 matters: the sky must not light the dungeon
-./voxelith --mcp --project projects/dungeon_crawler --threads 3 --time 0.75         # the AI's way (.mcp.json is set up): screenshots never contain the Lua HUD
+./voxelith --manual --project projects/dungeon_crawler --hud 0                       # the game (needs a display and a Vulkan GPU); project.cfg has `game = on` (the sandbox keys are off)
+./voxelith --mcp --project projects/dungeon_crawler --threads 3                      # the AI's way (.mcp.json is set up): screenshots do not contain the Lua HUD yet
 tools/hudshot.sh out.png 14 --script idle:3000                                      # windowed in a private Xvfb + ffmpeg grab: the way to SEE the HUD without a display (BOOT=file.lua sets up a situation)
 tools/playthrough.py janitor                                                        # a bot plays the whole floor through the MCP server, takes pictures into ~/share/tour, records and replays the session (hash check)
 ./voxelith --check-project projects/dungeon_crawler
@@ -17,17 +17,17 @@ python3 tools/make_dungeon_models.py ; python3 tools/make_sounds.py             
 ```
 A new run: delete `projects/dungeon_crawler/world.vxs*`, `.state`, `.events`, `.prefabs` (the level builds its voxels only when `project.first_run()`; the progress is in `.state/store.json`).
 
-### Keys (the engine's sandbox keys are switched off in `input.cfg`; see ENGINE_FEEDBACK.md for why combat is on the keyboard)
+### Keys (`game = on` switches the engine's sandbox keys off; the game's own actions are in `input.cfg`)
 | key | |
 |---|---|
 | WASD, Shift, Space, mouse | walk, run, jump, look |
-| **F** | attack (the equipped weapon: reach, damage and speed differ) |
-| **Q** | the class ability (Mop Sweep / Fire Bolt / Power Chord / Audit; costs mana, has a cooldown) |
+| **LMB or F** | attack, hold to keep swinging (the equipped weapon: reach, damage and speed differ) |
+| **RMB or Q** | the class ability (Mop Sweep / Fire Bolt / Power Chord / Audit; costs mana, has a cooldown) |
 | **E** | use what the crosshair is on (levers, crates, vending machine, crystal, stairs, vehicles) |
 | **R / T / G** | quick: heal item / mana item / throw a firecracker |
 | **I / C / J** | bag + equipment / character sheet (spend stat points) / achievements; Esc closes |
 | **0** | camera: first person / third person; **F5** screenshot to ~/share; **F11** save the world |
-Do not press the number keys, Z, X, Y, N, M: they are the engine's teleports / undo / rain / clock and cannot be unbound. The game defends itself (GLEE scolds you).
+(Before the engine's game mode the level had to defend itself against Z / number keys / Y; that code is gone.)
 
 ## What the slice contains
 * **Start**: the Intake Lobby (a hand-built hall of voxels, braziers, a reception desk, a save crystal, a janitor's closet behind a prefab door), a **class selection** screen (Janitor, Pyromaniac, Bard, Accountant), GLEE's intro.

@@ -10,7 +10,7 @@ if ! xdpyinfo -display $D >/dev/null 2>&1; then (Xvfb $D -screen 0 1920x1080x24 
 P=projects/dungeon_crawler
 rm -rf $P/world.vxs* $P/.state $P/.events $P/.prefabs
 [ -n "$BOOT" ] && cp "$BOOT" $P/dev/boot.lua
-DISPLAY=$D ./voxelith --windowed --manual --project $P --threads 3 --time 0.75 --hud 0 --no-audio "$@" >/tmp/hudshot.log 2>&1 &
+DISPLAY=$D ./voxelith --windowed --manual --project $P --threads 3 --hud 0 --no-audio "$@" >/tmp/hudshot.log 2>&1 &
 PID=$!
 sleep "$WAIT"
 ffmpeg -y -loglevel error -f x11grab -video_size 1920x1080 -i $D -frames:v 1 "$OUT"

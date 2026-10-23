@@ -28,15 +28,15 @@ def room_shot(v, name, eye, target, fov=80):
 def fight(v, room, max_ticks=2400, step=60):
     """Attack with auto-aim, heal when low, until nobody of that room is alive or the time is up. Returns a summary line."""
     L(v, "Game.autoaim = true; Game.state.mp = 100", 1)
+    v.tool("input_action", name="attack", down=True, player=0)          # held: the game swings whenever its cooldown allows
     t = 0
     while t < max_ticks:
         out, _ = L(v, """
 local G = Game
 if G.player.dead then return end
-G.player.next_attack = 0; G.player.attack()
 if G.state.hp < G.player.max_hp() * 0.45 then G.player.quick('heal') end
-if G.state.mp > 20 then G.player.ability() end
 print(G.enemies.alive_in('%s'), G.state.hp, G.state.deaths)""" % room, ticks=step)
+        v.tool("input_action", name="ability", down=True, player=0)      # the real path: a logged input action (docs/INPUT.md "Custom actions")
         t += step
         if out and out[0].split("\t")[0] == "0": break
     out, _ = L(v, "local G = Game; return nil; ", 0)
@@ -45,15 +45,10 @@ print(G.enemies.alive_in('%s'), G.state.hp, G.state.deaths)""" % room, ticks=ste
     return "%-10s %s  (ticks %d)  level/kills/deaths/hp/gold %s" % (room, "cleared" if t < max_ticks else "NOT cleared", t, o[0] if o else "?")
 
 def main():
-    flags = os.path.join(ROOT, "projects", "dungeon_crawler", "dev", "flags.lua")
-    with open(flags, "w") as f: f.write("Game = Game or {}\nGame.no_prefabs = true   -- recordings do not replay prefab.place (ENGINE_FEEDBACK.md)\n")
-    try:
-        run_all()
-    finally:
-        if os.path.exists(flags): os.remove(flags)
+    run_all()
 
 def run_all():
-    with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--time", "0.75", "--record", log]) as v:
+    with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--record", log]) as v:
         print("status:", v.status()["project"])
         v.step(30)
         print(L(v, "return Game.player.pick_class('%s')" % cls)[0])
@@ -83,13 +78,12 @@ def run_all():
         out, _ = L(v, "local G=Game; print(G.boss.started, G.boss.active)", 0)
         print("boss intro:", out)
         L(v, "Game.autoaim = true", 0)
+        v.tool("input_action", name="attack", down=True, player=0)
         ok = False
         for i in range(80):
             o, _ = L(v, """local G=Game
 if not G.player.dead then
-  G.player.next_attack = 0; G.player.attack()
   if G.state.hp < G.player.max_hp() * 0.5 then G.player.quick('heal') end
-  if G.state.mp > 20 then G.player.ability() end
   -- (the moat and the boss: keep the player on the platform)
   local px,py,pz = player.pos(); local lx,ly,lz = G.to_local(px,py,pz)
   if G.dist2(lx,lz,30,132) > 11 then player.teleport(G.mx(30), G.my(0.1), G.mz(128)) end

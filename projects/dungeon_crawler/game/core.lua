@@ -18,7 +18,7 @@ function G.wz(zm) return G.OZ + vox(zm) end
 function G.mx(xm) return units.m(G.OX) + xm end        -- world metres (bodies, emitters, agents, player)
 function G.my(ym) return units.m(G.OY) + ym end
 function G.mz(zm) return units.m(G.OZ) + zm end
-function G.to_local(wxm, wym, wzm) return wxm - units.m(G.OX), wym - units.m(G.OY), wzm - units.m(G.OZ) end
+function G.to_local(wxm, wym, wzm) if not wxm then return end return wxm - units.m(G.OX), wym - units.m(G.OY), wzm - units.m(G.OZ) end
 
 -- voxels are built on the first run only (the save keeps them), or when the guard finds the world undone (Z is the engine's undo key and cannot be unbound)
 G.rebuilding = false
@@ -47,7 +47,7 @@ function G.fill(x0, y0, z0, x1, y1, z1, mat, tex)
     local ax, ay, az, bx, by, bz = G.wx(x0), G.wy(y0), G.wz(z0), G.wx(x1) - 1, G.wy(y1) - 1, G.wz(z1) - 1
     if bx < ax or by < ay or bz < az then return end
     edit.box(ax, ay, az, bx, by, bz, mat)
-    if tex then pcall(edit.texture_box, ax, ay, az, bx, by, bz, tex) end     -- (pcall: --check-project's dry run does not know the project's own textures)
+    if tex then pcall(edit.texture_box, ax, ay, az, bx, by, bz, tex) end     -- (pcall: the MCP server does not read the project's textures.json, phase 1 report)
 end
 function G.clear(x0, y0, z0, x1, y1, z1)
     local ax, ay, az, bx, by, bz = G.wx(x0), G.wy(y0), G.wz(z0), G.wx(x1) - 1, G.wy(y1) - 1, G.wz(z1) - 1

@@ -15,7 +15,6 @@ W.builders[#W.builders + 1] = function()
 end
 
 W.things[#W.things + 1] = function()
-    if G.no_prefabs then return end
     -- the door: a manifest prefab (models/buildings/door.prefab.lua): a frame, a panel on a hinge, no plate, a real body that swings when pushed
     local ok, id, h = pcall(prefab.place, "buildings/door", G.wx(21), G.wy(0), G.wz(-0.25), { rotation = 0, name = "closet_door", params = { open = 90, plate = false }, carve_air = true })
     if not ok then print("closet door: " .. tostring(id))

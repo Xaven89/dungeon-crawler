@@ -2,7 +2,7 @@
   "mcpServers": {
     "voxelith": {
       "command": "./voxelith",
-      "args": ["--mcp", "--project", "projects/dungeon_crawler", "--threads", "3", "--time", "0.75"]
+      "args": ["--mcp", "--project", "projects/dungeon_crawler", "--threads", "3"]
     }
   }
 }

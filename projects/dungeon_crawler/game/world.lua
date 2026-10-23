@@ -142,38 +142,8 @@ function G.on_room_cleared(room)
 end
 
 -- ================================================================================================ housekeeping: the engine's debug keys cannot be unbound (docs/INPUT.md), so the game defends itself
-W.last_safe = nil
-W.heart = false
-local function in_dungeon(lx, ly, lz) return lx > -2 and lx < 126 and lz > -2 and lz < 154 and ly > -8 and ly < 15.5 end
 
 function W.tick(t)
-    -- the undo shield: Z undoes "the last user action"; one tiny hidden edit a second means the last action is never the dungeon
-    if t % 45 == 0 then
-        W.heart = not W.heart
-        edit.voxel(G.wx(61), G.wy(-4), G.wz(75), W.heart and "dirt" or "stone")
-    end
-    -- the sentinel: if the lobby floor is gone anyway (many Z presses), build it all again
-    if t % 120 == 60 and G.state and G.state.class then
-        local m = world.material_at(G.wx(3), G.wy(-0.25), G.wz(11))
-        if m ~= "marble" and m ~= "unloaded" and not G.rebuilding then
-            G.rebuilding = true
-            W.build()
-            G.rebuilding = false
-            G.announcer.say("Somebody pressed undo. The management has restored the dungeon from backup. Please do not do that again.", { prio = 1 })
-        end
-    end
-    if t % 10 == 0 then
-        local px, py, pz = player.pos()
-        local lx, ly, lz = G.to_local(px, py, pz)
-        if in_dungeon(lx, ly, lz) then
-            if t % 30 == 0 and not G.player.dead then W.last_safe = { px, py, pz } end
-        elseif G.state and G.state.class and not G.player.dead then
-            local ls = W.last_safe or { W.start_position() }
-            player.teleport(ls[1], ls[2], ls[3])
-            G.announcer.say_key("guard.teleport", { prio = 1, key = "guard", cooldown = 300 })
-        end
-    end
-    if t % 180 == 0 then fx.rain(false) end
     if t % 20 == 0 and G.state and G.state.class and not G.cutscene and camera.mode() == "editor" then camera.mode("first") end      -- the 0 key cycles into the free editor camera: a cheat view
     G.traps.tick_all(t)
     if W.tick_belt then W.tick_belt(t) end

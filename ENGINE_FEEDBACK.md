@@ -120,3 +120,29 @@ expected: the replay ends with the recorded hash (it did, before the prefabs wer
 happened: `replay: ... not the one the session was recorded with`, preceded by `prefab.place: no prefab 'buildings/door' (there is no /home/claude/share/voxelith-clips/buildings/door.prefab.lua ...)` (the manifest is looked up in a folder that is not the clip's) and `prefab.place: /tmp/x.log.clip/prefab_1.vxm: cannot read` for the plain model form (the clip folder has prefab_10.vxm, prefab_11.vxm ... but the first one is not readable); on_start then stops and the hash differs. 
 repro: any level with `prefab.place("models/props/crate.vxm", x, y, z)` in on_start, MCP `--record log`, one `step`, `voxelith --replay log`.
 workaround: the test tools write `dev/flags.lua` (`Game.no_prefabs = true`) and the level skips its set dressing when recording; the replay is then exact.
+
+# Phase 1 retest (engine update of 2026-10-23: game mode, input actions, replay and check fixes)
+
+## Game mode (`game = on`)  — fixed in phase 1
+Removed from the level: the undo shield, the sentinel, the teleport guard, `fx.rain(false)`, the `dig = none ...` lines of input.cfg. Windowed in Xvfb with synthetic key events (z, y, 1, n pressed): the player did not move (no teleport), the lobby floor stayed marble (no undo), no rain. F3 / F5 / F11 / 0 still work. Left: a small guard that puts the camera back to first person when the 0 key cycles into the free editor camera (a cheat view of the whole dungeon); a `camera = first, third` option for game mode would remove it.
+Not fixed / unclear: MCP `status` has no `game_mode` key (docs say it reports it), with `game = on` in project.cfg and with `--game`; so I could not confirm the mode from the MCP side.
+
+## Custom input actions  — fixed in phase 1 (mouse not confirmed)
+`action.attack = mouse:left, key:f, pad:rt`, `action.ability = mouse:right, key:q, pad:x` and three quick-use actions in input.cfg; the level has `on_action(name, down, player)` and `input.down("attack")` (hold to keep swinging); the HUD's attack / ability / quick-key code is gone. Seen: pressing F in the windowed game fired `on_action("attack")` (swings = 1, `ui.input().actions.attack`); the MCP `input_action {name, down, player}` drives the same path: tools/playthrough.py now holds `attack` with it during fights and presses `ability`, and the pyromaniac bot killed the boss that way; the recording replays. Not confirmed: the real mouse buttons (synthetic X button events still do not reach the engine, so a click in Xvfb did nothing; keys do). A real mouse must be tried by a person.
+
+## Replay of a level with `prefab.place` / manifest prefabs / rigged agents  — fixed in phase 1
+Removed `Game.no_prefabs` and the `dev/flags.lua` dance. `tools/playthrough.py pyro` (class pick, the whole floor, the boss killed, the vending machine, the end screen) recorded 19,733 ticks with the closet door prefab, the sign board, the props and 17 kinds of agent; replayed with `voxelith --replay log --threads 3` (no `--project`): `session hash e3230cd343ca97e6 == the recorded hash`.
+
+## `events.on` several callbacks / `include_optional` / `gravity_target` in the check  — fixed in phase 1 (not retested one by one)
+`include_optional("dev/boot.lua")` replaces the pcall(include); the dry run now passes `events.gravity_target` without my pcall (`--check-project`: 0 errors). I kept my own `crate_hooks` table (it works); the several-callbacks change was not retested.
+
+## Textures: the CLI is fixed, the MCP server is not
+`--check-project` and the headless CLI know `textures.json` now (no pcall needed there). But `voxelith --mcp --project projects/dungeon_crawler`: `texture_list` shows only the 16 built-ins (no `skull`, `rune_tile`, no `conveyor_on`), and with the pcall removed `on_start` stops at the first `edit.texture_box(..., "rune_tile")` ("unknown texture"), so the whole level is half built in an MCP session (and the running MCP server of this Claude Code session is still the old binary: `reload_level` of it answers with the old checker's errors). Same project in a windowed or headless CLI run: fine. I put the pcall around `edit.texture_box` back in game/core.lua for the MCP path only.
+repro: `python3 -c "from voxelith_client import Voxelith; v = Voxelith(['--project', 'projects/dungeon_crawler']); print(len(v.tool('texture_list')['textures']))"` prints 16.
+
+## The closed-room light at noon: no change seen
+Launcher and .mcp.json no longer pass `--time 0.75`. MCP screenshots at the default (noon) time of the lobby, the Hall, the arena and the stairwell (`~/share/noon/*.png`) are still lit blue-grey all over, like the first test of this project (a closed room 8 m under the plain, no windows); the conveyor corridor, which has red lamps, looks the same as at night plus a blue fill. So rooms did not "become black unless lit". (In the windowed game without `--time` the lobby looked dark, so the clock there may start at another phase: I did not check which.) Torches and lamps still light their rooms, nothing got darker.
+
+## Smaller things seen while retesting
+- The bot's pictures still need `time_of_day: 0.75` to look right.
+- `ui.input().actions` is a table keyed by name (documented), `held` was not tried.
