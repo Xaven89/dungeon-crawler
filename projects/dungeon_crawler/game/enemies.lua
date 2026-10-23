@@ -457,14 +457,14 @@ function E.tick_projectiles(t)
 end
 
 -- fire hurts: anything standing in flames or embers (a cell at the feet or the knees) takes damage every half second and catches fire itself
-local burning = { flame = true, ember = true }
--- is something burning at the feet (the floor layer, the cell above it, a cell to each side)? The carpet is one voxel thick: the burning voxel is the floor itself
+-- is something burning at the feet (the floor layer, the cell above it, a cell to each side)? The carpet is one voxel thick: the burning voxel is the floor itself.
+-- (world.burning(x, y, z) is the engine's own answer, exact; the first version of this scanned for ember cells)
 local function on_fire(x, y, z, h)
     local cx, cz = floor(x * 16), floor(z * 16)
     for _, oy in ipairs({ -0.02, 0.05, 0.4 }) do
         local cy = floor((y + oy) * 16)
         for _, o in ipairs({ { 0, 0 }, { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
-            if burning[world.material_at(cx + o[1], cy, cz + o[2])] then return true end
+            if world.burning(cx + o[1], cy, cz + o[2]) then return true end
         end
     end
     return false

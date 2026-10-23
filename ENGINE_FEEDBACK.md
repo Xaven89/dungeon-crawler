@@ -238,3 +238,9 @@ kind: missing        severity: annoying (the game's damage numbers are held back
 ## No way to ask "is this voxel on fire"
 kind: missing        severity: annoying
 Fire hurts nobody in the engine; to make flames hurt enemies and the player the game reads `world.material_at` for `ember` / `flame` cells around the feet (ember is what a burning voxel shows). A `world.burning(x, y, z)` (or `fire.at(x, y, z)`) and an `on_fire(x, y, z)` event for the cells that catch fire would make this exact and cheap. Also: `fx.fire(x, y, z, r)` with r 28 voxels burned a whole 12 x 14 m carpet; the material column 24 `fire_spread` (3..10 for a carpet) is what keeps a fire to a patch: that column is documented in GUIDE.md "Materials" but not in LUA_API / the CSV header comment of `--dump-materials`.
+
+## Phase 5 retest (build of 2026-10-23, late)
+- `world.burning(x, y, z)`: used by the game now instead of the ember scan; an intern standing in a fireball's patch loses 5 to 6 HP every half second (44 -> 25 in 3 s), same numbers as before: fixed, thank you.
+- T in game mode: the engine ignores it now; the game keeps X for mana anyway (a key a player presses by habit for something else is a bad mana key; changing back is a one-line change in input.cfg).
+- Doors / `.events` without a world save: the log line is the right behaviour for the case that blocked the user; the saved-world mismatch stays open (docs/TASKS.md).
+- Particles: not built, the request is in docs/TASKS.md. Priority from the game's side: `fx.text` first (it removes game/vnum.lua's pixel font and the one-voxel limit), fractional positions second.
