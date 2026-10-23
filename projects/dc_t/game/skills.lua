@@ -71,7 +71,7 @@ function K.tick(t)
     if G.safe and s.cond and (s.cond.bleed or s.cond.septic) then K.clear() end
     if t % 60 == 0 and K.has("bleed") then
         local px, py, pz = player.pos()
-        G.player.hurt(2 + floor((G.run and G.run.floor_no() or 1) / 2), "bleeding", { pierce = true })
+        G.player.hurt(3 + floor((G.run and G.run.floor_no() or 1) / 2), "bleeding", { pierce = true })
         if G.gore then G.gore.splat(px, py + 0.05, pz, "blood_stain", 0.45) end
     end
 end

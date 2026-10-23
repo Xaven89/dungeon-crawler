@@ -519,7 +519,7 @@ function P.tick(t)
     s.playtime = s.playtime + 1
     if t % 30 == 0 then
         local out_of_combat = t - (P.last_hurt or -9999) > 480
-        if out_of_combat and s.hp < P.max_hp() then s.hp = min(P.max_hp(), s.hp + (0.8 + P.stat("con") * 0.12)) end
+        if out_of_combat and s.hp < P.max_hp() and not G.skills.has("bleed") then s.hp = min(P.max_hp(), s.hp + (0.8 + P.stat("con") * 0.12)) end
         if s.mp < P.max_mp() then s.mp = min(P.max_mp(), s.mp + 0.9 + P.stat("int") * 0.08) end
     end
     -- popups fade

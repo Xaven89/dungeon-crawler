@@ -132,14 +132,22 @@ local function corridor_shell(s)
     local t = 0.25
     G.fill(s[1] - t, -0.5, s[2] - t, s[3] + t, 4.9, s[4] + t, "dungeon_brick", "blocks")
 end
-local function corridor_air(s)
-    G.clear(s[1], 0, s[2], s[3], 4.5, s[4])
-    G.fill(s[1], -0.5, s[2], s[3], 0, s[4], "flagstone", "tiles")
+-- the air of a segment; where it meets a room (`lo` / `hi`: the end at the smaller / larger coordinate along `axis`) it reaches 0.3 m into the room, because the lining of the corridor
+-- (0.25 m all round) covers the last bit of the room's floor space at the door otherwise and the door is walled shut
+local function corridor_air(s, axis, lo, hi)
+    local x0, z0, x1, z1 = s[1], s[2], s[3], s[4]
+    if axis == "x" then if lo then x0 = x0 - 0.3 end; if hi then x1 = x1 + 0.3 end
+    else if lo then z0 = z0 - 0.3 end; if hi then z1 = z1 + 0.3 end end
+    G.clear(x0, 0, z0, x1, 4.5, z1)
+    G.fill(x0, -0.5, z0, x1, 0, z1, "flagstone", "tiles")
 end
 
 local function build_corridors(p)
     for _, e in ipairs(p.edges) do for _, s in ipairs(e.segs) do corridor_shell(s) end end
-    for _, e in ipairs(p.edges) do for _, s in ipairs(e.segs) do corridor_air(s) end end
+    for _, e in ipairs(p.edges) do
+        local axis = (e.doors[1].side == "E") and "x" or "z"
+        for k, s in ipairs(e.segs) do corridor_air(s, axis, k == 1, k == #e.segs) end
+    end
 end
 
 local function corridor_things(p)

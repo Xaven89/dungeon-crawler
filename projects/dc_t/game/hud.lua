@@ -228,12 +228,12 @@ local function hud_world(w, h, input)
     ui.text(26, 52, (H.floor_label and H.floor_label() or "FLOOR 1") .. "  " .. (room and room.name or "..."), { size = 20, color = C.dim })
     local rl = H.rule_label and H.rule_label()
     if rl then ui.text(26, 78, rl, { size = 18, color = "#ff9a5a" }) end
-    local cy_ = rl and 104 or 80
+    local cy_ = h - 160
     for _, kind in ipairs({ "bleed", "septic" }) do
         if G.skills.has(kind) then
             local left = floor((s.cond[kind] - t) / 60)
             ui.text(26, cy_, string.format("%s  %ds", G.skills.COND[kind].name, left), { size = 20, color = G.skills.COND[kind].color })
-            cy_ = cy_ + 24
+            cy_ = cy_ + 26
         end
     end
     -- the top right: the show's numbers
