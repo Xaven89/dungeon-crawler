@@ -40,7 +40,6 @@ W.builders[#W.builders + 1] = function()
     end
     G.corridor{ x = 29.5, z = 112.6, len = 33.5, w = 3, h = 3.2, axis = "x", floor = "flagstone", wall = "dungeon_brick" }
     W.openings[#W.openings + 1] = { 29.3, 0, 111.4, 30.1, 3.2, 113.8 }               -- into the arena's own tunnel
-    G.text(60.8, 13.2, 80.2, "SERVICE TUNNEL", { facing = "+z", material = "hazard_y", size = 1, depth = 1 })
     -- the lever plinth (south wall, west side)
     G.fill(41.2, 0, 94.6, 42.8, 0.9, 96.2, "marble", "blocks"); G.fill(41.8, 0.9, 95.2, 42.2, 1.5, 95.6, "metal")
     -- the doors: east to the Gutter, west to the Grotto
@@ -51,7 +50,8 @@ end
 
 W.things[#W.things + 1] = function()
     -- the gravity: nothing over the middle of the floor; a field that points up, switched on by the lever
-    local null = gravity.add{ type = "null", name = "ballroom_zero_g", pos = { G.mx(57), G.my(6.2), G.mz(82) }, half = { 9.5, 6, 9.5 }, priority = 10 }
+    -- "zero-g" is nearly zero: 1.8 m/s^2 down (a real null field left a jumper stuck on the ceiling with no way back: a jump has no way to push off the air). A jump carries you most of the way up, the fall back takes a few seconds.
+    local null = gravity.add{ type = "uniform", name = "ballroom_zero_g", dir = { 0, -1, 0 }, strength = 1.8, pos = { G.mx(57), G.my(6.2), G.mz(82) }, half = { 9.5, 6, 9.5 }, priority = 10 }
     -- the flip field reaches up into the first metres of the service tunnel (y to 15.4), so that whoever falls up through the vent keeps falling up until he is under the tunnel's roof
     local flip = gravity.add{ type = "uniform", name = "ballroom_flip", dir = { 0, 1, 0 }, strength = 9.81, priority = 20, pos = { G.mx(57), G.my(7.7), G.mz(82) }, half = { 9.5, 7.7, 9.5 }, enabled = false }
     W.gravity.null, W.gravity.flip = null, flip

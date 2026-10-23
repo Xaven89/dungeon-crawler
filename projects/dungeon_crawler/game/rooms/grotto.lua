@@ -103,7 +103,6 @@ W.builders[#W.builders + 1] = function()
             edit.box(G.wx(cx) - w, G.wy(-0.5), G.wz(cz) + dz, G.wx(cx) + w, G.wy(-0.05), G.wz(cz) + dz, "water")
         end
     end
-    G.text(26.5, 3.3, 112, "THE FOREMAN IS IN", { facing = "+z", material = "hazard_y", size = 1, depth = 1 })
 end
 
 W.things[#W.things + 1] = function()

@@ -31,7 +31,7 @@ function S.sell(id)
     local price = math.max(1, math.floor(d.value / 2))
     G.items.remove(id, 1)
     G.state.gold = G.state.gold + price
-    G.player.popup("sold for " .. price, "#ffd24a")
+    G.player.log("sold for " .. price .. " gold", "#ffd24a")
     G.sfx.play("coin")
     G.save()
     return true

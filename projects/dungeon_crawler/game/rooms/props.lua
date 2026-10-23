@@ -22,7 +22,6 @@ W.things[#W.things + 1] = function()
             local old = prefab.find(name)
             if old and old ~= 0 then prefab.remove(old) end        -- (the first version's swing door, and its 4 m wide sign board that stood in the doorway)
         end
-        G.text(20.9, 3.4, 0.0, "STAFF ONLY", { facing = "+z", material = "hazard_y", size = 1, depth = 1 })
         G.clear(20.8, 0, -0.25, 23.4, 2.9, 0)                  -- the doorway
         G.clear(20.8, 2.9, -0.25, 23.4, 6.0, 0)                -- the slot above it that the slab slides into
         G.fill(20.6, 0, -0.25, 20.8, 3.1, 0, "metal"); G.fill(23.4, 0, -0.25, 23.6, 3.1, 0, "metal"); G.fill(20.6, 2.9, -0.25, 23.6, 3.1, 0, "metal")   -- the frame

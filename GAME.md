@@ -61,6 +61,8 @@ A new run: delete `projects/dungeon_crawler/world.vxs*`, `.state`, `.events`, `.
 Engine systems used: voxel building and carving, prefabs (door with hinge, sign board, props) and `prefab.place`, textures (built-in and `textures.json` pixel art), paint, voxel text, materials.csv, emitters with lights (torches, braziers, fireflies), GI, fire / explosions / destruction (barrels, secret wall, boss slam), liquids (lava, toxic water, scripted flood), physics bodies (boulder, projectiles, loot, crates), gravity fields (null, uniform, events.gravity_target), agents + nav + rigged models + clips + events + ragdoll, events (buttons, levers, volumes, doors, belt, gravity target), vehicles, cameras (first, third, editor cutscene), audio (WAV playback), HUD + UI kit + inventory sample, `project.store`, localization (`tr`, plural-free), recordings.
 Not used: world generation by biomes (the floor is carved into a flat plain; see "What is next"), wear / foliage ground cover, networking, hinges beyond doors, packs.
 
+**Signs:** every voxel sign is registered by `G.text`; `tools/check_signs.py` looks in front of each one for pillars / pipes. A sign must fit its wall (width = characters x 6 x size / 16 m). Earlier saved worlds are repaired once on start (`fix_*` flags in the saved state).
+
 ## Code layout (`projects/dungeon_crawler/`)
 ```
 project.cfg  level.lua  input.cfg  materials.csv  textures.json   the project; level.lua wires on_start / on_tick / on_anim / on_hud

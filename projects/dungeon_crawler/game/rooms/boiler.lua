@@ -36,7 +36,6 @@ W.builders[#W.builders + 1] = function()
     W.openings[#W.openings + 1] = { 111.6, 0, 20, 112.4, 4, 24 }
     W.openings[#W.openings + 1] = { 113.6, 0, 20, 114.4, 4, 24 }
     G.text(79, 6.6, 26, "BOILER GALLERY - MIND THE LAVA", { facing = "-z", material = "hazard_y", size = 1, depth = 1 })
-    G.text(100, 7.0, 0, "THE DRAWBRIDGE IS THAT WAY (RAISED)", { facing = "+z", material = "neon_red", size = 1, depth = 1 })
 end
 
 W.things[#W.things + 1] = function()

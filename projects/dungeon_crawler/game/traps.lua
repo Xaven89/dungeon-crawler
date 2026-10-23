@@ -349,7 +349,7 @@ function T.tick_floating(t)
             if f.kind == "item" then
                 if G.items.add(f.payload, 1) then
                     local d = G.items.defs[f.payload]
-                    G.player.popup(d.name, d.color); G.sfx.play("pickup")
+                    G.player.log(d.name, d.color); G.sfx.play("pickup")
                 end
             end
             G.save()

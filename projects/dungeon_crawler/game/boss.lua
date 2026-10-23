@@ -27,16 +27,14 @@ function B.begin()
     A.say_key("boss.intro", { prio = 2 })
     A.say_key("boss.intro", { prio = 0 })
     G.sfx.play("boss_stinger")
-    -- the cutscene: the editor camera (a free camera that leaves the player parked) circles him for seven seconds, then the view goes back to the player's eyes
-    local t0 = time.tick()
+    -- the cutscene: the editor camera (a free camera that leaves the player parked) in three STATIC shots with cuts (a camera that is moved every tick jittered: the editor camera re-finds
+    -- the floor under its focus all the time), then the view goes back to the player's eyes. The player is held in place meanwhile (game/world.lua).
     camera.mode("editor"); G.cutscene = true
-    local timer
-    timer = every(4, function()
-        local f = (time.tick() - t0) / 420
-        camera.focus(G.mx(30), G.my(2.4), G.mz(136.5))
-        camera.set{ zoom = 9 - 2.5 * f, pitch = 14, yaw = 95 - 55 * f }
-        if f >= 1 then cancel(timer); camera.mode("first"); G.cutscene = false end
-    end)
+    local function shot(zoom, pitch, yaw, fy) camera.focus(G.mx(30), G.my(fy or 2.4), G.mz(136.5)); camera.set{ zoom = zoom, pitch = pitch, yaw = yaw } end
+    shot(9, 14, 95)
+    after(150, function() shot(6.5, 10, 55) end)
+    after(300, function() shot(4.8, 6, 20, 3.0) end)
+    after(420, function() camera.mode("first"); G.cutscene = false end)
     model.play(inst.mdl, "roar", 1, false, 4)
     if G.music and G.music.set then G.music.set("boss") end
 end

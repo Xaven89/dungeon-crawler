@@ -34,8 +34,6 @@ W.builders[#W.builders + 1] = function()
     G.clear(64, -6.4, 138.4, 69.6, 0, 140)
     for k = 0, 11 do G.fill(64, -k * 0.5 - 0.5, 138.4 + k * 0.1, 69.6, -k * 0.5, 138.5 + k * 0.1 + 0.4, "flagstone") end
     G.fill(64, -6.4, 139.4, 69.6, -0.5, 140.6, "obsidian")
-    G.text(64.1, -2.6, 139.4, "FLOOR 2", { facing = "-z", material = "neon_red", size = 2, depth = 1 })
-    G.text(58, 3.7, 124.2, "STAIRWELL 1 - SAFE ROOM - NO MURDER (EXCEPT BY APPOINTMENT)", { facing = "+z", material = "lantern", size = 1, depth = 1 })
 end
 
 W.things[#W.things + 1] = function()

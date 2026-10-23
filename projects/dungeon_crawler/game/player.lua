@@ -84,6 +84,13 @@ P.popups = {}       -- { text, color, t, big }
 P.flash = 0         -- tick of the last hit taken (red vignette)
 P.hitmark = 0       -- tick of the last hit dealt
 P.hitmark_crit = false
+-- the loot log (bottom left, above the stats): gold, XP, items, healing: the things that are not about what is in front of you
+P.log_lines = {}
+function P.log(text, color)
+    P.log_lines[#P.log_lines + 1] = { text = text, color = color or "#ffffff", t = time.tick() }
+    if #P.log_lines > 8 then table.remove(P.log_lines, 1) end
+end
+
 function P.popup(text, color, big)
     P.popups[#P.popups + 1] = { text = text, color = color or "#ffffff", t = time.tick(), big = big }
     if #P.popups > 6 then table.remove(P.popups, 1) end
@@ -116,7 +123,7 @@ function P.add_xp(n, why)
     local s = G.state
     if n <= 0 or s.level >= P.MAX_LEVEL then return end
     s.xp = s.xp + n
-    P.popup("+" .. n .. " XP", "#9fe0ff")
+    P.log("+" .. n .. " XP", "#9fe0ff")
     local up = false
     while s.level < P.MAX_LEVEL and s.xp >= P.xp_needed(s.level) do
         s.xp = s.xp - P.xp_needed(s.level)
@@ -149,7 +156,7 @@ function P.heal(n, quiet)
     local s = G.state
     local before = s.hp
     s.hp = min(P.max_hp(), s.hp + n)
-    if not quiet and s.hp > before then P.popup("+" .. floor(s.hp - before) .. " HP", "#6bff8a") end
+    if not quiet and s.hp > before then P.log("+" .. floor(s.hp - before) .. " HP", "#6bff8a") end
 end
 
 local low_hp_warned = 0
@@ -424,7 +431,7 @@ function P.equip(id)
     if old then G.items.add(old, 1) end
     s.equip[slot] = id
     G.sfx.play("equip")
-    P.popup("EQUIPPED: " .. d.name, d.color)
+    P.log("equipped: " .. d.name, d.color)
     s.hp = min(s.hp, P.max_hp())
     G.save()
     return true
@@ -447,7 +454,7 @@ function P.use_item(id)
     if d.heal and s.hp >= P.max_hp() and not d.mana and not d.throw then P.popup("ALREADY HEALTHY", "#cccccc"); return false end
     G.items.remove(id, 1)
     if d.heal then P.heal(d.heal); G.sfx.play("heal") end
-    if d.mana then s.mp = min(P.max_mp(), s.mp + d.mana); P.popup("+" .. d.mana .. " MP", "#7aa8ff"); G.sfx.play("heal", nil, nil, nil, 0.6, 1.3) end
+    if d.mana then s.mp = min(P.max_mp(), s.mp + d.mana); P.log("+" .. d.mana .. " MP", "#7aa8ff"); G.sfx.play("heal", nil, nil, nil, 0.6, 1.3) end
     if d.throw then
         local ex, ey, ez, hx, hy, hz = G.look_ray(24, 0.25)
         G.sfx.play("swing")

@@ -185,6 +185,21 @@ local function hud_world(w, h, input)
             ui.text(cx - tw / 2 + 52, cy + 82, it.prompt, { size = 24, color = "#ffffff" })
         end
     end
+    -- the loot log: small lines at the bottom left, above the stats box, they fade after a few seconds
+    do
+        local lines = P.log_lines
+        local base = h - 190
+        for i = #lines, 1, -1 do
+            local l = lines[i]
+            local age = t - l.t
+            if age > 480 then table.remove(lines, i)
+            else
+                local a = age > 400 and (1 - (age - 400) / 80) or 1
+                local yy = base - (#lines - i) * 26
+                ui.text(30, yy, l.text, { size = 20, color = l.color .. string.format("%02x", floor(255 * a)), shadow = true })
+            end
+        end
+    end
     -- popups above the crosshair
     local n = #P.popups
     for i = n, 1, -1 do

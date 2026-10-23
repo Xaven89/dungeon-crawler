@@ -52,8 +52,6 @@ local function build_lobby_voxels()
     G.fill(7.9, 1.1, 2.1, 18.1, 1.25, 3.9, "gold")
     G.fill(8, 0, 3.8, 18, 0.3, 4, "dark_wood")
     G.fill(2, 0.8, 9, 4, 0.85, 13, "marble", "rune_tile")
-    G.text(4.2, 5.3, 0, "THE DESCENT", { facing = "+z", material = "gold", size = 3, spacing = 1, depth = 2 })
-    G.text(2.9, 4.1, 0, "SEASON 7 - NOW WITH 40% MORE DEATH", { facing = "+z", material = "neon_red", size = 1, depth = 1 })
     -- the check-in crystal (the save point of the lobby): a rune crystal on a plinth, west wall
     G.fill(2, 0, 9, 4, 0.8, 13, "marble", "blocks")
     G.sphere(3, 1.4, 11, 0.62, "rune")
@@ -75,7 +73,6 @@ local function build_lobby_voxels()
     local g = W.GATE
     for z = g.z0, g.z1, 4 do G.vfill(g.x0, 0, z, g.x1, g.h, math.min(z + 1, g.z1), "metal") end            -- bars
     G.vfill(g.x0, 0, g.z0, g.x1, 3, g.z1, "metal"); G.vfill(g.x0, 34, g.z0, g.x1, 37, g.z1, "metal"); G.vfill(g.x0, 68, g.z0, g.x1, g.h, g.z1, "metal")
-    G.text(7.4, 6.4, 22, "GAUNTLET GATE - PLEASE SCREAM IN AN ORDERLY FASHION", { facing = "-z", material = "hazard_y", size = 1, depth = 1 })
 end
 
 local function build_lobby_things()
@@ -127,6 +124,7 @@ function W.build()
         for _, o in ipairs({ { 36.6, 0, 27.6, 39.4, 3.4, 28.1 }, { 36.6, 0, 34.9, 39.4, 3.4, 35.4 } }) do G.clear(o[1], o[2], o[3], o[4], o[5], o[6]) end
         G.state.flags.fix_secret_walls = true
     elseif G.should_build() then G.state.flags.fix_secret_walls = true end
+    if W.repair_signs then W.repair_signs() end
     for _, f in ipairs(W.things or {}) do f() end
 end
 
@@ -179,7 +177,7 @@ function W.tick(t)
     end
     -- the title, the class choice, the shop and the end screen hold the player where he stands (the bag does not: it is opened in a fight)
     local sc = G.screen
-    if sc == "title" or sc == "class" or sc == "shop" or sc == "end" then
+    if sc == "title" or sc == "class" or sc == "shop" or sc == "end" or G.cutscene then
         if not G.frozen_at then local px, py, pz = player.pos(); G.frozen_at = { px, py, pz } end
         player.teleport(G.frozen_at[1], G.frozen_at[2], G.frozen_at[3])
     else

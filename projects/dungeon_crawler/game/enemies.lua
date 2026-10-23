@@ -147,7 +147,13 @@ function E.damage(inst, amount, opts)
         P.popup((opts.crit and "CRIT " or "") .. amount, opts.crit and "#ffd24a" or "#ffffff", opts.crit)       -- the plain numbers over the crosshair (Settings: "Damage numbers")
     else
         local kind = (inst.T.boss and "boss") or (opts.source == "fire" and "fire") or (opts.crit and "crit") or "plain"
-        G.vnum.show(amount, x, y + inst.height + 0.15, z, kind, 1, inst.id)
+        -- in front of the body (towards the player, at the edge of its radius) and at chest height, never higher than a head above the player's eyes: a number above a tall monster could not be seen up close
+        local px, py, pz = player.pos()
+        local dx, dz = px - x, pz - z
+        local n = math.max(0.01, math.sqrt(dx * dx + dz * dz))
+        local off = math.min(inst.radius * 0.9, n - 0.6)
+        local ny = math.min(y + inst.height * 0.72, py + 2.0)
+        G.vnum.show(amount, x + dx / n * off, ny, z + dz / n * off, kind, 1, inst.id)
     end
     G.sfx.play(opts.crit and "hit_crit" or "hit", nil, nil, nil, 0.8)
     if inst.T.hit_sfx then G.sfx.play(inst.T.hit_sfx, G.to_local(x, y, z)) end
@@ -204,7 +210,7 @@ function E.kill(inst, opts)
     if G.state.marked_bonus and inst.marked then gold = gold * 2 end
     gold = floor(gold * (1 + P.gold_bonus()) + (inst.marked and inst.marked > time.tick() and gold or 0))
     s.gold = s.gold + gold
-    if gold > 0 then P.popup("+" .. gold .. " gold", "#ffd24a") end
+    if gold > 0 then P.log("+" .. gold .. " gold", "#ffd24a") end
     P.add_xp(floor(T.xp * (1 + 0.0 * s.level)), "kill")
     if x then G.sfx.play(T.die_sfx or "squish_die", G.to_local(x, y, z)) end
     -- overkill: more than twice the hp that was left
@@ -276,12 +282,12 @@ local function pickup(l)
     local A = G.announcer
     if l.kind == "gold" then
         G.state.gold = G.state.gold + l.payload
-        G.player.popup("+" .. l.payload .. " gold", "#ffd24a")
+        G.player.log("+" .. l.payload .. " gold", "#ffd24a")
         G.sfx.play("coin")
     else
         local d = G.items.defs[l.payload]
         if G.items.add(l.payload, 1) then
-            G.player.popup(d.name, d.color)
+            G.player.log(d.name, d.color)
             G.sfx.play("pickup")
             if d.rarity ~= "common" then A.say_key("item." .. d.rarity, { key = "item_" .. d.rarity, cooldown = 600 }, d.name) end
             local n = 0

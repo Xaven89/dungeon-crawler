@@ -64,7 +64,12 @@ function G.vfill(x0, y0, z0, x1, y1, z1, mat, tex)
 end
 function G.vclear(x0, y0, z0, x1, y1, z1) edit.clear(G.OX + x0, G.OY + y0, G.OZ + z0, G.OX + x1, G.OY + y1, G.OZ + z1) end
 function G.sphere(xm, ym, zm, rm, mat) edit.sphere(G.wx(xm), G.wy(ym), G.wz(zm), vox(rm), mat) end
-function G.text(xm, ym, zm, s, opts) opts = opts or {}; edit.text(G.wx(xm), G.wy(ym), G.wz(zm), s, opts) end
+G.texts = {}      -- every sign that was built: { x, y, z, text, facing, width, size } (tools/check_signs.py looks in front of each one for pillars, pipes and sconces)
+function G.text(xm, ym, zm, s, opts)
+    opts = opts or {}
+    G.texts[#G.texts + 1] = { x = xm, y = ym, z = zm, text = s, facing = opts.facing or "+z", size = opts.size or 1, spacing = opts.spacing or 1 }
+    edit.text(G.wx(xm), G.wy(ym), G.wz(zm), s, opts)
+end
 
 -- a cylinder (vertical) of a material, metres, centre and radius
 function G.pillar(cx, cz, r, y0, y1, mat, tex)
