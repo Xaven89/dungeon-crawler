@@ -24,7 +24,13 @@ class Voxelith:
                                   env=dict(os.environ, **(env or {})))
         # the engine logs to stderr: it is drained all the time (a full pipe would block the server in the middle of a call); the last lines are kept for error messages
         self._err = collections.deque(maxlen=200)
-        threading.Thread(target=lambda: [self._err.append(l) for l in self.p.stderr], daemon=True).start()
+        # VOXELITH_STDERR=/path: every line the engine logs is also appended to that file (the last 200 are all the deque keeps: a debugging run that needs the whole log, e.g. VX_HASHEVERY traces)
+        errfile = open(os.environ["VOXELITH_STDERR"], "a", buffering=1) if os.environ.get("VOXELITH_STDERR") else None
+        def drain():
+            for l in self.p.stderr:
+                self._err.append(l)
+                if errfile: errfile.write(l)
+        threading.Thread(target=drain, daemon=True).start()
         self._id = 0
         init = self.rpc("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "voxelith_client.py", "version": "1"}})
         if "result" not in init:
