@@ -22,20 +22,50 @@ function F.pick_kind(rng, floor_n)
     return "rat"
 end
 
--- n enemies somewhere in the room (3 m from the walls, 2.5 m from each other and from the middle of the doors)
-function F.populate(room, ctx, rng, n)
+-- n enemies somewhere in the room (3 m from the walls, 2.5 m from each other, 5 m from the doors). opts: kinds = { {kind, weight} } instead of the floor's roster, allow(x, z) -> bool, elite = n of them tougher
+function F.populate(room, ctx, rng, n, opts)
+    opts = opts or {}
     local placed = {}
     local tries = 0
-    while #placed < n and tries < n * 30 do
+    while #placed < n and tries < n * 40 do
         tries = tries + 1
         local x = room.x + 3 + rng.next() * (room.w - 6)
         local z = room.z + 3 + rng.next() * (room.d - 6)
-        local ok = true
-        for _, q in ipairs(placed) do if G.dist2(x, z, q[1], q[2]) < 2.5 then ok = false; break end end
+        local ok = not ctx.near_door(room, x, z, 5) and (not opts.allow or opts.allow(x, z))
+        if ok then for _, q in ipairs(placed) do if G.dist2(x, z, q[1], q[2]) < 2.5 then ok = false; break end end end
         if ok then placed[#placed + 1] = { x, z } end
     end
-    for _, q in ipairs(placed) do ctx.add(room, F.pick_kind(rng, ctx.floor), q[1], q[2]) end
+    for _, q in ipairs(placed) do
+        local kind
+        if opts.kinds then
+            local total = 0; for _, k in ipairs(opts.kinds) do total = total + k[2] end
+            local x = rng.next() * total
+            for _, k in ipairs(opts.kinds) do x = x - k[2]; if x <= 0 then kind = k[1]; break end end
+        end
+        ctx.add(room, kind or F.pick_kind(rng, ctx.floor), q[1], q[2], opts.y or 0)
+    end
     return #placed
+end
+
+-- wall sconces along the four walls, none within 3 m of a door
+function F.sconces(room, ctx, step, y)
+    step = step or 8; y = y or 3.3
+    for x = room.x + 4, room.x + room.w - 3, step do
+        if not ctx.near_door(room, x, room.z, 3) then G.sconce(x, y, room.z, "+z") end
+        if not ctx.near_door(room, x, room.z + room.d, 3) then G.sconce(x, y, room.z + room.d, "-z") end
+    end
+    for z = room.z + 4, room.z + room.d - 3, step do
+        if not ctx.near_door(room, room.x, z, 3) then G.sconce(room.x, y, z, "+x") end
+        if not ctx.near_door(room, room.x + room.w, z, 3) then G.sconce(room.x + room.w, y, z, "-x") end
+    end
+end
+
+-- hanging lamps on a grid, about one per 60 m2
+function F.lamps(room, intensity, reach)
+    local nx, nz = max(1, floor(room.w / 8)), max(1, floor(room.d / 8))
+    for i = 1, nx do for j = 1, nz do
+        G.lamp(room.x + room.w * (i - 0.5) / nx, room.z + room.d * (j - 0.5) / nz, room.h, 1.2, { reach = reach or 12, intensity = intensity })
+    end end
 end
 
 -- how many enemies a room of this size holds on this floor
@@ -91,12 +121,8 @@ F.register("hall", {
     end,
     things = function(room, ctx)
         local r = ctx.rng(room)
-        for x = room.x + 4, room.x + room.w - 3, 8 do
-            G.sconce(x, 3.3, room.z, "+z"); G.sconce(x, 3.3, room.z + room.d, "-z")
-        end
-        -- hanging lamps on a grid, about one per 60 m2
-        local nx, nz = max(1, floor(room.w / 8)), max(1, floor(room.d / 8))
-        for i = 1, nx do for j = 1, nz do G.lamp(room.x + room.w * (i - 0.5) / nx, room.z + room.d * (j - 0.5) / nz, room.h, 1.2, { reach = 12 }) end end
+        F.sconces(room, ctx)
+        F.lamps(room, 15, 13)
         F.populate(room, ctx, r, F.head_count(room, ctx.floor, r))
         if r.next() < 0.5 then ctx.crate(room, ctx.floor >= 3 and "silver" or "bronze", room.x + 3, room.z + 3, "+z") end
     end,

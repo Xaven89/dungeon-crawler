@@ -29,6 +29,7 @@ include("game/gen/safe.lua")
 include("game/gen/floor.lua")
 include("game/gen/run.lua")
 include("game/gen/themes.lua")
+include("game/gen/themes_more.lua")
 include("game/hud.lua")
 include("game/hud_run.lua")
 
