@@ -146,3 +146,8 @@ Audio, saves with versions + `project.store`, controller + key bindings, determi
 - `makeRegionOps` hot spot: a per-region `cornerAt` memo for `treeNear` (L18).
 - `jobs_.wait(counter_)` in `reloadAll` / `reloadBox` instead of the in-flight counter (L21).
 - SpawnSystem: creature models are re-read from disk at every spawn (cache them by hash); herd members that stand in a non-resident neighbour column are skipped (L22).
+
+## From the game test (phase 3 retest)
+- A faint horizontal band across a tall curved wall in a closed hall at noon (the dungeon crawler's arena): the lighting grid's vertical edge / a one-probe row of the toroidal grid where coverage dips. The blue sky fill is gone (a ray up that hits stone takes the sky ambient down to a twentieth where probes cannot say), the band remains as a seam. Look at the grid's vertical extent against hall height and at the coverage fade at the grid edge.
+- `--audio-out` per-bus stems (`--audio-stems dir`) and a loop seam check for `sound.play{loop = true}` files (a click where the file's end meets its start).
+- A third-person camera that a wall pulled in: the body is hidden below 0.9 m (done); a fade instead of a cut would be nicer.
