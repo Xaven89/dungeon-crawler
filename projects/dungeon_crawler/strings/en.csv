@@ -362,3 +362,4 @@ skill.up.2,"A new level of {1}: {2}. The sponsors have noted it. Their notes are
 cond.bleed.1,"You are bleeding. This is not a metaphor. A bandage would be good, the stairwell would be better."
 cond.septic.1,"You are septic: healing is half as good until a Smoothie or sushi clears you. Please do not ask what the smoothie is."
 cond.cured,"{1} cured"
+run.new,Leave this run: new seed

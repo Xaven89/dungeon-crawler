@@ -108,28 +108,36 @@ F.register("lair", {
 })
 
 -- ---------------------------------------------------------------------------------------------- hall: the plain fighting room
+-- the pillars of a hall: a pure function of the room (the voxels and the population both ask for it)
+local function hall_plan(room, ctx)
+    local r = ctx.rng(room)
+    local pillars = {}
+    local nx, nz = floor(room.w / 8), floor(room.d / 8)
+    for i = 1, nx do for j = 1, nz do
+        if r.next() < 0.7 then pillars[#pillars + 1] = { room.x + room.w * i / (nx + 1), room.z + room.d * j / (nz + 1) } end
+    end end
+    return pillars
+end
+
 F.register("hall", {
     names = { "Hall of Mild Peril", "The Waiting Room", "Hall of Pending Approvals", "The Open Plan" },
     weight = function(floor_n, room) return 3 end,
     voxels = function(room, ctx)
-        local r = ctx.rng(room)
         G.room{ x = room.x, z = room.z, w = room.w, d = room.d, h = room.h, floor = "flagstone", wall = "dungeon_brick", ceil = "dungeon_brick", ftex = "tiles", wtex = "blocks", ctex = "planks" }
         -- a carpet down the long axis
         if room.w >= room.d then G.fill(room.x + 1, 0, room.z + room.d / 2 - 2, room.x + room.w - 1, 0.05, room.z + room.d / 2 + 2, "carpet")
         else G.fill(room.x + room.w / 2 - 2, 0, room.z + 1, room.x + room.w / 2 + 2, 0.05, room.z + room.d - 1, "carpet") end
-        -- rows of pillars
-        local nx, nz = floor(room.w / 8), floor(room.d / 8)
-        for i = 1, nx do for j = 1, nz do
-            if r.next() < 0.7 then G.pillar(room.x + room.w * i / (nx + 1), room.z + room.d * j / (nz + 1), 0.7, 0, room.h, "marble", "blocks") end
-        end end
+        for _, p in ipairs(hall_plan(room, ctx)) do G.pillar(p[1], p[2], 0.7, 0, room.h, "marble", "blocks") end
         for x = room.x + 3, room.x + room.w - 3, 6 do G.fill(x, room.h - 0.8, room.z, x + 0.5, room.h, room.z + room.d, "dark_wood") end
     end,
     things = function(room, ctx)
         local r = ctx.rng(room)
         F.sconces(room, ctx)
         F.lamps(room, 15, 13)
-        F.populate(room, ctx, r, F.head_count(room, ctx.floor, r))
-        if r.next() < 0.5 then ctx.crate(room, ctx.floor >= 3 and "silver" or "bronze", room.x + 3, room.z + 3, "+z") end
+        local pil = hall_plan(room, ctx)
+        local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)
+        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = function(x, z) for _, p in ipairs(pil) do if G.dist2(x, z, p[1], p[2]) < 1.6 then return false end end return true end })
+        if r2.next() < 0.5 then ctx.crate(room, ctx.floor >= 3 and "silver" or "bronze", room.x + 3, room.z + 3, "+z") end
     end,
 })
 
@@ -152,6 +160,10 @@ F.register("warlord", {
         ctx.crate(room, "gold", cx - 0.6, room.z + room.d - 2, "-z", 0.55)
         local kind = (ctx.floor >= 3) and "cyclops" or "troll"
         ctx.add(room, kind, cx, room.z + room.d - 8, 0, { hp = (kind == "troll") and 1.8 or 1 })
-        F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { kinds = { { "orc", 4 }, { "bandit", 3 }, { "imp", 2 } }, allow = function(x, z) return z < room.z + room.d - 10 end })
+        F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { kinds = { { "orc", 4 }, { "bandit", 3 }, { "imp", 2 } }, allow = function(x, z)
+            if z >= room.z + room.d - 10 then return false end
+            for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do if G.dist2(x, z, cx + dx, room.z + room.d * k / 3) < 1.8 then return false end end end
+            return true
+        end })
     end,
 })

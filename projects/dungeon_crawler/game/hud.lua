@@ -489,6 +489,11 @@ local function bag_screen(w, h, input)
         if nf ~= flat then ui.run(string.format("Game.music.set_flat_numbers(%s)", tostring(nf))) end
         y = y + 60
         ui.text(cx + 8, y + 20, tr("ui.settings_hint"), { size = 20, color = C.dim })
+        local run = G.run.cur()
+        if run then
+            ui.text(cx + 8, y + 70, string.format("%s  %s    %s %d    %s", tr("run.seed"), tostring(run.seed), "FLOOR", run.floor or 1, run.mode == "orientation" and "ORIENTATION" or ""), { size = 24, color = "#eef1f8" })
+            if uikit.button("new_run", tr("run.new"), cx + 8, y + 120, 420, 48) then ui.run("Game.run.open_menu()") end
+        end
     else
         ui.text(cx + 8, top, string.format("Achievements  %d / %d", s.ach_count or 0, #G.announcer.order), { size = 28, color = C.gold })
         local y = top + 44

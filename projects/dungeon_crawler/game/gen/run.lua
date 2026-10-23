@@ -104,3 +104,10 @@ function R.resume()
     end
     return false
 end
+
+-- from the settings: leave this run and pick another (the seed screen)
+function R.open_menu()
+    if G.screen ~= "bag" or G.player.dead then return end
+    G.screen = "run"
+    G.hud.seed_text = nil
+end
