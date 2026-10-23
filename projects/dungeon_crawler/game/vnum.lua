@@ -4,16 +4,18 @@
 Game = Game or {}
 local G = Game
 local V = {}
+V.last = {}
 G.vnum = V
 local floor = math.floor
 
+-- a 3 x 5 font: with one voxel (6 cm) per pixel a digit is 30 cm high, the smallest that stays readable (the flat HUD text is about 11 cm at the same distance; fx.play takes whole voxels)
 local FONT = {
-    ["0"] = { "01110", "10001", "10011", "10101", "11001", "10001", "01110" }, ["1"] = { "00100", "01100", "00100", "00100", "00100", "00100", "01110" },
-    ["2"] = { "01110", "10001", "00001", "00010", "00100", "01000", "11111" }, ["3"] = { "11110", "00001", "00001", "01110", "00001", "00001", "11110" },
-    ["4"] = { "00010", "00110", "01010", "10010", "11111", "00010", "00010" }, ["5"] = { "11111", "10000", "11110", "00001", "00001", "10001", "01110" },
-    ["6"] = { "00110", "01000", "10000", "11110", "10001", "10001", "01110" }, ["7"] = { "11111", "00001", "00010", "00100", "01000", "01000", "01000" },
-    ["8"] = { "01110", "10001", "10001", "01110", "10001", "10001", "01110" }, ["9"] = { "01110", "10001", "10001", "01111", "00001", "00010", "01100" },
+    ["0"] = { "111", "101", "101", "101", "111" }, ["1"] = { "010", "110", "010", "010", "111" }, ["2"] = { "111", "001", "111", "100", "111" },
+    ["3"] = { "111", "001", "111", "001", "111" }, ["4"] = { "101", "101", "111", "001", "001" }, ["5"] = { "111", "100", "111", "001", "111" },
+    ["6"] = { "111", "100", "111", "101", "111" }, ["7"] = { "111", "001", "010", "010", "010" }, ["8"] = { "111", "101", "111", "101", "111" },
+    ["9"] = { "111", "101", "111", "001", "111" },
 }
+local GW, GH = 3, 5
 local LIFE = 0.75         -- seconds the number floats
 local RISE = 1.0          -- metres a puff has risen at the end of its life (measured)
 local SIZE = 1.0          -- the particle: voxels (a flame shrinks while it rises)
@@ -26,7 +28,7 @@ function V.define()
 end
 
 -- a number at a point (world metres); kind: plain | crit | fire | boss; scale > 1: bigger
-function V.show(value, x, y, z, kind, scale)
+function V.show(value, x, y, z, kind, scale, owner)
     kind = kind or "plain"
     local text = tostring(math.floor(value + 0.5))
     if #text > 4 then text = "9999" end
@@ -35,9 +37,16 @@ function V.show(value, x, y, z, kind, scale)
     local n = math.max(0.01, math.sqrt(dx * dx + dz * dz))
     dx, dz = dx / n, dz / n                       -- from the point to the player
         -- fx.play takes WHOLE voxels, so the pixel pitch is a whole number of voxels (1 = 6 cm: normal, 2: crits and far away); a finer pitch drops and doubles pixels
-    local k = ((scale or 1) > 1.2 or n > 7) and 2 or 1
-    local width = (#text * 6 - 1) * k
+    local k = 1
+    local width = (#text * (GW + 1) - 1) * k
     local vx, vy, vz = floor(units.vox(x) + 0.5), floor(units.vox(y) + 0.5), floor(units.vox(z) + 0.5)
+    -- a second number of the same target while the first is still in the air starts one line higher (they used to overlap and look doubled)
+    if owner then
+        local now = time.tick()
+        local last = V.last[owner]
+        if last and now - last.t < LIFE * 60 then vy = math.max(vy, last.y + GH + 2) end
+        V.last[owner] = { t = now, y = vy }
+    end
     -- the number stands in a plane across the nearest axis (x or z) towards the player: whole-voxel steps, no gaps at any angle
     local rxv, rzv, fx_, fz_
     if math.abs(dx) >= math.abs(dz) then fx_, fz_ = (dx >= 0) and 1 or -1, 0; rxv, rzv = 0, (dx >= 0) and -1 or 1
@@ -45,14 +54,14 @@ function V.show(value, x, y, z, kind, scale)
     local pixels = {}
     for ci = 1, #text do
         local glyph = FONT[text:sub(ci, ci)]
-        for row = 1, 7 do
-            for col = 1, 5 do
+        for row = 1, GH do
+            for col = 1, GW do
                 if glyph[row]:sub(col, col) == "1" then
-                    local u = ((ci - 1) * 6 + (col - 1)) * k - width / 2
+                    local u = ((ci - 1) * (GW + 1) + (col - 1)) * k - width / 2
                     for fy = 0, k - 1 do
                         for fu = 0, k - 1 do
                             local uu = u + fu
-                            pixels[#pixels + 1] = { vx + rxv * uu + fx_ * 8, vy + (7 - row) * k + fy, vz + rzv * uu + fz_ * 8 }
+                            pixels[#pixels + 1] = { vx + rxv * uu + fx_ * 8, vy + (GH - row) * k + fy, vz + rzv * uu + fz_ * 8 }
                         end
                     end
                 end

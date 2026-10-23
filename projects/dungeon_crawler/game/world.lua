@@ -88,8 +88,9 @@ local function build_lobby_things()
     for _, z in ipairs({ 4, 18 }) do G.sconce(0, 3.2, z, "+x") end
     G.torch(3, 2.6, 11, { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 9, name = "lobby_crystal" })
     emitter.create{ name = "lobby_dust", preset = "dust_motes", pos = { G.mx(13), G.my(4), G.mz(11) }, size = { 11, 4, 9 } }
-    local g = W.GATE
-    W.lobby_gate = events.door{ name = "lobby_gate", box = { G.OX + g.x0, G.OY, G.OZ + g.z0, G.OX + g.x1, G.OY + g.h, G.OZ + g.z1 }, travel = { 0, -72, 0 }, speed = 2 }
+    -- the gate is plain voxels that this script removes (not an event door: a door's state is saved apart from the voxels, and when the world was rebuilt but the state kept, the
+    -- door believed it was open while the bars stood in the corridor). Applied again at every start.
+    if G.state.flags.gate_lobby then W.gate_apply(W.GATE) end
 end
 
 -- ================================================================================================ the whole floor
@@ -222,8 +223,18 @@ W.checkpoints = {
     stairwell = { x = 58, y = 0.1, z = 132 },
 }
 
+-- a gate: a slab of voxels {x0, x1, z0, z1, h} (voxels, local). open: the bars are cleared from the top down in eight steps (they sink into the floor)
+function W.gate_apply(g) G.vclear(g.x0, 0, g.z0, g.x1, g.h, g.z1) end
+function W.gate_open(g, flag)
+    G.state.flags[flag] = true
+    for i = 1, 8 do
+        after((i - 1) * 4, function() G.vclear(g.x0, math.floor(g.h * (8 - i) / 8), g.z0, g.x1, g.h, g.z1) end)
+    end
+    after(36, function() G.sfx.play("lever", (g.x0 + 4) / 16, 1.5, (g.z0 + g.z1) / 32, 0.8, 0.6) end)
+end
+
 function W.open_lobby_gate()
-    if W.lobby_gate then events.command(W.lobby_gate, "open") end
+    W.gate_open(W.GATE, "gate_lobby")
 end
 
 function W.start_position()   -- where a new contestant wakes up: the west side of the lobby looking east at the gate

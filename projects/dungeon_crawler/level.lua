@@ -28,6 +28,7 @@ local G = Game
 function on_start()
     G.load()
     G.items.init()
+    if G.state.class then G.state.flags.gate_lobby = true end          -- a contestant who has checked in is let through, whatever happened to the 5 s timer before
     G.enemies.define_fx()
     G.vnum.define()
     G.world.build()

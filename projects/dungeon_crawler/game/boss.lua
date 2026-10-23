@@ -167,7 +167,7 @@ function B.on_dead(inst)
     -- minions go with him
     for _, i in pairs(E.list) do if not i.dead and i.room == "arena" then E.damage(i, 9999, { source = "restructuring" }) end end
     after(180, function()
-        events.command(W.arena_gate, "open")
+        W.gate_open(W.AGATE, "gate_arena")
         A.say("The gate to Stairwell One is open. Please collect your platinum crate. Please do not ask where the keycard goes. It goes nowhere. It is laminated.", { prio = 1 })
         T.build_crate_now("boss_platinum", "platinum", 28.7, 0, 134, "-z")
     end)

@@ -33,13 +33,20 @@ E.types = {
 }
 
 function E.define_fx()
-    -- (no `debris` / `grain` classes: they settle into the world as real voxels you can stand on; sparks fall and vanish, puffs drift)
-    local function splat(name, mat, color_count)
+    -- hits: a spray that vanishes (sparks fall, puffs drift). Deaths: the same, plus `debris`, which SETTLES into the world as real voxels: the stains, bones and lumps of a fight stay where
+    -- they fell (and are saved with the world). Wall chips below never use debris.
+    local function splat(name, mat, count, gore_mat, chunk)
         fx.define{ name = name, emitters = {
-            { class = "spark", material = mat, count = color_count or 16, speed = 34, speed_jitter = 0.6, spread = 0.9, life = 1.0, size = 1.3, radius = 2, direction = { 0, 1, 0 } },
+            { class = "spark", material = mat, count = count or 16, speed = 34, speed_jitter = 0.6, spread = 0.9, life = 1.0, size = 1.3, radius = 2, direction = { 0, 1, 0 } },
             { class = "puff", material = mat, count = 4, size = 5, duration = 0.25, darkness = 0.15, direction = { 0, 1, 0 }, speed = 9, spread = 0.7 } } }
+        fx.define{ name = "gore" .. name:sub(6), emitters = {
+            { class = "spark", material = mat, count = (count or 16) + 12, speed = 40, speed_jitter = 0.7, spread = 1.2, life = 1.1, size = 1.4, radius = 3, direction = { 0, 1, 0 } },
+            { class = "debris", material = gore_mat or mat, count = 40, speed = 32, speed_jitter = 0.8, spread = 1.5, life = 2.0, size = 1.0, radius = 3, direction = { 0, 1, 0 } },
+            { class = "debris", material = chunk or gore_mat or mat, count = 12, speed = 22, speed_jitter = 0.8, spread = 1.5, life = 2.0, size = 1.0, radius = 3, direction = { 0, 1, 0 } },
+            { class = "puff", material = mat, count = 8, size = 6, duration = 0.35, darkness = 0.25, direction = { 0, 1, 0 }, speed = 10, spread = 1.0 } } }
     end
-    splat("splat_goo", "goo", 22); splat("splat_toxic", "toxic", 22); splat("splat_bone", "bone", 14); splat("splat_red", "carpet", 14); splat("splat_spore", "glowcap", 14)
+    splat("splat_goo", "goo", 22, "goo", "goo"); splat("splat_toxic", "toxic", 22, "goo", "toxic"); splat("splat_bone", "bone", 14, "bone", "flesh")
+    splat("splat_red", "blood", 14, "blood", "flesh"); splat("splat_spore", "glowcap", 14, "blood", "glowcap")
     fx.define{ name = "chip_stone", emitters = { { class = "spark", material = "stone", count = 10, speed = 30, speed_jitter = 0.6, spread = 0.9, life = 0.6, size = 1.4, radius = 1.5 },
                                                   { class = "puff", material = "stone", count = 3, size = 3, duration = 0.2, darkness = 0.2, direction = { 0, 1, 0 }, speed = 5, spread = 0.8 },
                                                   { class = "spark", material = "metal", count = 5, speed = 40, speed_jitter = 0.5, spread = 0.9, life = 0.3, size = 0.5, radius = 1 } } }
@@ -140,7 +147,7 @@ function E.damage(inst, amount, opts)
         P.popup((opts.crit and "CRIT " or "") .. amount, opts.crit and "#ffd24a" or "#ffffff", opts.crit)       -- the plain numbers over the crosshair (Settings: "Damage numbers")
     else
         local kind = (inst.T.boss and "boss") or (opts.source == "fire" and "fire") or (opts.crit and "crit") or "plain"
-        G.vnum.show(amount, x + G.range(-0.25, 0.25), y + inst.height + 0.2 + G.range(0, 0.25), z + G.range(-0.25, 0.25), kind, opts.crit and 1.5 or 1)
+        G.vnum.show(amount, x, y + inst.height + 0.15, z, kind, 1, inst.id)
     end
     G.sfx.play(opts.crit and "hit_crit" or "hit", nil, nil, nil, 0.8)
     if inst.T.hit_sfx then G.sfx.play(inst.T.hit_sfx, G.to_local(x, y, z)) end
@@ -205,7 +212,7 @@ function E.kill(inst, opts)
     if inst.kind == "slime" or inst.kind == "slime_toxic" then if (A.bump("slimes") or 0) >= 10 then A.award("squeegee") end end
     if inst.burning then A.award("pyro") end
     if x then
-        fx.play(T.splat or "splat_red", floor(x * 16), floor((y + inst.height * 0.5) * 16), floor(z * 16), T.boss and 2.5 or 1.4)
+        fx.play(((T.splat or "splat_red"):gsub("^splat", "gore")), floor(x * 16), floor((y + inst.height * 0.4) * 16), floor(z * 16), T.boss and 2.2 or (T.miniboss and 1.6 or 1.1))
         if T.ragdoll then
             local fx_, fy_, fz_ = player.forward()
             model.ragdoll(inst.mdl, true, fx_ * 120, 60, fz_ * 120)
@@ -220,11 +227,18 @@ function E.kill(inst, opts)
     if x and gold > 3 then E.drop(x, y + 0.3, z, "gold", gold) end
     -- the cleanup of the body
     local id, mdl = inst.id, inst.mdl
-    after(T.ragdoll and 420 or 20, function()
-        E.list[id] = nil
-        E.by_model[mdl] = nil
-        agent.remove(id)
-    end)
+    -- the body stays for a while (the last 8 bodies of the floor): it fades away when the 9th falls or after 40 s; single-part monsters (slimes) burst at once
+    E.corpses = E.corpses or {}
+    local function clear_it()
+        if E.list[id] then E.list[id] = nil; E.by_model[mdl] = nil; agent.remove(id) end
+    end
+    if T.ragdoll then
+        E.corpses[#E.corpses + 1] = clear_it
+        if #E.corpses > 8 then table.remove(E.corpses, 1)() end
+        after(2400, clear_it)
+    else
+        after(20, clear_it)
+    end
     if inst.room and E.alive_in(inst.room) == 0 and G.on_room_cleared then G.on_room_cleared(inst.room) end
     -- GLEE comments (not on every kill: she gets bored)
     if T.boss then

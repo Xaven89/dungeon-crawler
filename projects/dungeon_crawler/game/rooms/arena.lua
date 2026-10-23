@@ -63,8 +63,7 @@ W.things[#W.things + 1] = function()
     T.hazard("lava", CX - 13.3, -3.5, CZ - 13.3, CX + 13.3, 0.3, CZ + 13.3, 0)     -- placeholder replaced below: the moat only
     T.hazards[#T.hazards] = nil
     local g = W.AGATE
-    W.arena_gate = events.door{ name = "arena_exit_gate", box = { G.OX + g.x0, G.OY, G.OZ + g.z0, G.OX + g.x1, G.OY + g.h, G.OZ + g.z1 }, travel = { 0, -62, 0 }, speed = 2 }
-    if G.state.flags.boss_dead then events.command(W.arena_gate, "open") end
+    if G.state.flags.boss_dead or G.state.flags.gate_arena then W.gate_apply(g) end       -- (voxel gate, see world.lua)
 end
 
 -- the moat hurts: standing between r 11 and 13.2 below the bridge level
