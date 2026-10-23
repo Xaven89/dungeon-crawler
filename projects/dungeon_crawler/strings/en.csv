@@ -254,3 +254,4 @@ ui.bus.sfx,Sound effects
 ui.bus.voice,GLEE's voice
 ui.settings_hint,"Volumes are saved with your run. Drag the sliders; 100% is as the show was mixed."
 ui.capture,Click in the window to capture the mouse (Esc lets it go). Moonlight: relative mouse mode, Ctrl+Alt+Shift+M
+ui.flat_numbers,Damage numbers as flat text (instead of voxel particles)

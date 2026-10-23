@@ -68,3 +68,6 @@ function M.tick(t)
     if fighting and not M.combat then M.combat = sound.play{ file = "sounds/m_combat.wav", loop = true, bus = "music", volume = 0.7, fade_in = 0.6 }
     elseif not fighting and M.combat then sound.stop(M.combat, 2.5); M.combat = nil end
 end
+
+-- (a game setting that lives next to the sound ones) damage numbers as voxel particles, or as flat text over the crosshair
+function M.set_flat_numbers(on) G.state.flags.flat_numbers = on and true or false end

@@ -434,6 +434,10 @@ local function bag_screen(w, h, input)
             if math.abs(v - G.music.bus[name]) > 0.001 then ui.run(string.format("Game.music.set_bus(%q, %.2f)", name, v)) end
             y = y + 70
         end
+        local flat = G.state.flags.flat_numbers and true or false
+        local nf = uikit.checkbox("flat_numbers", tr("ui.flat_numbers"), flat, cx + 8, y + 10, 700, 36)
+        if nf ~= flat then ui.run(string.format("Game.music.set_flat_numbers(%s)", tostring(nf))) end
+        y = y + 60
         ui.text(cx + 8, y + 20, tr("ui.settings_hint"), { size = 20, color = C.dim })
     else
         ui.text(cx + 8, top, string.format("Achievements  %d / %d", s.ach_count or 0, #G.announcer.order), { size = 28, color = C.gold })

@@ -134,7 +134,9 @@ function E.damage(inst, amount, opts)
     inst.last_damage = time.tick()
     local x, y, z = wpos(inst)
     P.hitmark = time.tick(); P.hitmark_crit = opts.crit; P.hitmark_wall = false
-    if x then
+    if G.state.flags.flat_numbers or not x then
+        P.popup((opts.crit and "CRIT " or "") .. amount, opts.crit and "#ffd24a" or "#ffffff", opts.crit)       -- the plain numbers over the crosshair (Settings: "Damage numbers")
+    else
         local kind = (inst.T.boss and "boss") or (opts.source == "fire" and "fire") or (opts.crit and "crit") or "plain"
         G.vnum.show(amount, x + G.range(-0.25, 0.25), y + inst.height + 0.2 + G.range(0, 0.25), z + G.range(-0.25, 0.25), kind, opts.crit and 1.5 or 1)
     end
