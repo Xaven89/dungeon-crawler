@@ -166,3 +166,9 @@ The trees were analysed and written down (docs/TREE_STYLE.md, tools/make_trees.p
 - **Furniture, props, kitchen, chests, fences, pub set**: scale rules, material use, wood/metal/glass colour roles.
 - **Mushrooms and graveyard**: shape grammar and palettes.
 For each: measure (do not guess), write `docs/<NAME>_STYLE.md` (measurements, palette roles with RGB and kit materials, recipes, a checklist) and a seeded generator in `tools/` that proves the recipe, as for the trees; keep a shared "world style" index so species/props from different packs sit together (scale, palette saturation, voxel noise).
+
+## From the dungeon game's gore test (2026-10-23)
+- Stains that age (wet to dried): a per-material second colour that a stain's state byte (age) blends towards, advanced by a slow cosmetic system (a `dry_ticks` column), so a hall of blood darkens and the particle red stays readable on a red carpet; today a game picks one dark colour (84, 2, 10, roughness 18 reads).
+- A fine model (voxel scale) as a static prop or foliage in numbers: the renderer has a flat 48 bodies per 16 x 16 tile and no body acceleration structure, so more than a few dozen fine bodies in view is not supported (docs/ANIMATION.md "Voxel scale"); canopies would need a BVH or a grid of bodies.
+- Scaled bodies in the physics world (limbs that push crates at scale 0.6): `VoxelBody::scale` is carried everywhere in metres, but the narrow phase, the player's body probe and `raycastBodies` assume the world's voxel; the agent proxy box is the answer for now.
+- `player.model(file, { scale = 0.6 })` / `player.hand_model` override (the file's scale applies today).

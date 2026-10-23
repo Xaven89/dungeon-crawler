@@ -7,6 +7,10 @@ Art packs the owner supplied (`Upload/`), converted into starter-kit models (`as
 **Licences.** None of the packs has a known licence for redistribution: the Stylized Voxel Forest pack says in its own `LICENSE_STATUS.txt` that "owner distribution and license terms are pending" and that the preparation package "does not grant a license";
 the others carry no licence text at all (the Voxel Magic pub set's ReadMe only names its author, Maria Starko). The models are in the repository because the owner asked for them: clear the licences before the engine or a game is published.
 
+**Round 29: finer voxels.** The figures, the furniture, the kitchen things, chests, fences and the pub set are now stored **at their own voxel size** (a one-part rig with a voxel scale of 0.6: `--convert-vox ... --vox-unit 0.6`, palettes of up to 64 colours),
+not resampled: stamped into the world (`prefab.place`, the Prefabs panel) they are resampled to the world's voxel and look as before, drawn as a body (`player.model`, `model.spawn{ visual = true }`, `agent.spawn{ collision = "proxy" }`) they keep every detail
+(docs/ANIMATION.md "Voxel scale"). The sizes in the tables below are the file's voxels; the metres column is at the world's voxel (multiply a scaled model by its scale: a human of 49 voxels is 1.8 m).
+
 ## Packs and categories
 
 | pack (Upload/) | what it is | kit folder | how it was converted | scale |
@@ -36,91 +40,91 @@ The forest models are shells (the mesh is hollow); only the graveyard models wer
 
 ## Models
 
-### Humans (static T-pose figures) (`assets/prefabs/figures/humans/`)
+### Humans (static T-pose figures) (`assets/prefabs/figures/humans/`) (voxel scale 0.6: voxels of 3.75 cm)
 
 | model | voxels (x, y up, z) | metres |
 |---|---|---|
-| `human_demon_girl` | 28 x 29 x 7 | 1.8 x 1.8 x 0.4 m |
-| `human_man_adventurer` | 30 x 29 x 8 | 1.9 x 1.8 x 0.5 m |
-| `human_man_samurai` | 30 x 31 x 7 | 1.9 x 1.9 x 0.4 m |
-| `human_man_warrior` | 31 x 32 x 8 | 1.9 x 2.0 x 0.5 m |
-| `human_woman_adventurer` | 28 x 30 x 7 | 1.8 x 1.9 x 0.4 m |
+| `human_demon_girl` | 46 x 49 x 12 | 1.7 x 1.8 x 0.4 m |
+| `human_man_adventurer` | 50 x 49 x 14 | 1.9 x 1.8 x 0.5 m |
+| `human_man_samurai` | 50 x 51 x 11 | 1.9 x 1.9 x 0.4 m |
+| `human_man_warrior` | 52 x 54 x 13 | 1.9 x 2.0 x 0.5 m |
+| `human_woman_adventurer` | 46 x 50 x 12 | 1.7 x 1.9 x 0.4 m |
 
-### Monsters (static T-pose figures) (`assets/prefabs/figures/monsters/`)
-
-| model | voxels (x, y up, z) | metres |
-|---|---|---|
-| `monster_cyclop_pink` | 41 x 29 x 10 | 2.6 x 1.8 x 0.6 m |
-| `monster_gold_golem` | 70 x 51 x 15 | 4.4 x 3.2 x 0.9 m |
-| `monster_orc_captain_green` | 35 x 33 x 9 | 2.2 x 2.1 x 0.6 m |
-| `monster_troll_blue` | 41 x 29 x 10 | 2.6 x 1.8 x 0.6 m |
-
-### Furniture (`assets/prefabs/props/furniture/`)
+### Monsters (static T-pose figures) (`assets/prefabs/figures/monsters/`) (voxel scale 0.6: voxels of 3.75 cm)
 
 | model | voxels (x, y up, z) | metres |
 |---|---|---|
-| `bed` | 9 x 11 x 17 | 0.6 x 0.7 x 1.1 m |
-| `chair_dark_brown` | 8 x 16 x 8 | 0.5 x 1.0 x 0.5 m |
-| `chair_dark_green` | 8 x 16 x 9 | 0.5 x 1.0 x 0.6 m |
-| `chair_light_brown` | 8 x 16 x 8 | 0.5 x 1.0 x 0.5 m |
-| `couch` | 19 x 13 x 11 | 1.2 x 0.8 x 0.7 m |
-| `drawer_light_brown` | 13 x 11 x 8 | 0.8 x 0.7 x 0.5 m |
-| `table_dark_green` | 21 x 8 x 8 | 1.3 x 0.5 x 0.5 m |
-| `table_light_brown` | 21 x 8 x 8 | 1.3 x 0.5 x 0.5 m |
-| `wardrobe_light_brown` | 20 x 20 x 11 | 1.2 x 1.2 x 0.7 m |
+| `monster_cyclop_pink` | 68 x 49 x 16 | 2.5 x 1.8 x 0.6 m |
+| `monster_gold_golem` | 117 x 85 x 25 | 4.4 x 3.2 x 0.9 m |
+| `monster_orc_captain_green` | 58 x 55 x 15 | 2.2 x 2.1 x 0.6 m |
+| `monster_troll_blue` | 68 x 49 x 16 | 2.5 x 1.8 x 0.6 m |
 
-### Kitchen and tableware (`assets/prefabs/props/kitchen/`)
+### Furniture (`assets/prefabs/props/furniture/`) (voxel scale 0.6: voxels of 3.75 cm)
 
 | model | voxels (x, y up, z) | metres |
 |---|---|---|
-| `glass_water` | 4 x 5 x 4 | 0.2 x 0.3 x 0.2 m |
-| `glass_wine` | 5 x 11 x 5 | 0.3 x 0.7 x 0.3 m |
-| `mug` | 4 x 4 x 3 | 0.2 x 0.2 x 0.2 m |
-| `oven` | 14 x 14 x 14 | 0.9 x 0.9 x 0.9 m |
-| `oven_glassless` | 14 x 14 x 14 | 0.9 x 0.9 x 0.9 m |
-| `pan` | 4 x 2 x 7 | 0.2 x 0.1 x 0.4 m |
-| `pot_silver` | 7 x 5 x 4 | 0.4 x 0.3 x 0.2 m |
+| `bed` | 15 x 19 x 29 | 0.6 x 0.7 x 1.1 m |
+| `chair_dark_brown` | 14 x 27 x 14 | 0.5 x 1.0 x 0.5 m |
+| `chair_dark_green` | 14 x 27 x 15 | 0.5 x 1.0 x 0.6 m |
+| `chair_light_brown` | 14 x 27 x 14 | 0.5 x 1.0 x 0.5 m |
+| `couch` | 32 x 21 x 18 | 1.2 x 0.8 x 0.7 m |
+| `drawer_light_brown` | 21 x 19 x 14 | 0.8 x 0.7 x 0.5 m |
+| `table_dark_green` | 35 x 13 x 14 | 1.3 x 0.5 x 0.5 m |
+| `table_light_brown` | 35 x 13 x 14 | 1.3 x 0.5 x 0.5 m |
+| `wardrobe_light_brown` | 33 x 34 x 19 | 1.2 x 1.3 x 0.7 m |
 
-### Decor (`assets/prefabs/props/decor/`)
-
-| model | voxels (x, y up, z) | metres |
-|---|---|---|
-| `campfire_large` | 28 x 13 x 26 | 1.8 x 0.8 x 1.6 m |
-| `designy_statue` | 4 x 22 x 13 | 0.2 x 1.4 x 0.8 m |
-| `lamppost` | 10 x 37 x 6 | 0.6 x 2.3 x 0.4 m |
-| `pot_cactus` | 5 x 8 x 5 | 0.3 x 0.5 x 0.3 m |
-| `pot_flower` | 5 x 8 x 5 | 0.3 x 0.5 x 0.3 m |
-
-### Chests (`assets/prefabs/props/chests/`)
+### Kitchen and tableware (`assets/prefabs/props/kitchen/`) (voxel scale 0.6: voxels of 3.75 cm)
 
 | model | voxels (x, y up, z) | metres |
 |---|---|---|
-| `chest_light_brown` | 11 x 5 x 5 | 0.7 x 0.3 x 0.3 m |
-| `chest_mysterious_blue` | 11 x 11 x 8 | 0.7 x 0.7 x 0.5 m |
-| `chest_mysterious_dark` | 11 x 11 x 8 | 0.7 x 0.7 x 0.5 m |
-| `chest_shining_green` | 7 x 7 x 5 | 0.4 x 0.4 x 0.3 m |
-| `chest_skeleton` | 11 x 5 x 5 | 0.7 x 0.3 x 0.3 m |
+| `glass_water` | 6 x 9 x 6 | 0.2 x 0.3 x 0.2 m |
+| `glass_wine` | 8 x 18 x 8 | 0.3 x 0.7 x 0.3 m |
+| `mug` | 7 x 7 x 5 | 0.3 x 0.3 x 0.2 m |
+| `oven` | 24 x 24 x 24 | 0.9 x 0.9 x 0.9 m |
+| `oven_glassless` | 24 x 24 x 24 | 0.9 x 0.9 x 0.9 m |
+| `pan` | 7 x 3 x 12 | 0.3 x 0.1 x 0.4 m |
+| `pot_silver` | 11 x 8 x 7 | 0.4 x 0.3 x 0.3 m |
 
-### Wooden fence parts (`assets/prefabs/props/fences/`)
-
-| model | voxels (x, y up, z) | metres |
-|---|---|---|
-| `wood_fence_corner` | 12 x 11 x 12 | 0.8 x 0.7 x 0.8 m |
-| `wood_fence_middle` | 1 x 8 x 10 | 0.1 x 0.5 x 0.6 m |
-| `wood_fence_part_1` | 2 x 11 x 12 | 0.1 x 0.7 x 0.8 m |
-| `wood_fence_part_2` | 2 x 11 x 12 | 0.1 x 0.7 x 0.8 m |
-| `wood_fence_pole` | 2 x 11 x 2 | 0.1 x 0.7 x 0.1 m |
-
-### Pub set (`assets/prefabs/buildings/pub/`)
+### Decor (`assets/prefabs/props/decor/`) (voxel scale 0.6: voxels of 3.75 cm)
 
 | model | voxels (x, y up, z) | metres |
 |---|---|---|
-| `pub_bar` | 48 x 48 x 48 | 3.0 x 3.0 x 3.0 m |
-| `pub_bottles` | 9 x 8 x 3 | 0.6 x 0.5 x 0.2 m |
-| `pub_lamp` | 7 x 11 x 4 | 0.4 x 0.7 x 0.2 m |
-| `pub_stool` | 8 x 10 x 8 | 0.5 x 0.6 x 0.5 m |
-| `pub_table` | 11 x 15 x 25 | 0.7 x 0.9 x 1.6 m |
-| `pub_tree` | 13 x 34 x 10 | 0.8 x 2.1 x 0.6 m |
+| `campfire_large` | 46 x 22 x 43 | 1.7 x 0.8 x 1.6 m |
+| `designy_statue` | 7 x 37 x 22 | 0.3 x 1.4 x 0.8 m |
+| `lamppost` | 16 x 62 x 10 | 0.6 x 2.3 x 0.4 m |
+| `pot_cactus` | 8 x 14 x 8 | 0.3 x 0.5 x 0.3 m |
+| `pot_flower` | 8 x 13 x 8 | 0.3 x 0.5 x 0.3 m |
+
+### Chests (`assets/prefabs/props/chests/`) (voxel scale 0.6: voxels of 3.75 cm)
+
+| model | voxels (x, y up, z) | metres |
+|---|---|---|
+| `chest_light_brown` | 19 x 9 x 8 | 0.7 x 0.3 x 0.3 m |
+| `chest_mysterious_blue` | 18 x 18 x 13 | 0.7 x 0.7 x 0.5 m |
+| `chest_mysterious_dark` | 18 x 18 x 13 | 0.7 x 0.7 x 0.5 m |
+| `chest_shining_green` | 12 x 11 x 8 | 0.4 x 0.4 x 0.3 m |
+| `chest_skeleton` | 19 x 9 x 8 | 0.7 x 0.3 x 0.3 m |
+
+### Wooden fence parts (`assets/prefabs/props/fences/`) (voxel scale 0.6: voxels of 3.75 cm)
+
+| model | voxels (x, y up, z) | metres |
+|---|---|---|
+| `wood_fence_corner` | 20 x 18 x 20 | 0.8 x 0.7 x 0.8 m |
+| `wood_fence_middle` | 2 x 13 x 16 | 0.1 x 0.5 x 0.6 m |
+| `wood_fence_part_1` | 4 x 18 x 20 | 0.1 x 0.7 x 0.8 m |
+| `wood_fence_part_2` | 4 x 18 x 20 | 0.1 x 0.7 x 0.8 m |
+| `wood_fence_pole` | 4 x 18 x 4 | 0.1 x 0.7 x 0.1 m |
+
+### Pub set (`assets/prefabs/buildings/pub/`) (voxel scale 0.6: voxels of 3.75 cm)
+
+| model | voxels (x, y up, z) | metres |
+|---|---|---|
+| `pub_bar` | 80 x 80 x 80 | 3.0 x 3.0 x 3.0 m |
+| `pub_bottles` | 15 x 14 x 5 | 0.6 x 0.5 x 0.2 m |
+| `pub_lamp` | 12 x 18 x 6 | 0.4 x 0.7 x 0.2 m |
+| `pub_stool` | 14 x 17 x 14 | 0.5 x 0.6 x 0.5 m |
+| `pub_table` | 18 x 25 x 42 | 0.7 x 0.9 x 1.6 m |
+| `pub_tree` | 21 x 57 x 17 | 0.8 x 2.1 x 0.6 m |
 
 ### Giant mushrooms (`assets/prefabs/nature/mushrooms/`)
 
