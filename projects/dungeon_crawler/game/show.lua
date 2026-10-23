@@ -125,7 +125,7 @@ end
 -- the box's voxels (when it is new) and its button (every start)
 function S.declare(b)
     local T = G.traps
-    if b.troll then T.crate_loot[b.id] = { S.TROLL[1 + floor(G.hash(#b.id, b.x, 3) * #S.TROLL) % #S.TROLL] } end
+    if b.troll then T.crate_loot[b.id] = { S.TROLL[1 + floor(G.hash(#b.id, floor(b.x * 10), 3) * #S.TROLL) % #S.TROLL] } end
     T.build_crate_now(b.id, b.tier, b.x, 0, b.z, "-x")
     if not G.state.opened[b.id] then
         T.crate_hooks[b.id] = function()
@@ -140,7 +140,7 @@ function S.redeclare()
     for _, b in ipairs(sh.boxes or {}) do
         if not G.state.opened[b.id] then
             local T = G.traps
-            if b.troll then T.crate_loot[b.id] = { S.TROLL[1 + floor(G.hash(#b.id, b.x, 3) * #S.TROLL) % #S.TROLL] } end
+            if b.troll then T.crate_loot[b.id] = { S.TROLL[1 + floor(G.hash(#b.id, floor(b.x * 10), 3) * #S.TROLL) % #S.TROLL] } end
             T.crate(b.id, b.tier, b.x, 0, b.z, "-x")
         end
     end

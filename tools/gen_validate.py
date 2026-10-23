@@ -22,7 +22,7 @@ with Voxelith(["--project", copy, "--threads", "3"]) as v:
         for fl in range(1, floors + 1):
             v.lua("Game.floorgen.start(%d, %d)" % (seed, fl), ticks=1)
             while v.lua("print(Game.floorgen.job and Game.floorgen.job.i or 'done')", ticks=20)["output"][0] != "done": pass
-            v.step(30)
+            v.lua("local G = Game; player.teleport(G.mx(62), G.my(0.1), G.mz(76))", ticks=240)        # (the middle of the volume: every chunk of the floor is streamed in)
             # the gate open: the exit is reachable then
             v.lua("local p = Game.floorgen.layout; if p.gate then Game.world.gate_apply(p.gate) end", ticks=3)
             v.lua("Game.gen.validate.start(Game.floorgen.layout)", ticks=0)

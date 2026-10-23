@@ -195,7 +195,7 @@ function W.tick(t)
     end
     if t % 20 == 0 and G.state and G.state.class and not G.cutscene and camera.mode() == "editor" then camera.mode("first") end      -- the 0 key cycles into the free editor camera: a cheat view
     G.traps.tick_all(t)
-    if not (G.floorgen and G.floorgen.active) then           -- (the Orientation's own machines)
+    if not (G.floorgen and (G.floorgen.active or G.floorgen.job)) then           -- (the Orientation's own machines)
         if W.tick_belt then W.tick_belt(t) end
         if W.arena_tick then W.arena_tick(t) end
         if W.shuttle and W.shuttle.tick then W.shuttle.tick(t) end
@@ -271,5 +271,6 @@ function W.respawn_orientation()
     local x, y, z = W.start_position()
     player.teleport(x, y, z)
     G.current_room = nil
+    G.frozen_at = nil                     -- (the title / class screens hold the player where he stood: here is where he stands now)
     W.last_safe = nil
 end
