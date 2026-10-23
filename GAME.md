@@ -114,3 +114,6 @@ The dungeon is described in metres in a local frame (x east, z south, y up from 
 
 ## Player bodies
 The contestant's third-person body is a kit figure by class (`BODIES` in level.lua; files in `models/figures/`): janitor = human_man_warrior, pyro = human_demon_girl, bard = human_woman_adventurer, accountant = human_man_adventurer. Before a class is chosen the Hero model is used. Playthrough (pyro) replays to hash `14e372d14e0f8b96`.
+
+## Equipment on the body
+`G.kit()` in level.lua maps what is equipped to the kit's item models (docs/EQUIPMENT.md): weapons (mop/torch -> wooden staff; swords, dagger, spoon, stapler -> iron sword; mace, axe, rolling pin -> battle axe) in the right hand (the idle clip is `ready` while holding something), Pot-Lid Pauldrons -> pauldrons, Tux/Bathrobe -> cape, Cardboard Breastplate -> iron helmet, the Pyromaniac always a wizard hat. `G.setup_player_models()` rebuilds it on class choice and on every equip/unequip. The first-person hand keeps `models/sword.vxm`. The project's `models/figures/*.vxm` are copies of the kit figures: copy them again after an engine update that changes the figures.

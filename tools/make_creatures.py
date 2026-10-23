@@ -45,10 +45,25 @@ class Creature:
         self.vox = {}      # (x, y, z) -> (material, paint, texture, part)
         self.parts = [("root", -1, (0.0, 0.0, 0.0))]  # name, parent index, pivot
         self.clips = []    # (name, duration, loop, {part: [(t, rot, pos, glow)]}, events)
+        self.procedural_block = None  # the rules the model starts with (ANIM "procedural": the JSON of model.procedural)
+        self.hand_block = None  # how the model sits in the first-person view (ANIM "hand"): offset (right, up, forward) in metres, turn in degrees
+        self.socket_rot = {}  # socket name -> (rx, ry, rz) degrees (the ANIM chunk's "sockets")
     # parts
     def part(self, name, parent, pivot):
         self.parts.append((name, self.index(parent), tuple(float(v) for v in pivot)))
         return name
+    def socket(self, name, parent, pivot, rot=None):
+        """A place for an item: a part without voxels (docs/EQUIPMENT.md). `rot` (degrees, X then Y then Z, in the parent's frame) is how the item lies on it."""
+        self.part(name, parent, pivot)
+        if rot is not None and tuple(rot) != (0, 0, 0): self.socket_rot[name] = tuple(float(v) for v in rot)
+        return name
+    def procedural(self, rules):
+        """Rules the model runs from the start (a cape's springs): the JSON of `model.procedural` (docs/ANIMATION.md)."""
+        self.procedural_block = rules
+    def hand(self, offset, turn=0.0, idle=None):
+        """The `hand` block of an item file: where the model sits in the camera's view (player.hand_model reads it when it is given no options)."""
+        self.hand_block = {"offset": [float(v) for v in offset], "turn": float(turn)}
+        if idle: self.hand_block["idle"] = idle
     def index(self, name):
         for i, p in enumerate(self.parts):
             if p[0] == name: return i
@@ -112,9 +127,12 @@ class Creature:
                     assert 0 <= t <= duration, (name, part, t)
                     out += struct.pack("<ffffffff", t, rot[0], rot[1], rot[2], pos[0], pos[1], pos[2], glow)
             if ev: events[name] = [{"t": t, "name": n} for t, n in ev]
-        if events or self.scale != 1.0:
+        if events or self.scale != 1.0 or self.socket_rot or self.hand_block or self.procedural_block:
             doc = {"events": events} if events else {}
             if self.scale != 1.0: doc["scale"] = self.scale
+            if self.hand_block: doc["hand"] = self.hand_block
+            if self.procedural_block: doc["procedural"] = self.procedural_block
+            if self.socket_rot: doc["sockets"] = {n: {"rot": list(r)} for n, r in self.socket_rot.items()}
             text = json.dumps(doc).encode()
             out += b"ANIM" + struct.pack("<HI", 1, len(text)) + text
         with open(path, "wb") as f: f.write(out)

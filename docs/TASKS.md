@@ -1,175 +1,280 @@
-# Tasks
+# Lua API
 
-The roadmap of design section 14 (phases 1 to 5) and the hardening of section 13 / 15 (phase 6) are done: see `docs/HANDOVER.md` for what was built and found. What is left, in the order to do it:
+Level and gameplay scripts are Lua 5.4. A project names one script (`lua = level.lua` in `project.cfg`, or `voxelith --lua level.lua`); the file runs once
+at start and may define these functions:
 
-## Order of work (sorted 2026-10-21; the user's decision to change; Fable designs or reviews only when the user says so)
-How it is sorted: first what is broken and in the user's way, then what lets the user *build* levels without Lua (the editor was the focus of the last rounds), then what makes the result look and feel richer, then the big new subsystems, last the platform work that has no visible effect today. Inside a group: small and independent first, things that other items need before the items that need them. The details of each item are in the sections below.
+| function | called |
+|---|---|
+| `on_start()` | once, after the world around the player is loaded |
+| `on_tick(tick)` | every simulation tick (60 per second), before the tick runs |
+| `on_reload()` | after the file changed on disk and was reloaded (scripts are hot reloaded: save the file while the game runs) |
 
-**1. Bugs (an hour or two each)**
-1. ~~Brush shape cannot be changed~~ **done (2026-10-21)**: the radio and the combo are labelled apart; `tests/test_tool_ui.cpp` sweeps the pointer over every panel in every tool state and fails on a Dear ImGui ID conflict (it fails on the old labels).
-2. ~~Paint size 1 is not one voxel~~ **done**: the radius starts at 0 (exactly one voxel, also for the cube and the disc), the slider says so.
+A reload runs the file's top level again in the **same** Lua state: globals survive, timers are dropped (and kept if the new file has a syntax error), then
+`on_reload()` runs. So create things in `on_start()` and keep the top level to definitions, or they are created twice.
 
-**2. Building without Lua (the editor, each is a day or less unless noted)**
-3. ~~Array / clone along a direction~~ **done**: `region_array` and `prefab_array` actions (one undo step: `DestructionSystem::holdGroup`), MCP `region op:"array"` and `prefab_array`, the Select tool's array section with the outlines of all copies and a translucent last copy (Alt + wheel: the count, Enter makes it). docs/EDITOR_MODE.md "Array". Open: a two-axis grid, rotated arrays.
-4. ~~Prefab instances in their own tree view~~ **done**: the Instances window (a group per manifest or folder, nested prefabs under their parent, their event nodes and parts, a filter).
-5. ~~Project picker~~ **done**: the Projects window (name, description, last played, `preview.png`; open = save and re-exec on the project, duplicate, create), MCP `list_projects` / `duplicate_project`; start it with `--ui-panels projects` (docs/GUIDE.md).
-6. ~~Gravity zone tool~~ **done**: `gravity_define` (a field as JSON: every key of Lua `gravity.add`) with MCP `gravity_add / set / remove / enable / sample`; the Gravity window makes box / sphere / tube / weightless zones from the selection and fits a field to the selection; `tests/test_field_json.cpp` and `test_gravity_zone.cpp` rebuild the habitat tube, the flip room and the twist tube. Open: handles on the field itself, planes / splines / surfaces in the editor (MCP only).
-7. ~~Event authoring tools~~ **done**: authored nodes and connections as JSON (`event_define / delete / connect / disconnect` actions, `events.json` declared before `on_start`), MCP `event_create / set / delete / connect / disconnect`, the Events window (nodes, connections, a graph) and the node boxes drawn in the world; a node kind `emitter` too. docs/EVENTS.md "Authoring". Open: a *pusher* node (the conveyor belt), region / gravity-watch nodes, clicking nodes in the 3D view.
-7b. ~~In-game Lua script panel~~ **done**: the Script window (editor, Run as one undo step, a sandboxed dry run with the edits outlined in the world, snippets, scripts of the project's `scripts/` folder, prefab manifests with a live re-stamp on save) with `selection` (`each_voxel`, `fill`, `replace`, `paint`, `count` ...). docs/EDITOR_MODE.md "Script window".
-8. ~~Snap points for prefabs~~ **done**: a manifest's `snaps = { east = { at, dir, tag, mate } }`, the carried prefab jumps to the nearest fitting face (ghost and click), MCP `prefab_snaps` and `place_prefab {snap_to}`, `model_define` / `define_prefab` take `snaps`; the kit's bridge, fences and wall have them. docs/PREFABS.md "Snap points".
+Rules of the sandbox: `io`, `os`, `package`, `dofile`, `loadfile` and `string.dump` do not exist and `load` reads text only (no bytecode); every call into Lua is
+limited to 20 million VM instructions in all its coroutines together (an endless loop is stopped with an error message in the log instead of freezing the
+game) and the script's memory is capped at 256 MB (`string.rep('x', 4e8)` fails inside the script); errors are logged with the script line and the game keeps
+running. An edit beyond sane limits (radius over 640 voxels, a box longer than 16384 voxels) is refused with a log line.
+All edits a script makes in one call (`on_start`, `on_tick`, one timer) are **one undo step** (Z undoes the whole call). Scripts never touch voxels directly: they submit the same
+edit operations the game does.
 
-**3. Look and feel**
-9. ~~Textures per occurrence~~ **done**: the decision (the voxel's top byte, docs/TEXTURES.md), the table (`textures.json`, 15 built-ins, procedural patterns and 8 x 8 pixel tiles), `.vxm` `VXM3 / VXM4` with names, the shader, the Paint tool (colour / texture / both), MCP `texture_*` / `paint {texture}`, Lua `edit.texture_*`, the Textures window.
-10. ~~Text on signs~~ **done**: voxel text (a 5 x 7 font on any face): Lua `edit.text`, MCP `text`, the workspace `text` op, prefab `labels` (the text is part of the stamp and moves with the prefab), the kit's `props/sign_board`. docs/TEXT.md. Open: painted text, a decal render, an editor Text tool.
-11. ~~Foliage level of detail~~ **done (2026-10-21)**: coarser rings of 8 and 16 voxel cells carry the grass out to about 94 and 190 m (default `foliage_range = 200`, a setting in metres; low 48, medium 100), on by default for every blade type (`far_ring = 0` opts out); costs about +0.7 to 1.1 ms of the GPU frame at 200 m (docs/FOLIAGE.md "Range").
-12. ~~Emitter system~~ **done**: authored emitters (flame / puff / spark / grain, shapes, rate / burst, cone, light) with 9 presets, MCP `emitter_*`, Lua `emitter.*`, prefab `ctx.emitter`, an event node `emitter` (on / off / toggle / burst), the Emitters window, `emitters.json`; the kit's torch and campfire are manifests now. docs/EMITTERS.md.
+**Units.** Edits, world queries, liquids and effects use **voxels** (1 voxel = 1/16 m, integers; numbers are rounded). Gravity fields, the player and bodies
+use **metres**. `units.vox(m)` and `units.m(v)` convert.
 
-**4. Big subsystems (weeks; each wants a design round with Fable when the user asks)**
-13. ~~UI widget set and the inventory test~~ **done**: HUD input (`ui.input`, `ui.clip`, `ui.measure`, `ui.cursor`), the Lua widget library `assets/lib/ui_kit.lua` (buttons, sliders, tabs, text fields, scroll areas, slot grids with drag and drop, tooltips, focus and pad navigation), the inventory sample and `projects/inventory_test`. docs/UI_KIT.md.
-14. ~~Animation suite~~ **done** (docs/ANIMATION.md): procedural animation (walk cycle, look-at, two-bone IK with foot placement and planted feet, springs, ragdoll on a hit, quadruped gaits, rig roles and joint limits), cross-fades, blend spaces, state machines with layers, clip events, clip editing as text and in the Models panel. Open: clips for interactions that first move the character, a drag-the-part timeline in the 3D preview.
-15. ~~Conveyor belt as a real feature~~ **done**: surface velocity in the contact solver (the player too), scrolling textures (`scroll`), a `belt` event node (on / off / toggle / reverse), `events.belt`, `projects/conveyor_belt`. docs/CONVEYOR.md.
+## Materials
+```lua
+material("stone")          --> 1 (error: unknown material 'x')
+material_name(10)          --> "water"
+```
+The names are the ones in the project's `materials.csv` (`voxelith --dump-materials` writes the built-in table).
 
-**5. Platform and background (no visible change, but they protect everything above)**
-16. The first real two-machine session (desktop as client) with both logs recorded; run `tools/xdeterminism.sh` on the desktop first.
-17. Nightly run every night (`tools/nightly.sh`); a ctest case that opens the window for a few seconds.
-18. Performance: 1440p at 60 fps on the laptop GPU (ray march 8 to 14 ms in open planet scenes), the `storm` scene budgets, `kBodiesPerTile`. **Measured 2026-10-21** (`voxelith --perf-gate --report-only`, native 2560x1440, dynamic resolution off): mean 18.1 ms, p99 28.3 ms over the tour (budget 16.7 / 25); the last frame: raymarch 14.3, shade 10.0, upload 4.0, puffcomposite 2.9, foliage 2.0, godrays 1.1, GI 1.2 ms. The game's dynamic resolution covers the gap in play; the gate runs without it.
-19. Rubble in the far levels, the haze bands at night, deterministic brick-pool exhaustion.
-20. AI tooling follow-ups (second transport, long-running calls, `describe`), accessibility options, the workspace and editor follow-ups listed under "Open (next)" (text form of models, `model_check`, `delete_model`, trees as instances).
+## edit: building and carving
+```lua
+edit.sphere(x, y, z, radius, "brick" [, mode])
+edit.box(x0, y0, z0, x1, y1, z1, "glass" [, mode])     -- corners inclusive, any order
+edit.paint_sphere(x, y, z, radius, "red")                -- paint (docs/PAINT.md): a name, "#rrggbb", an index 1..255 or "none"; the material stays
+edit.paint_box(x0, y0, z0, x1, y1, z1, "#3366cc")
+edit.text(x, y, z, "HELLO", { facing = "+z", material = "brick", size = 1, spacing = 1, depth = 1, align = "left", mode = "replace", paint = "red", texture = "heart" })  -- voxel text (docs/TEXT.md): a 5 x 7 font; (x, y, z) is the bottom of the line, `facing` the way the text looks
+edit.texture_sphere(x, y, z, radius, "brick")          -- texture (docs/TEXTURES.md): what is drawn on the faces of the solid voxels, by the name of a texture (the built-ins, textures.json, `texture_define`); "none" clears it
+edit.texture_box(x0, y0, z0, x1, y1, z1, "heart")       -- colour and material stay; liquids and glass take none
+edit.clear(x0, y0, z0, x1, y1, z1)                      -- air
+edit.voxel(x, y, z, "metal")
+edit.carve(x, y, z, radius [, roughness, seed])         -- the noisy bite of an explosion, without the blast
+edit.model("models/house.vxm", x, y, z [, rotation])    -- .vxm or MagicaVoxel .vox, relative to the script; rotation 0..23
+```
+`mode` is `"replace"` (default), `"fill_air"` (only write into empty voxels) or `"paint"` (only recolour solid voxels).
 
-## Phase 7: the engine for AI (started 2026-10-19)
-The engine must be easy to work with for an AI (a coding agent, an assistant in an editor), not only for a person at a keyboard.
-- [x] **MCP server** `voxelith --mcp` (`docs/MCP.md`): status, step, lua, run_script, screenshot, raycast, query_voxels, list_materials, state_hash, log, save_world, read_docs, check_project; docs as resources; deterministic, replayable (`--record`), tested end to end (`tools/mcp_smoke.py`).
-- [x] First tools after the review (round 7): `count_voxels`, `slice`, `step_until`, `look_from`, `describe`, `bodies`, `gravity_fields`, `undo` / `redo`, `log`.
-- [x] **Reset / reload**: `reload_level {project?}` (the process re-executes itself with the same arguments, no replay of `initialize` is needed: the server keeps no per-client state; tested in mcp_smoke).
-- [x] `new_project {dir, name?}` (project.cfg + a small level.lua; no materials.csv: the built-in table is used until one is added).
-- [x] Assertions as tools: `find_material {material, near, radius, limit}`, `region_hash {min, max}` for a level's own regression test.
-- [x] `export_region {min, max, name}` (a .vxm in the models folder) and `list_models`; placing is Lua `edit.model` / `prefab.place`. Open: a text form of a model that a model can read and edit (layers as characters, like `slice`), and a `stamp_region` tool.
-- [ ] More tools as real AI sessions ask for them: gravity-field editing (`gravity_*` actions exist), prefab / model placement, undo / redo as tools, a `reset` that rebuilds the world without a restart, `load_project`, camera paths (a series of screenshots for a time-lapse), voxel-region export as .vxm so an AI can look at and edit a structure as data.
-- [ ] A bigger picture of a scene for a model that sees images only: a `describe` tool (what is in front of the player: materials and distances along a few rays, bodies, fires) and an optional "annotated" screenshot (axes, a metre grid).
-- [ ] Long-running calls: progress notifications for `step` of thousands of ticks, cancellation, a background mode where the world runs while the AI thinks (opt-in: determinism needs the tick count to be recorded per call).
-- [ ] A second transport (HTTP / SSE) so one engine can serve several agents or a remote machine; authentication.
-- [x] A small Python client (`tools/voxelith_client.py`, no dependencies): `with Voxelith([...]) as v: v.lua(...); v.screenshot('a.png')`.
-- [x] Screenshots are compressed PNGs (filters + LZ77 with the fixed Huffman codes: 1.5 MB became 0.4 MB at 960x540); a JPEG `quality` option would shrink them further.
-- [x] Level authoring by AI: done with the MCP server by a Sonnet subagent ("Lantern Cove", project in the session scratchpad): works, the friction list is fixed (see HANDOVER). Repeat it after bigger API changes, and with a second level that uses prefabs, rigs and the liquid solver.
-- [ ] Look at the visuals the exercise found: hard-edged night haze bands, thin lit windows (the water checker pattern and the stars in a window are fixed).
+## world: queries
+```lua
+world.material_at(x, y, z)  --> "stone" / "air" / "unloaded" (outside the streamed area the world is not known; edits there wait until it loads)
+world.solid(x, y, z)        --> true / false
+world.top(x, z [, from_y])  --> y of the highest solid voxel of the column, -1 if none
+```
+Edits become visible one tick after the call, so a query right after `edit.*` still sees the old world.
 
-## Engine
-- [ ] Rubble that was welded into the world is invisible beyond the full-resolution radius (level-1 voxels are a majority vote): keep sparse solid in the coarse levels (a "has any solid" bit that is drawn as a small voxel?), or draw welded rubble as bodies longer; check with a flight over a demolition site.
-- [ ] `kBodiesPerTile` (48): a tile in a pile of hundreds of bodies drops the farthest; measure the worst real case (`storm` at 1080p) and raise it or cull by what the tile's pixels can still see.
-- [ ] Deterministic brick-pool exhaustion (design in HANDOVER "Phase 7 candidate"): column jobs into scratch pools, optimistic-parallel phases with a serial fallback. Build it when the `c` lines of real logs show the regime occurs.
-- [ ] The design's 1440p / 60 fps on a laptop-class GPU: the ray march costs 8 to 14 ms in open planet scenes (temporal start-point reuse, a tile pre-pass, a cheaper secondary-ray path).
-- [ ] The `storm` scene (a demolition with a charge every second tick) inside its budgets: split the carve over the free tick, bound the flush.
-- [ ] Debug lines at output resolution when the picture is upscaled.
-- [ ] Fable's older ideas: an Action registry (one table of kinds with their numbers and checks), prefab instance ids, `recorder.keepFile`, model copy hashes, Lua `model.pose`.
+Ground and first run:
+```lua
+x, y, z = world.flat_spot(width_m, depth_m [, max_step])   -- min corner (voxels) of dry flat ground near the player; y = the first free voxel above it. An error if there is none within 50 m
+project.first_run()          -- false when the project's world save already existed (its edits are in the world): build voxels only when true
+```
 
-## Quality
-- [ ] Run `tools/nightly.sh` every night (it needs the GPU and, for the live random-play step, `NIGHTLY_DISPLAY=:90`); today it is run by hand.
-- [ ] The external-team gate: someone outside this project builds a level from the docs.
+## gravity: fields (metres, m/s²)
+```lua
+id = gravity.add{ type = "uniform", name = "flip room", dir = {0, -1, 0}, strength = 9.81, priority = 20,
+                  pos = {x, y, z}, half = {4, 4, 4} }     -- half = region (0 = everywhere)
+gravity.add{ type = "point",   pos = {...}, strength = 4, inner = 2, outer = 30, falloff = "inverse_square", ref = 1 }
+gravity.add{ type = "surface", pos = {...}, half = {...}, strength = 5, inner = 3, outer = 10 }   -- follows the voxels of a planetoid
+gravity.add{ type = "null",    pos = {...}, half = {...} }                                        -- weightless box
+gravity.retarget(id, {0, 1, 0}, 9.81)      -- turn a uniform field (the flip switch)
+gravity.enable(id, false)   gravity.remove(id)   gravity.find("name") --> id or -1
+ax, ay, az = gravity.sample(x, y, z)
+```
+Types: `uniform point line plane torus spline box surface null`. Common keys: `name enabled pos strength inner outer priority blend ("replace"|"add"|"max")
+falloff ("constant"|"inverse_square") ref reverse pin_camera_up dir half round radius a b two_sided points mode ("toward"|"along"|"up") smoothing`.
+Fields with a higher `priority` win where they overlap; `inner`/`outer` are the shell in which the field fades out.
 
-## Hinges, swing doors, grab, weight (docs/HINGES.md, design only)
-- Phase 1: swing door as a hybrid (voxels at the stops, kinematic body while it swings, `weldAt`), Lua `events.door{ type = "swing", ...}`.
-- Phase 2: world-anchored hinge in the solver (spring, friction, breakaway, motor), player collides with and pushes bodies, weight-gated plates/trapdoors (min_weight along the local gravity).
-- Phase 3: grab (CPU ray against bodies, spring hold with force caps, actions grab/release/throw by body id, MCP tools).
-- Cut for now: riding on moving bodies, GI occlusion by body doors, vehicles.
-- Props need lighter materials (a 1 m wooden crate is 768 kg): add a light `crate` material or smaller props.
+## emitter: particles by rule (docs/EMITTERS.md)
+```lua
+emitter.create{ name = "chimney", preset = "chimney_smoke", pos = {x, y, z} }    -- metres; every key of the JSON form: shape, size, kind, rate, burst, life, particle_size, direction, speed, spread, material, light = { color = {r, g, b}, reach = 6 }
+emitter.enable("chimney", false)   emitter.burst("chimney" [, n])   emitter.remove("chimney")   emitter.find("chimney") --> true / false
+```
+Presets: `torch campfire chimney_smoke steam_vent fireflies dust_motes magic_sparks embers sand_fall`. In a prefab manifest's `build`: `ctx.emitter{ name = "flame", preset = "torch", at = {3, 19, 3} }` (a model cell; named `<instance>.flame`, goes with the prefab).
 
-## Prefabs and foliage (docs/PREFABS_FOLIAGE.md, design only)
-- Order: HINGES phase 1 -> prefabs phase 1 (manifest `*.prefab.lua` over tracked prefabs + rig parts as material slots + instance-scoped node names) -> HINGES phase 2 -> foliage `scatter{}` (C++ with Lua binding) -> ground-cover type table (Grass id 3 is hard-coded in foliage_ground.comp).
-- MCP: `define_prefab`, `place_prefab`, `prefabs`; check_project dry-runs manifests.
+## fx: effects
+```lua
+fx.explosion(x, y, z, radius [, strength])    -- voxels; carves, throws bodies, debris, sparks, smoke, sets flammables alight
+fx.fire(x, y, z, radius)                      -- sets flammable voxels (grass, leaves, wood) alight
+fx.rain(true)                                 -- rain around the player
+wear.clean(x0, z0, x1, z1)                    -- metres: the dirt tracks in the box go back, the worn cells in it are forgotten (docs/WEAR.md); wear.cells() -> cells worn (-1: wear is off), wear.enabled()
+fx.snow(0.8)                                  -- 0..1: a snow type of the ground cover table (docs/FOLIAGE.md "Snow") lies that deep; fx.snow(0.8, true): it is falling (trodden snow fills in faster). Render only
+fx.pour(x, y, z, count [, "sand"])            -- grains falling from a disc
+fx.steam(x, y, z [, amount])                  -- a parcel of steam (255 = one voxel of water)
+```
 
-- Done (2026-10-19): swing doors, hinges phase 2 (player pushes bodies, dynamic doors/trapdoors, weight plates), prefabs phase 1, scatter{}, ground cover table. Done: hinges phase 3 (grab). Done too: ground cover v2 phases A to C (docs/GROUNDCOVER_V2.md), `hinge.add` Lua, prefab nesting, the manifest cache. Open: ground cover phase D (second ring, kelp, painted masks), GI occlusion by body doors, prefab nesting, painted biome masks, ground cover physics/fire/trampling, a `hinge.add` Lua API for arbitrary body hinges.
-- Done (2026-10-19): grass fire is a patch (`fire_spread`), the `liquids + fire` budget (2.9 of 3.0 ms; path dependent). Open as before: ground cover phase D, GI occlusion by body doors (accepted cut), prefab UI.
-- Done (2026-10-19, second run): ground cover phase D (kelp, painted masks, the far ring), GI occlusion by body doors, the Prefabs panel for manifests; tests for the round-13 leftovers. Open: toroidal persistent cover records (skipped on purpose), flaming tufts next to Ember, GI occlusion for other bodies than doors.
+## liquid
+```lua
+id = liquid.source(x, y, z, "water", rate)    -- fill units added per tick (a faucet: 12 is a trickle, 255 a flood)
+liquid.remove_source(id)
+```
+Water and lava flow along the local gravity, lava and water make stone and steam, steam condenses and rains back.
 
-## Done in the 2026-10-20 night run (see HANDOVER for details)
-Audio, saves with versions + `project.store`, controller + key bindings, deterministic math (`xdet` cross-build), lockstep networking (lobby, relay, hash check, desync, **late join**, **a hand, a seat and a stream area per player**), crash reports + autosave, game HUD from Lua, mod packs, localization, vehicles, navigation + agents, accessibility (captions, UI size, colour assist, reduce motion). Reviews of rounds 15 and 16 fixed; round 17 asked.
+## body: loose objects (physics bodies; metres for the position, voxels for the size)
+```lua
+id = body.box(x, y, z, sx, sy, sz, "wood")    id = body.ball(x, y, z, radius_voxels, "stone")
+h = hinge.add{ a = body, b = otherBody (omit: the world), anchor = {x, y, z} (m), axis = {x, y, z}, limits = {lo, hi} (degrees from the pose now), spring_to, spring_k, spring_damping, friction, breakaway, motor = {rad/s, N m} }
+hinge.set(h, {...})   s = hinge.state(h)   -- { angle (degrees), omega (rad/s), torque (N m) }    hinge.remove(h)   -- hinges between bodies (a drawbridge, a swinging sign, a gate)
+body.grab(id [, hold_distance_m])   body.release()   body.throw([speed])   id = body.grabbed()   -- the player's hand (docs/HINGES.md): a spring with force limits; light bodies follow the view, heavy ones are dragged
+body.push(id, ix, iy, iz [, px, py, pz])   -- (with a point in metres the impulse acts there: a shove at a door's edge swings it) an impulse in N s (a 1,100 kg wooden crate needs about 5000 for a clear shove; momentum = mass x speed)  x, y, z, ok = body.pos(id)  body.remove(id)
+```
+Light materials (wood) float, heavy ones (stone, metal) sink.
 
-## Open (next)
-- **World, wear and snow plan** (Fable's design of 2026-10-22, docs/WORLD_WEAR_DESIGN.md; the user's ideas: real + weather snow, wear paths with a path voxel and dirt tracks that can be cleaned, biomes and caves, an endless world with a settable fixed size, pop-in): order W0 journal cap (fixes the standing soak), W1 wear core, W2 tracks and cleaning, W3 real snow, G1 biomes, G2 caves, G3 region ops, G4 biome_map, E1 endless + disc streaming, E2 pop-in; about 18 to 20 days. W0 to W3 built 2026-10-22 (docs/WEAR.md); G1 to E2 (biomes, caves, region structures, endless world, pop-in) not started.
-- ~~Soak, standing fails~~ (found 2026-10-21, fixed 2026-10-22 as W0): the undo journal capped retained SLOTS (250,000: 8 to 516 words each, so 8 to 516 MB of pool); it is now also capped in WORDS (64 M = 256 MB: `Journal::capWords`, the side recorder's trigger too), and the soak measures the pool without the journal (`SoakSample::journalMb`, held on its own: `maxJournalMb`). The standing soak's pool slope is 0.23 MB / 1000 ticks.
-- **The first real two-machine session** (the desktop as the client over `ssh -L`; both peers started with `--record` so a desync leaves two logs to diff, and `tools/xdeterminism.sh` run once on the desktop's own build first: another CPU vendor and glibc are what this box could not vary): everything networked so far ran on one machine (two and three processes, two windowed peers on Xvfb). UDP / NAT traversal is not built (TCP, trust the peers).
-- Net: player-vs-player collision, `rain` and the audio listener per peer, a join clip that does not scale with the session length (a snapshot of the world, a week of work).
-- Agents: a hierarchical search for routes over 80 m, avoidance of the player, steering knuckles / suspension for vehicles, a vehicle from a model. (Done in the follow-up: rigged models with a walk clip, doors, avoidance of bodies and of each other.)
-- UI beyond the immediate HUD: a retained widget tree (images and SVG are done: `ui.image`) with gamepad navigation, fonts for other scripts.
-- Accessibility: a slider for the camera's lag on gravity flips, material colour presets for colour blindness, high-contrast outlines, a screen reader for the panels.
-- Windowed tests on a virtual display work (`Xvfb :95`, `tools/xdrive.py`); the ctest case `window` (tools/window_test.sh) starts the window on Xvfb and drives it with real keys (done).
-- **Cameras** (done: first / third / top, `camera.*`, docs/CAMERAS.md). Open: `camera.follow` for a vehicle or agent, shoulder offset with an over-the-shoulder aim, camera paths, the player as a real model instead of a debug box, a drag box to select and order agents (a strategy game's first need), edge scrolling.
-- **Ground cover in caves and on undersides**: done (docs/FOLIAGE.md: the ground pass goes through canopies and roofs, caves get a floor from a ray at the camera's height, `ceiling = 1` types hang from undersides). Open: wall cover (moss on a vertical face), longer strands (a segment chain), a `light` input (cave plants that want shade) from the GI volume, a Cove vine / moss-curtain row once the level has a cave or a pergola.
-- Vehicles: steering knuckles and suspension (the wheels are rigid voxel discs: a bumpy ride), a rubber material for wheels, a vehicle from a model; the grip would then be tuned on a real model.
-- Editor phase 3 follow-ups (Fable's round 21): done: the registry in `netDescriptor`, `adoptOnly` for the undo handler, `prefab.at(x, y, z)`. Open: `edit.model` / `scatter` with `track = true` (trees as selectable instances: each would be a tracked prefab with its own snapshot file; needs a shared-snapshot registry first).
-- **Prefabs without stamping and folders** (done): `model_define` (parts, sockets, pivots and a manifest from a workspace model, optionally the whole manifest text), models and manifests in folders (`nature/oak`; gallery by folder, `move_model`, the kit in folders). Open: a model's parts shown in the gallery / `model_info` (a rig loaded back into the workspace loses its parts), `delete_model`, a folder tree with drag and drop in the panel.
-- Workspace follow-ups (Fable's round 22): **done**: a text form both ways (`model_text` / `model_from_text` with a legend), `model_from_prefab`, `model_check` (floating voxels, pockets), `model_copy` / `model_rename` / `model_diff`, write time and size in `list_models` (docs/MODEL_WORKSPACE.md "Text form"). Open: a `paste_model` action that carries the voxels (RLE) so workspace models can be stamped in a networked session; kit pieces: **done** stairs, ladder, window wall, wall corner, path tile, table, chair, tent (tools/make_prefabs.py; snaps on the stairs, window wall, wall corner and path tile; tests/test_kit.cpp); open: a lantern post with a lamp node (needs parts).
-- **Surface patterns and paint** (docs/PAINT.md): materials draw a pattern (brick, planks, tiles, blocks, stripes, speckle with a second colour; `materials.csv` columns `pattern`, `r2,g2,b2`), solid voxels carry a paint colour (255-colour palette in the state byte), the Paint tool (Q, palette, strokes, eyedropper), MCP `paint` / `paint_palette` / `region paint`, Lua `edit.paint_*`, workspace `paint` per shape and as an op; all of it survives `.vxm`, rotate / mirror and prefabs. Open: paint in the GI bounce and in debris particles (a broken painted wall crumbles unpainted), pattern / paint on the far-LOD levels (patterns fade out before they would show), a first-person paintbrush item (the Lua / action pieces exist), more patterns (herringbone, shingles, cobble), a per-material pattern scale column, paint in the net `paste` of workspace models.
-- Model workspace (docs/MODEL_WORKSPACE.md): built (CPU operations, MCP tools, Lua, panel section). Open: parts / sockets / manifests in the workspace itself (today `model_to_world` + `define_prefab`), a mouse editor in the panel (click voxels in a 3D preview), a text format for sharing models between agents.
-- **Editor mode** (design by Fable, docs/EDITOR_MODE.md): phases 0 (editor camera), 1 (box selection, fill / replace / copy / paste, every function an MCP tool), 2 (ghost preview, handles with a coordinate system, move / rotate / mirror) and 3 (placed prefabs as instances: pick, move, turn, copy, settings, delete; undo / redo) are built. Phase 4 (the starter kit, the placement preview, the model workspace) is built. Open: the translucent fill of the selection, a coloured ghost (it is glass now), a manifest-based kit (doors, gates with parts and nodes: `define_prefab` on a workspace model stamped into the world), kit models in more variants.
+## Scatter (trees, bushes, rocks by rule)
+```lua
+n, footprints, stats = scatter{ models = {{"models/oak.vxm", 4}, "models/bush.vxm"}, box = {x0, z0, x1, z1}, spacing = 112, density = 0.5, on = {"grass"}, slope_max = 0.7, avoid = {...}, clearings = {scale = 400, threshold = 0.35}, seed = 7 }
+```
+Voxels, deterministic from the parameters and the loaded ground, stamped as edits; docs/FOLIAGE.md has every option and what `stats` says.
 
-## Ideas noted from the user (2026-10-20, not started; to be run through Fable for a design before building)
-- **Prefabs panel: placed prefabs get their own view.** The list of placed (tracked) prefab instances should not sit in the middle of the panel: its own tab / window, as a collapsible tree (folder or manifest, then instance, then its nodes and parts; nested prefabs under their parent), with select / re-stamp / remove per entry and a filter. The gallery stays a separate view.
-- **Gravity zone tool.** An editor tool (and MCP tools, every function reachable through MCP as for the rest of the editor) to create gravity fields with a shape (box, sphere, cylinder / tube, plane, spline, surface), a direction or inward / outward (radial, along an axis, toward a point or line), strength, falloff, blend mode and priority, drawn like the selection box with handles; list, edit, enable / disable and delete; enough to recreate every gravity arrangement built so far (planets, the habitat tube, the flip room, the twist tube, the launch pad). Today: Lua `gravity.*`, the `gravity_*` actions, the `gravity_fields` MCP tool (read) and the Gravity panel.
-- **Textures per occurrence, and a texture editor.** A pattern today belongs to the material (all concrete is tiles). Wanted: choose the material, then a texture / pattern for *this* occurrence, so one concrete wall is tiled and the next is smooth. Likely a second per-voxel byte or a per-region / per-prefab-part texture layer next to the paint colour (design question: where the bits live: state byte shared with paint, a brick-level attribute, or a texture index inside the paint palette entry); a small texture editor (pattern type, scale, colours, mortar width, a few pixel-art tiles) with a library, selectable in the Paint tool, MCP and Lua, kept through `.vxm` and prefabs. See docs/PAINT.md.
-- **Event authoring tools.** The event system (docs/EVENTS.md) can only be built from Lua (`events.button / lever / volume / door / lamp / push ...`, `connect`) and inspected / triggered through MCP (`events`, `trigger`, `event_command`). Wanted: create triggers, volumes, buttons, pushers, timers, spawners as editor objects (draw a box for a volume, click a voxel for a button), place lamps and doors from a prefab or a selection, and a way to **connect** them (signal -> target + command + delay) in a panel and through MCP (`event_create`, `event_connect`, `event_disconnect`, `event_set`, `event_delete`), saved with the project like the Lua-made ones; a node list with a graph view.
-- **Remote session: instructions.** Question from the user: can CLAUDE.md and the other instructions be changed from the remote (Moonlight / phone) session? Answer given in chat: CLAUDE.md is a normal file in the repo and the memory folder is plain files; they can be edited on request or with the `/memory` command; permission settings stay with the user's own `/config`.
+## Prefabs
+```lua
+id = prefab.place("models/castle.vxm", x, y, z [, rotation [, name [, carve_air]]])   -- minimum corner, voxels; rotation 0..23; tracked
+world.blocks(x, y, z)  world.passable(x, y, z)   -- stored voxel that is in the way / a walk-through voxel (docs/GORE.md); `world.solid` is true for both; world.top(x, z, fromY, true) skips walk-through voxels
+edit.sphere(x, y, z, r, "blood", "coat")  edit.box(..., "blood", "coat" | "clear_if")   -- a one-voxel shell on the surfaces inside the shape / clear that material only
+fx.splat(x, y, z, radius, "blood" [, seed])   -- metres: a speckled spatter of a walk-through material on the surfaces around a point (docs/GORE.md)
+prefab.restamp(id)    prefab.remove(id)    id = prefab.find(name)   -- 0 when there is none; remove also takes the nodes "<name>.*" with it
+id, h = prefab.place("door", x, y, z, { rotation = 0, name = "front", slots = { panel = "glass" }, variant = "wide", params = { open = -90 } })   -- a MANIFEST prefab (models/door.prefab.lua): parts, material slots, sockets, nodes: docs/PREFABS.md
+```
+Placing a name that is already tracked with the same file, spot and contents whose voxels are in the world (a saved project) adopts it instead of stamping again; a changed file is
+re-stamped over the old version. The path is relative to the script. One undo step per call.
 
-## More ideas noted from the user (2026-10-21, not started)
-- **Animation suite.** A way to build character movements and interaction animations (open door, pick up, sit, push, swing a tool), not just keys written by hand. Today: rigs with parts, pivots and keyframed clips (`world/rig.hpp`: rotation / offset / glow per part, loop flag), `animated_model`, ragdoll, agents that walk. Wanted: a clip editor (timeline, part selection, pose by dragging a part about its pivot, copy / mirror / blend of clips, preview on the model in the workspace), state machines / blending (idle -> walk -> run, layers for upper body), events on a clip's time line (footstep sound, hit frame), clips for interactions that move the character to a spot first, and every function as an MCP tool and in Lua so agents can author clips.
-- **Procedural animation (question: how hard?).** Not hard for the basics on the rig system that exists, because parts are rigid and the poses are already computed per frame: (1) a walk cycle from speed (swing legs / arms with sine phases driven by distance walked, body bob, lean into acceleration), (2) look-at for the head part toward a target, (3) two-bone IK for legs and arms (analytic, about 100 lines) with foot placement by a ray down to the voxel ground so feet stand on stairs and slopes, and gravity-aware (the up vector comes from the gravity field, which matters here), (4) secondary motion (springs for tails, hair, capes, antennae), (5) physics-driven blending toward the ragdoll on a hit. Harder: a general rig description (which parts are legs, limits per joint: a `.vxm` part table plus a small Lua / CSV description), foot sliding on turns, and quadrupeds. Rough order: look-at and walk cycle first (a day), IK and foot placement next, springs after. Determinism: the poses are cosmetic (render only) unless a gameplay rule reads them; keep them out of the simulation state.
-- **Emitter system for effects (particles).** Today `ParticleEmitter` has fixed effects (explosion, carve, dust, pour, puffs, flame per burning voxel, splash, rain) driven by the simulation. Wanted: authored **emitters** as objects placed in the world or attached to a prefab socket / body / part, with parameters: rate or burst, lifetime, shape of the source (point, box, sphere, disc, line), start velocity and spread, gravity / buoyancy (up against gravity), size and colour over life, emissive glow and a light, material (ember, smoke, spark, water, leaf), wind, collision on / off, loops and triggers from the event system (on / off, burst). So a **torch or campfire can burn without setting anything on fire** (a flame emitter plus smoke and a flickering light, `lit` as a prefab parameter), also fountains, chimney smoke, fireflies, dust motes, steam vents, magic effects. Presets in a library, an editor panel with a live preview, MCP tools (`emitter_create / set / delete / list / burst`), Lua `emitter.*`, saved with the project, in prefab manifests (`ctx.emitter`) and part of the net session state (seeded, deterministic, or cosmetic and out of the hash: decide in the design). See also the torch / campfire / lantern kit manifests listed above as waiting for parts and a flame effect.
+`workspace.new / edit / info / names / remove / place`: small models made apart from the world (docs/MODEL_WORKSPACE.md).
 
-## Ideas noted from the user (2026-10-21, second batch, not started)
-- **Snap points for prefabs.** Named snap points / sockets on a prefab (a door frame's edge, a hallway segment's two open ends, a wall's top) that line up with a compatible snap point of another prefab when placing: the ghost jumps to the nearest match within a distance, with the matching rotation, and shows which points connect. Types and a gender / tag so that only fitting ends join (`hall_end`, `wall_top`); defined with the parts in `model_define` / the manifest (sockets exist already as part pivots: add a direction and a tag), used by the placing mode, `place_prefab` (`snap_to: {instance, point}`) and Lua.
-- **Array / clone operation.** Clone a selection or a placed prefab *x* times along a direction with a spacing or gap (for hallways, fences, colonnades, floors of a building): `region {op: "array", count, offset | axis + gap}` and `prefab_array {name, count, offset}` as logged, undoable actions (one undo step), a ghost preview of all copies in the editor with a count the wheel changes, two-axis (grid) and rotated arrays (a staircase, a ring) as later options. Prefab copies become instances of their own (or one group); limits on the count and the total voxels.
-- **Conveyor belt (idea, 2026-10-21; a script-only test exists at `projects/conveyor_test`, docs/CONVEYOR.md, restored at the user's request to look at it).** A belt with an animated surface and items that ride on it at a given speed, as a test of what the engine can do now. Notes for whoever builds it: with today's engine a script can do it (moving stripes by redrawing voxels with `edit.box`, crates carried by `body.push` towards the belt's speed each tick, `body.pos` for the speed); a real one wants surface velocity in the contact solver (also for the player), a scrolling surface texture, and an event-system belt node (on / off / reverse).
+`prefab.at(x, y, z)` (voxels) is the placed prefab that owns that voxel, as `{ id, name, manifest, x, y, z, rotation, sx, sy, sz }`, or nil: what a script asks to react to what the player built (the editor's pick).
 
-## Idea noted from the user (2026-10-21, not started)
-- **Project picker inside Voxelith.** Change the loaded project while the game runs (today a project is chosen at start by the launcher, and only the MCP `reload_level {project}` switches it from outside): a panel or start screen listing the projects folder (name, description, last played, a picture), with open / new / duplicate, a warning about unsaved edits, and the engine restarting itself on the chosen project (the same re-exec `reload_level` uses). Works with the Sunshine / Moonlight launcher (one tile that opens the picker instead of one tile per project).
-- **Foliage further away, less detailed (idea from the user, 2026-10-21, not started).** On a flat map the ring of ground cover around the player (24 m, blades thin out from about 15 m, beyond that only the tint of docs/FOLIAGE.md) is visibly small. Wanted: more distance at a small cost by levels of detail: (1) a **middle ring** (about 24 to 60 m) of fewer, larger and merged blades (clumps: one instance stands for 4 to 8 blades, cells are dithered by their hash so the density thins without popping), no trample / sway detail; (2) a **far ring** (60 to 150 m) of flat card clumps or just a textured, shaded ground (the tint plus a noise pattern from docs/PAINT.md's surface patterns, which is nearly free in `shade.comp`); (3) cover cells chosen per ring from the same deterministic per-brick scatter so the types and patches match across the rings; (4) a setting (quality levels low / medium / high set the ring radii and the instance budget) and a frame-time guard that shrinks the rings when the GPU is slow (the dynamic resolution already does the same for the picture). Measure first: the instance count and the GPU time of the foliage passes (`foliageground`, `foliagesplat` in the frame graph) at 24 m, to see how much budget there is.
+## Rigged models
+```lua
+-- units: model.spawn, edit.*, prefab.place, world.* take VOXELS (1/16 m); agent.spawn, fx.*, player.teleport, sound.*, camera and bodies take METRES
+m = model.spawn("models/walker.vxm", x, y, z [, rotation [, { scale = 0.6, visual = true, swap = { ["from"] = "to" } }]])   -- voxel corner; every part becomes a driven body; `visual` draws it only, `scale` overrides the file's voxel scale (docs/ANIMATION.md "Voxel scale")
+model.play(m, "walk" [, speed [, loop]])    model.stop(m)    model.move(m, x, y, z)    model.remove(m)
+model.procedural(m, { walk = { legs = {"leg_l", "leg_r"}, arms = {"arm_l", "arm_r"} }, look = { part = "head" }, springs = {{ part = "tail" }} })   -- rules over the clip, by part name (docs/ANIMATION.md)
+model.look_at(m, x, y, z)   model.look_at(m)    -- the head turns towards a point (world voxels) within its limits / looks ahead again (an error on a model without a look rule)
+model.procedural(m, { ik = { legs = {{ upper = "thigh_l", lower = "shin_l", foot = "foot_l", pole = {0, 0, 1}, foot_height = 1 }} }, walk = { turn_smoothing = 15 } })   -- feet on the ground, planted feet, a smooth turn
+model.procedural(m, { from_roles = true })   -- the rules the rig's roles imply
+info = model.rig(m)   model.rig(m, { roles = "infer", joints = { head = { type = "ball", cone = 70, twist = 80 } } })   -- the rig description (parts, joints, roles, clips); the second form changes it first
+model.rig(m, { sockets = { grip_r = { parent = "hand_r", pivot = {14.5, 20, 4}, rot = {180, 0, 0} } } })   -- add / move a socket (a part without voxels where an item sits); `{ sockets = { grip_r = false } }` removes one (docs/EQUIPMENT.md)
+child = model.attach(m, "sword.vxm", "grip_r", { name, mode = "auto" | "merge" | "attach", offset = {x, y, z} metres, rot = {x, y, z} degrees, anchor = {x, y, z}, scale, swap, hide_parts = {..} })   model.detach(m [, name])   model.hide_part(m, part, on)   model.replace_part(m, part, file | nil)   model.sockets(m)   model.attachments(m)   -- equipment: items baked into a part's body (docs/EQUIPMENT.md); `m` may be an agent id
+names = model.clips(m)
+model.play(m, "walk", 1.0, true, 10)   -- the last number: ticks to cross-fade from what played before
+model.graph(m, { start = "idle", states = {...}, transitions = {...}, layers = {...} })   model.param(m, "waving", 1)   model.trigger(m, "hit")   model.state(m)   -- a state machine over the clips (docs/ANIMATION.md)
+function on_anim(m, event, clip) end   -- a clip event passed (a footstep, a hit frame)
+```
+Parts are made in the model editor (docs/GUIDE.md); clips are keyframed rotations and offsets per part. `speed` is clamped to +-100. The bodies push crates but nothing pushes them; a part that is destroyed is gone.
 
-## Ideas and bugs noted from the user (2026-10-21, third batch, not started)
-- **Test idea: UI / inventory.** Build an inventory screen as a test of the game-side UI (a grid of slots with item pictures and stack counts, drag and drop or click to move, a hotbar, tooltips, open / close with a key, items persisted with `project.fetch` / save state). What exists: the script HUD (docs/HUD.md): `on_hud(dt)`, `ui.text / rect / bar / line / circle / button / mouse / run`, images (PNG and SVG) in a 1080-high virtual space, input while the HUD has the mouse. **Where it belongs (recommendation):** the *game* owns inventory rules and items (what an item is, stack sizes, crafting, who may carry what); the *engine* owns what every game needs: the drawing and input primitives (done), layout helpers (grid, list, anchors, scroll, clipping), a few ready widgets (slot grid with drag and drop, button, slider, tooltip, text input, tabs), focus / mouse capture and controller navigation, text with the localization tables, and saving of script state. A small Lua **inventory library** shipped as a sample (`assets/lib/inventory.lua`, built on those widgets) would let a game start from it without making it part of the engine. The test would show which widgets are missing.
-- **Text on a sign.** The kit's signpost is plain voxels. Wanted: text on it (and on any surface). Options: (a) **voxel text**: a bitmap font stamped into voxels (a 5x7 or 8x8 pixel font, one voxel per pixel, `edit.text(x, y, z, "Hello", { facing, material, size })`, a workspace op `text`, a Text tool in the editor that follows the pointer as a ghost): real geometry, survives LOD, destruction and saves, works in prefabs (a manifest parameter `text`); cost: letters need at least 5 voxels of height to read (31 cm), so a sign is 1 m wide for 8 letters; (b) **painted text** with the paint state (docs/PAINT.md): colour a letter shape on the face, no geometry; (c) a **decal / label render** that draws text on a face at higher resolution than a voxel (a sign entity with a string, drawn in `shade.comp` or as a quad): crisp, but not a voxel and needs its own storage. Recommendation: start with (a) as an op plus a `text` parameter for the signpost manifest, think about (c) for small print.
-- **Bug: paint size 1 is not one voxel.** In the Paint tool a radius of 1 paints a ball of seven voxels (the voxel and its six neighbours): `paintSphereEdits` takes the radius as a distance (`<= r`), and the slider's smallest value is 1, so a single voxel (radius 0) cannot be chosen. Fix: size 1 = exactly one voxel (treat the size as a diameter or let the radius start at 0 and show "1 voxel"); check the cube and disc brushes and the MCP `paint` size the same way.
-- **Bug: after Tab and the brush tool the brush shape cannot be changed (Dear ImGui "2 visible items with conflicting ID").** The user's screenshot: "Programmer error: 2 visible items with conflicting ID" at the "brush" radio button. Cause (read from the code, not yet fixed): the tool radio button `ImGui::RadioButton("brush", ...)` and the shape combo `ImGui::Combo("brush", ...)` (tool_ui.cpp, Tools panel) have the same label, so the same ID in the same window; both are visible once the brush tool is on, so a click goes to the wrong one and the shape does not change. Fix: give one a hidden suffix (`"brush##tool"`, `"brush##shape"`) and look for other labels that repeat in the panels (the new paint block has `radius (voxels)##paint`; the size slider, "material" and "mode" labels are worth a check); a test that draws every panel with the ID conflict check on (`io.ConfigDebugHighlightIdConflicts`) and fails on a conflict.
+## Effects
+```lua
+fx.define{ name = "pop", emitters = {
+    { class = "spark", material = "metal", count = 60, speed = 55, speed_jitter = 0.5, spread = 0.8, life = 1.4, size = 0.7, radius = 1 },
+    { class = "puff", material = "stone", count = 12, size = 6, duration = 0.4, darkness = 0.5, direction = {0, 1, 0}, speed = 14, spread = 0.2 } } }
+fx.play("pop", x, y, z [, scale [, age]])    -- voxels; scale multiplies radius, speed and size; age (s) joins the effect part way through (particles already along their path)
+names = fx.effects()
+```
+Emitter fields: `class` (debris, grain, spark, puff, flame, drop), `material`, `count`, `life` / `life_jitter` (s), `size` / `size_jitter` (voxels; a puff's radius), `radius` (spawn sphere),
+`direction` (+Y is the local up), `speed` / `speed_jitter` (voxels/s), `spread` (0 along `direction`, 1 every way), `delay`, `duration` (0: all at `delay`, else spread over it), `darkness` (puffs).
+Sizes are in voxels (6.25 cm): 3 to 6 is clearly visible. Redefining a name replaces it (a script reload does that). Built in: `sparks`, `smoke_column`, `fountain`, `confetti`. Effects are cosmetic.
 
-## Idea noted from the user (2026-10-21, not started)
-- **A Lua editor in the game (script panel), working with the selection.** To edit prefabs on the fly and make general edits without leaving the game. Scope (recommended, small): a panel with a multi-line editor, Run and Save (into the project, e.g. `scripts/`), errors with line numbers, a few snippets; editing a prefab's manifest with a live re-stamp when it is saved (what the "re-read the manifest" button does now); and the **selection as variables** for the script: `selection.min / max / prefab`, helpers like `selection.each_voxel(fn)`, `selection.fill(material)`, so "replace every second brick in my selection" is a few lines. A **dry run**: the edits of the script go through the edit queue, so they can be shown as a ghost first and applied on confirmation. Already there: the Console panel, the MCP `lua` / `run_script` tools, scripts as logged actions (one undo step, replayable, the code text travels in net sessions), the instruction limit. Later: syntax colouring (a small Lua tokenizer; the ImGui text widget is plain), completion for the `edit / world / prefab / events` APIs from docs/LUA_API.md, a script library per project, running a script on a key. Caveats: typing long code over Moonlight is awkward; the guards stay as they are (no file access, instruction limit); agents already have the `lua` tool, so the value is for the person at the keyboard. Effort: the panel one or two days, the selection link and the dry run about one more.
+## player and time
+```lua
+player.teleport(x, y, z)      x, y, z = player.pos()     -- feet, metres
+player.forward()             -- dx, dy, dz: the unit vector the player looks along
+-- Players of a networked session (docs/NETWORK.md): ids are 0-based, 0 is the host; every call above and below takes an optional id (default 0), and the state is the same on every peer.
+player.count(); player.present(i); player.name(i); player.eye(i); player.nearest(x, y, z)  -- { id =, distance = } of the nearest player in the world, or nil
+player.teleport(x, y, z, i)  -- one player: only the machine that plays it moves it (without an id: every machine's own player, as before)
+player.me()                  -- on_hud only: the id of the player this machine plays (it differs between machines, so the simulation must not use it)
+-- vehicle.enter(id, i), vehicle.exit(i), vehicle.seated(i), body.grab(id, dist, i), body.release(i), body.throw(speed, i), body.grabbed(i) act for player i
+time.tick()  time.seconds()   -- the tick being run (the same number on_tick(t) and the timers see)
+after(ticks, fn) --> id       every(ticks, fn) --> id    cancel(id)       -- timers (60 ticks = 1 s)
+include("other.lua")          -- relative to the script; `include_optional("dev/x.lua")` is the same but returns false for a file that is not there; `file_exists("x.lua")` asks
+print(...)  log(...)          -- to the log
+```
 
-## Footsteps and wear follow-ups (2026-10-22, not started)
-- Per-creature steps for animated models could trigger on the rig's own foot-contact clip events (`on_anim` footstep) instead of a distance stride.
-- A footsteps panel in the editor (pick creature, surface, foot kind and hear it) and a wear panel with live sliders for `@rate`, `@fade` and `@distance`.
-- Track colour from the material that was picked up (mud brown, snow white-grey, sand tan) instead of one list per surface row.
+## A small level
+```lua
+function on_start()
+    local px, py, pz = player.pos()
+    local x, z = math.floor(units.vox(px)) + 160, math.floor(units.vox(pz))
+    local y = world.top(x, z) + 1
+    edit.box(x, y, z, x + 63, y + 40, z + 63, "brick")
+    edit.clear(x + 3, y + 3, z + 3, x + 60, y + 40, z + 60)           -- a hollow room
+    edit.box(x + 4, y, z + 4, x + 59, y + 8, z + 59, "water")           -- flooded
+    flip = gravity.add{type = "uniform", dir = {0, -1, 0}, strength = 9.81, priority = 10,
+                       pos = {units.m(x + 32), units.m(y + 20), units.m(z + 32)}, half = {2, 1.2, 2}}
+    every(900, function() gravity.retarget(flip, {0, -1, 0}, 3) end)   -- the moon room every 15 s
+end
+```
+`projects/demo_level/level.lua` is a bigger, commented example.
 
-## From the round 26 review (not done)
-- Sidecar: compare the project's mask and model *bytes* with the saved ones, not only the table text (L1); a HUD caption when a save opens with old rules.
-- Stalactites under a chunk top: needs a cave sampler for the chunk above (L14).
-- Ore cost: cap `max_depth` / density so `anyOre` does not brick every deep brick (L15); document that ores, overhangs and flooded caves are level 0 only and that trees / features ignore an overhang (L16).
-- Rivers at a 1 km super-region border (each side reads its own window) and a hydrology window computed on the main thread by a `groundAt` miss from mood / spawn / hook (L17).
-- `makeRegionOps` hot spot: a per-region `cornerAt` memo for `treeNear` (L18).
-- `jobs_.wait(counter_)` in `reloadAll` / `reloadBox` instead of the in-flight counter (L21).
-- SpawnSystem: creature models are re-read from disk at every spawn (cache them by hash); herd members that stand in a non-resident neighbour column are skipped (L22).
+## Events: buttons, levers, volumes, lamps, doors (docs/EVENTS.md)
+Nodes are declared by name (a name that exists is adopted: a script run again, or a hot reload, finds its nodes); boxes are voxels, spheres / positions metres, times ticks. Materials by name (`on` / `off` are the materials the node's voxels swap between).
+```lua
+id = events.button{ name = "b", box = {x0,y0,z0,x1,y1,z1}, prompt = "Light the lamp", on = "neon", off = "metal", press_ticks = 20 }   -- pressed with E / `use` when looked at within 3.5 m
+id = events.lever { name = "sw", box = {...}, prompt = "...", on = "neon", off = "metal", lit = false }                              -- stays pressed until pressed again
+id = events.volume{ name = "plate", box = {...}, player = true, bodies = true, material = "wood", min_mass = 50, tags = {"key"} } -- or sphere = {x, y, z, radius_m}
+-- min_weight = 500 (N): the volume is on while what stands in it weighs at least that much along the local gravity (the player counts 80 kg, a 1 m wooden crate is 7.5 kN); events.state(id).weight_n
+id = events.lamp  { name = "l", box = {...}, on = "neon", off = "stone", radiance = {30, 28, 24}, lit = false }                    -- swaps the voxels; a lit lamp also lights the probes like fire
+id = events.door  { name = "gate", box = {...}, travel = {0, 40, 0}, speed = 2, material = "wood", auto_close = false }   -- the slab slides along travel (one axis) 2 voxels per tick; it waits for the player and bodies in its way. material: the slab is the whole box of it (placed if the world does not show it: first run, saved open door, blasted); without it the slab is the solids found in the box (at most 65,536 cells)
+id = events.door  { name = "front", material = "wood", box = {...}, hinge = { axis = "y", at = {x, y, z}, open = 90, seconds = 0.8 } }   -- a SWING door: the slab turns about the axis through the voxel cell `at` (open = 90 or -90, right-hand rule); voxels at the stops, a kinematic body while it turns (it pushes crates, waits at the end for what stands where it closes)
+id = events.door  { name = "front", model = "models/door.vxm", pos = {x, y, z}, rotation = 0, hinge = {...} }                         -- the slab from a model file (minimum corner at pos, one of the 24 rotations first)
+id = events.door  { name = "front", material = "wood", box = {...}, hinge = { axis = "y", at = {x, y, z}, open = 90, dynamic = true, friction = 6, spring_to = 0, spring_k = 80, spring_damping = 20, breakaway = 0, motor_torque = 0, motor_speed = 1.5, limits = { -100, 100 } } }
+-- DYNAMIC swing door: a real body on a hinge to the world, always (the player walks against it and it opens, crates and blasts move it; a trapdoor is axis "x" with `breakaway` = the torque that holds it, it falls open under load). friction holds it where it is left, spring_* pulls it back to spring_to (a saloon door: limits {-100, 100}),
+-- motor_torque > 0: open / close drive it (without a motor they do nothing: it is pushed). The node's level is "open" (|angle| >= 85 degrees); events.state(id).angle_deg. A closed one is a body: it does not occlude GI light.
+id = events.timer { name = "t", delay = 120, period = 0, autostart = false }            -- sends `on` (fired) when due; period > 0 repeats; commands start / stop / reset
+id = events.logic { name = "both", op = "and", inputs = { a, b }, count = 3, delay = 30 }  -- ops: and or xor not toggle one_shot counter (count) delay (ticks); reads its inputs' levels
+id = events.gravity_target { name = "room", field = flip, presets = { {{0, -1, 0}, 9.81}, {{0, 1, 0}, 9.81} } }   -- commands enable disable toggle retarget (arg = preset index)
+id = events.spawner { name = "drop", pos = {x, y, z}, kind = "box", size = {16, 16, 16}, material = "wood", impulse = 0 }   -- spawn: a body at pos (metres), `impulse` = upward speed m/s
+id = events.effect  { name = "pop", effect = "sparks", pos = {x, y, z}, scale = 1 }                                        -- play
+events.connect(from, "on", to, "toggle" [, { delay = 30, arg = 0 }])     -- (logic `set`: arg = +(input index + 1) sets that input on, -(index + 1) off)     -- signals: on off pulse stay (aliases pressed enter exit opened closed blocked); commands: on off toggle open close stop press enable disable
+local h = events.on(id, "on", function(ev) print(ev.name, ev.signal, ev.tick) end)  -- a function called when the node sends the signal (dropped on a hot reload: declare it in on_start / on_reload); several on one node and signal all run, in the order they were made; the handle goes to `events.off(h)`
+events.fire(id [, "on"])   events.command(id, "open")   events.enable(id, false)   events.remove(id)   id = events.find("name")   events.tag(body_id, "key")
+st = events.state(id)      -- { name, kind, level, enabled; doors: open, moving, position, remaining, blocked (swing doors: angle_deg, body, at_stop; position is 0 or 90); volumes: player, bodies }
+```
+Build the voxels of a lamp, door or button in `on_start` with `edit.*` (first run), declare the node on every run. A door with `material = "wood"` is the whole box of that material (the engine places it where the saved state says, so a door survives a reload, a blast or being declared over terrain); a door without it is whatever is solid in its box two ticks after it was declared. The pocket it slides into (`box` + `travel`) has to be air or the slab itself. A button, lever or lamp box should hold only its own voxels.
 
-## From the game test (phase 3 retest)
-- A faint horizontal band across a tall curved wall in a closed hall at noon (the dungeon crawler's arena): the lighting grid's vertical edge / a one-probe row of the toroidal grid where coverage dips. The blue sky fill is gone (a ray up that hits stone takes the sky ambient down to a twentieth where probes cannot say), the band remains as a seam. Look at the grid's vertical extent against hall height and at the coverage fade at the grid edge.
-- `--audio-out` per-bus stems (`--audio-stems dir`) and a loop seam check for `sound.play{loop = true}` files (a click where the file's end meets its start).
-- A third-person camera that a wall pulled in: the body is hidden below 0.9 m (done); a fade instead of a cut would be nicer.
 
-## From the game's playtest (phase 5 notes)
-- **Small particles and world-space labels** (the damage numbers): (a) `fx.play` and emitters at fractional voxel / metre positions, (b) particles that render at 1/4 to 1/2 voxel (the size key looks clamped to one voxel), (c) best: `fx.text{ text, pos, size, color, rise, life }`, a short string drawn in world space facing the camera (a billboard in the particle pass; the font is the HUD's), (d) a `mote` particle kind: constant velocity, no gravity, no settling, no shrink, (e) an option to keep particles out of the TAA history (a moving 1 voxel particle shows a double image). Needs a look at the particle pass (render/particles) before a design: it is a GPU particle system with a voxel-sized splat.
-- A door whose box does not match its saved state when the world is rebuilt: a start without a world save now ignores `.events/state.txt` (done); open: re-sync a door whose box and state disagree in a world that *was* saved (or save the node states inside the world save).
+## sound (docs/AUDIO.md)
+```
+sound.tone(hz, seconds [, x, y, z])          -- positions are metres; omitted: at the player's head
+sound.click([pitch [, x, y, z]])
+sound.boom(radius [, strength [, x, y, z]])
+sound.hit("metal", speed [, size [, x, y, z]])
+sound.step(creature, material [, speed [, x, y, z]])   -- one footstep of that creature (footsteps.csv, docs/AUDIO.md "Footsteps")
+sound.load("sounds/door.wav")  --> index      -- WAV, relative to the project; -1 when unreadable
+sound.play("sounds/door.wav" | index, x, y, z [, volume [, pitch]])  --> true / false
+sound.play{ file, loop, bus = "sfx" | "music" | "voice", volume, pitch, at = {x, y, z}, fade_in }  --> handle   -- no `at`: 2D; sound.stop(h [, fade]) / sound.volume(h, v [, fade]) / sound.pitch(h, p [, fade]) / sound.bus(name, v)  (docs/AUDIO.md)
+```
+Cosmetic: nothing is logged or hashed; there is no sound in headless runs, recordings, replays or MCP sessions.
 
-- Particles, done (2026-10-23): `mote` kind (`ParticleClass::Mote`, emitter `kind = "mote"`), `fx.mote`, `fx.text` (a label of motes facing the viewer, 5 x 7 font), `fx.particle_taa` / `particle_taa`. Open: a text particle that turns with the camera every frame (a billboard in the particle pass, not a plane fixed at creation), a text size below about a third of a voxel per font pixel is only legible near.
 
-## Style analysis of the other converted packs (noted from the user 2026-10-23, not started; wait for the more detailed models)
-The trees were analysed and written down (docs/TREE_STYLE.md, tools/make_trees.py: measured proportions, structure, palette roles, a seeded generator in that style). The other packs of docs/ASSET_CATALOG.md were only converted and categorised. When the more detailed (finer-voxel) models exist (per-object voxel scale, characters at 3.75 cm), do the same for each style, so future content can be extended coherently:
-- **Desert houses** (`buildings/desert`): wall thickness, storey height, window and door sizes, roof/parapet/balcony rules, palette roles (sand, dark wood, terracotta, brass), the loose parts (walls, arch, pillar, stairs) as a modular kit.
-- **Forest pack** (`nature/forest`): crown shapes, bark, fern/grass blade shapes, rock shapes, colour per vertex rules; compare with the trees' style (they differ: blobby crowns vs stippled balls).
-- **Characters** (`figures`): proportions (head/torso/limbs in voxels), T-pose layout, how faces, hands and gear are drawn, palette use per class (human / monster), part boundaries for a rig.
-- **Furniture, props, kitchen, chests, fences, pub set**: scale rules, material use, wood/metal/glass colour roles.
-- **Mushrooms and graveyard**: shape grammar and palettes.
-For each: measure (do not guess), write `docs/<NAME>_STYLE.md` (measurements, palette roles with RGB and kit materials, recipes, a checklist) and a seeded generator in `tools/` that proves the recipe, as for the trees; keep a shared "world style" index so species/props from different packs sit together (scale, palette saturation, voxel noise).
+## project.store / project.fetch / project.keys (docs/SAVES.md)
+```
+project.store("quest", { stage = 2, items = { "key", "lamp" } })   -- numbers, booleans, strings, tables of them; nil removes
+local q = project.fetch("quest")            --> the table, also after a restart (it is saved with the world)
+project.fetch("gold", 0)                    --> the default when there is no such key
+project.keys()                              --> { "gold", "quest" }
+```
+Saved with the world (`save`, F11, exit), part of the session hash, kept in recordings. Functions cannot be stored; at most 12 levels, 1 MB.
 
-## From the dungeon game's gore test (2026-10-23)
-- Stains that age (wet to dried): a per-material second colour that a stain's state byte (age) blends towards, advanced by a slow cosmetic system (a `dry_ticks` column), so a hall of blood darkens and the particle red stays readable on a red carpet; today a game picks one dark colour (84, 2, 10, roughness 18 reads).
-- A fine model (voxel scale) as a static prop or foliage in numbers: the renderer has a flat 48 bodies per 16 x 16 tile and no body acceleration structure, so more than a few dozen fine bodies in view is not supported (docs/ANIMATION.md "Voxel scale"); canopies would need a BVH or a grid of bodies.
-- Scaled bodies in the physics world (limbs that push crates at scale 0.6): `VoxelBody::scale` is carried everywhere in metres, but the narrow phase, the player's body probe and `raycastBodies` assume the world's voxel; the agent proxy box is the answer for now.
-- `player.model(file, { scale = 0.6 })` / `player.hand_model` override (the file's scale applies today).
-- The rigged figures (tools/rig_figures.py) are one mesh per part: the arms and legs show a seam when they swing (a shoulder or hip ball would hide it); the girls' skirts move with the torso; the golem's arms are slabs; no `run`, `jump`, `block`, `cast` clips; the clips are generic (a weapon pose per figure would need the hand part split off).
+
+## ui (docs/HUD.md): the game's HUD, valid inside `on_hud(dt)`
+```
+ui.size() -> w, h          ui.text(x, y, s [, {size, color, align, shadow}])      ui.rect(x, y, w, h, color [, {radius, outline, thickness}])
+ui.bar(x, y, w, h, fraction, color [, background])      ui.line(x1, y1, x2, y2, color [, thickness])      ui.circle(x, y, r, color [, {outline, thickness}])
+ui.button(label, x, y, w, h) -> clicked      ui.mouse() -> {x, y, down, clicked} | nil      ui.run(code)   -- as a logged action at the next tick
+```
+
+## Text in the player's language
+`tr(key, args...)`, `trn(key, count, args...)`, `lang()`, `has_text(key)`: see docs/LOCALIZATION.md (`strings/<lang>.csv`, `{1}` arguments, plural forms, fallback to `en` and to the key). Presentation only: do not branch the simulation on the text.
+
+## camera (docs/CAMERAS.md)
+`camera.mode("first" | "third" | "top")` switches and returns the mode (no argument: just returns it); `camera.set{ distance, lift, zoom, pitch (deg), yaw (deg), pan_speed, fov }`; `camera.focus(x, y, z)`. Render and input only: the simulation does not depend on it, except that the top camera flies the player along (a level that wants a strategy view calls `camera.mode("top")` in `on_start`).
+
+## Vehicles, agents, navigation
+`vehicle.spawn / drive / enter / exit / info / list / seated / remove` (docs/VEHICLES.md), `agent.spawn{..., creature = "horse"} (whose feet sound like footsteps.csv says) / walk / follow / wander / stop / speed / info / list / remove`, the callback `on_agent(id, what)`, `nav.path / nav.floor` (docs/AGENTS.md). In a networked session these act for the host's player (`vehicle.enter`, `body.grab`) because the script runs identically on every peer.
+
+
+### Custom input actions (docs/INPUT.md)
+`on_action(name, down, player)` is called in the simulation when a custom action of `input.cfg` (`action.NAME = ...`) goes down or up; `input.down(name [, player])` is true while that player holds it. Both follow the logged actions, so they replay and agree between players.
+
+### Props that touch nothing fall
+A voxel (or a group of voxels) that is not connected through solid voxels to an **anchor** material (the `anchor` flag of `materials.csv`: stone, the ground and the like) becomes a loose body and falls when the tick starts, so a sconce, a sign letter or a crystal built one voxel away from its wall drops to the floor. Build props touching their support, or give the support an anchor material. `status` shows the `bodies` count (a jump after `on_start` is this).
+
+### The sky
+`sky.set{ time = 0.75, speed = 0, fog = 2 }` sets the clock (0..1: 0 sunrise, 0.25 noon, 0.5 sunset, 0.75 midnight), how fast it runs (0 stands still, 1 is a day in ten minutes, up to 60) and a multiplier of the fog density; every key is optional (`time` alone keeps a running clock running and stands still otherwise). `sky.get()` gives `{time, speed, fog}`. Render only: nothing in the simulation reads the sky, so it is the same on every peer and in a replay (counted in ticks). `project.cfg` has `time`, `time_speed` and `fog` for the start; a biome's mood multiplies the fog again.
+
+### The player's body and hands
+`player.model(file | nil [, { idle, walk, run, jump, swim, attack }])` gives the player a rigged model (drawn in the third-person view and free pictures), `player.model_play(clip [, speed])` plays a one-shot over it, `player.attach(file, socket [, opts [, player]])` / `player.detach([name])` / `player.hide_part(part, on)` / `player.replace_part(part, file | nil)` put equipment on that body (docs/EQUIPMENT.md), `player.hand_model(file | nil [, { offset = {right, up, forward}, idle, turn }])` and `player.hand_play(clip [, speed])` the same for a model in the first-person view. Render only, not simulated: docs/ANIMATION.md "The player's model".
+
+### Fire
+`world.burning(x, y, z)` is true while the voxel is on fire (the fire system's own list: exact and cheap, unlike looking for ember voxels with `world.material_at`). `fx.fire(x, y, z, radius)` lights flammable voxels in the radius; **how far a fire spreads is the material's `fire_spread` column** (column 24 of `materials.csv`, 0..255, default 255; grass has 15, so a grass fire stays a patch, docs/GUIDE.md "Materials"): a carpet made of a material with a high `fire_spread` burns through whatever the radius was, so give floor coverings a low one.
+
+### Motes, labels and particle history
+`fx.mote{ at, vel, life, size, material, count, spread }` (small cubes that fly straight: no gravity, no collision, no settling), `fx.text{ text, at, size, material, rise, life, toward, align }` (a label that faces the viewer, made of motes) and `fx.particle_taa(false)`: docs/EMITTERS.md "Motes and text in the world". Positions and sizes in metres. Emitters have `kind = "mote"`.

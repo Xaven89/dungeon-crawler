@@ -247,3 +247,10 @@ every detail the world's voxel would throw away (faces, beards, straps, spikes).
 - **Palette swap**: `model.spawn(file, x, y, z, rot, { swap = { ["ch-1b813e"] = "ch-aa2222" } })`, `agent.spawn{ ..., swap = {...} }`, `player.model(file, { swap = {...} })`, `player.hand_model(file, { swap = {...} })`: that one instance is built with the second material wherever the first is (the voxel's paint stays); several instances of one file can have different colours. An unknown material name is an error.
 - Tests: `tests/test_voxel_scale.cpp` (file, body metrics, the same model drawn with doubled voxels at scale 0.5 stands where the plain one does, the legs plant the feet at the same height, agent proxy, stamping) and the GPU test "voxel scale: ..."
   (the same silhouette and shadow for a body of 48^3 voxels at 0.5 and one of 24^3 at 1, still and turned; twice the detail).
+
+
+## Equipment and the first-person hand model (round 30)
+
+Items on a body, sockets, and the `hand` block of an item file are in docs/EQUIPMENT.md. `player.hand_model(file)` without options takes the file's `hand` block (`{ offset = [right, up, forward], turn, idle }`, written by
+`Creature.hand(...)` or `tools/item_anchor.py --hand`); options given in the call win, field by field. A hand model whose file has an `anchor` part turns about the anchor (a sword is held at its grip) instead of
+its middle; a file without one behaves as before. The kit figures have a looping `ready` clip (sword arm up, shield in front) for a figure that holds something.

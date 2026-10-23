@@ -439,6 +439,7 @@ function P.equip(id)
     G.sfx.play("equip")
     P.log("equipped: " .. d.name, d.color)
     s.hp = min(s.hp, P.max_hp())
+    if G.setup_player_models then G.setup_player_models() end
     G.save()
     return true
 end
@@ -447,7 +448,7 @@ function P.unequip(slot)
     local s = G.state
     local id = s.equip[slot]
     if not id or (slot == "weapon" and false) then return false end
-    if G.items.add(id, 1) then s.equip[slot] = nil; G.save(); return true end
+    if G.items.add(id, 1) then s.equip[slot] = nil; if G.setup_player_models then G.setup_player_models() end; G.save(); return true end
     return false
 end
 
