@@ -414,3 +414,32 @@ kill.samurai.1,"A samurai, made redundant. His honour was not insured."
 kill.imp.1,"The intern from Marketing has been terminated. Her last tweet is scheduled for tomorrow."
 kill.imp.2,"Down she goes, still holding the staff she was told was a 'learning opportunity'."
 kill.troll.1,"The Troll of the Night Shift clocks out. Permanently. HR is relieved."
+boss.intro_auditor.1,"Please welcome THE CHIEF AUDITOR! One eye, no mercy, and a spreadsheet of everything you have ever hit. He keeps count. He always keeps count."
+boss.intro_auditor.2,"His rating: 2 stars. His HP: enough. His mood: itemised."
+boss.audit.1,"AUDIT! He has reached a hundred blows on the ledger and he would like a word. Several words. They are all 'stomp'."
+boss.audit.2,"The count is in: you hit him a lot. This will be reflected in your treatment. Backup has been requested."
+boss.meter,AUDIT
+achievement.deep_three.name,Three Floors of Regret
+achievement.deep_three.desc,Reach floor 3 of a seeded run.
+achievement.deep_three.line,"Achievement: 'Three Floors of Regret'. You are now deeper than most of the audience's expectations."
+achievement.deep_five.name,The Fifth Floor Is Not Shown on the Brochure
+achievement.deep_five.desc,Reach floor 5.
+achievement.deep_five.line,"Achievement: floor five. The brochure does not go this deep. The brochure's author did not either."
+achievement.contractor.name,Independent Contractor
+achievement.contractor.desc,Sign three sponsor contracts in one run.
+achievement.contractor.line,"Achievement: 'Independent Contractor'. Three signatures. Your lawyer would like a word. Your lawyer is a sponsor."
+achievement.rank_s.name,Rank S
+achievement.rank_s.desc,Get an S on a floor recap.
+achievement.rank_s.line,"Achievement: 'Rank S'. The audience has thrown things. They were flowers. Mostly."
+achievement.mimic_food.name,Gary's Family
+achievement.mimic_food.desc,Open the wrong chest in a prize room.
+achievement.mimic_food.line,"Achievement: 'Gary's Family'. You met them. They met you. It was brief."
+achievement.favorite.name,Somebody's Favorite
+achievement.favorite.desc,Become a favorite of the audience.
+achievement.favorite.line,"Achievement: 'Somebody's Favorite'. A sponsor has noticed you. This is the beginning of a long and unpleasant relationship."
+achievement.reshuffle.name,Management Reshuffle
+achievement.reshuffle.desc,Defeat three floor bosses in one run.
+achievement.reshuffle.line,"Achievement: 'Management Reshuffle'. Three bosses removed. The org chart has lost its shape."
+achievement.hardcore_two.name,Exclusive Rights Holder
+achievement.hardcore_two.desc,Reach floor 3 with the Exclusive Broadcast Rights contract.
+achievement.hardcore_two.line,"Achievement: 'Exclusive Rights Holder'. You have not died. Yet. The audience is placing bets on 'yet'."

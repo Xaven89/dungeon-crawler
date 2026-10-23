@@ -25,10 +25,11 @@ function B.begin(lair)
     inst.ai = B.ai
     inst.no_flinch = true
     inst.state = "intro"
+    if inst.T.meter then inst.meter = 0 end
     inst.intro_until = time.tick() + 420
     inst.next_attack, inst.next_slam, inst.next_throw, inst.next_summon, inst.next_geyser = 0, 0, 0, 0, 0
     B.inst, B.active, B.phase = inst, true, 1
-    local ik = (L_.kind == "golem") and "boss.intro_golem" or "boss.intro"
+    local ik = ({ golem = "boss.intro_golem", auditor = "boss.intro_auditor" })[L_.kind] or "boss.intro"
     A.say_key(ik, { prio = 2 })
     A.say_key(ik, { prio = 0 })
     G.sfx.play("boss_stinger")
@@ -124,6 +125,17 @@ function B.ai(inst, t, d, dy, info)
     if phase > B.phase then set_phase(inst, phase); return end
     if inst.attacking then
         if t >= inst.attack_until then inst.attacking = false; agent.follow(inst.id, 2.6) end
+        return
+    end
+    -- the Auditor: every blow you land is written down; at a hundred he calls an AUDIT: a stomp and reinforcements, and the count starts again
+    if inst.T.meter and (inst.meter or 0) >= 100 and t >= inst.next_slam then
+        inst.meter = 0
+        inst.next_slam = t + 300
+        G.announcer.say_key("boss.audit", { prio = 2 })
+        inst.attacking = true; inst.attack_until = t + 110; inst.pending = "summon"
+        agent.stop(inst.id)
+        model.play(inst.mdl, inst.T.clips.summon, 1, false, 4)
+        after(40, function() if not inst.dead then local x, y, z = E.position(inst); if x then E.shockwave(inst, x, y, z, 7, inst.T.dmg * 1.5); B.summon(inst, x, y, z) end end end)
         return
     end
     local function act(clip, dur)

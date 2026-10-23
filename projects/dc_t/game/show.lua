@@ -112,9 +112,10 @@ function S.deliver(room)
         local slot = placed + k
         local id = "f" .. f .. "spon" .. (sh.fav_total - sh.favorites + k)
         if not G.state.opened[id] then
-            local lx, lz = room.x + 14.6, room.z + 6.8 + SPOTS[slot]
+            local sp = room.box_spots and room.box_spots[slot] or { x = room.x + 14.6, z = room.z + 6.8 + SPOTS[slot], face = "-x" }
+            local lx, lz = sp.x, sp.z
             local troll = G.hash(f, sh.fav_total, k) < 0.25
-            sh.boxes[#sh.boxes + 1] = { id = id, room = room.id, tier = tier, x = lx, z = lz, troll = troll, sponsor = 1 + floor(G.hash(f, k, 9) * #S.SPONSORS) % #S.SPONSORS }
+            sh.boxes[#sh.boxes + 1] = { id = id, room = room.id, tier = tier, x = lx, z = lz, troll = troll, sponsor = 1 + floor(G.hash(f, k, 9) * #S.SPONSORS) % #S.SPONSORS, face = sp.face }
             S.declare(sh.boxes[#sh.boxes])
         end
     end
@@ -127,7 +128,7 @@ end
 function S.declare(b)
     local T = G.traps
     if b.troll then T.crate_loot[b.id] = { S.TROLL[1 + floor(G.hash(#b.id, floor(b.x * 10), 3) * #S.TROLL) % #S.TROLL] } end
-    T.build_crate_now(b.id, b.tier, b.x, 0, b.z, "-x")
+    T.build_crate_now(b.id, b.tier, b.x, 0, b.z, b.face or "-x")
     if not G.state.opened[b.id] then
         T.crate_hooks[b.id] = function()
             G.announcer.say_key(b.troll and "show.troll" or "show.thanks", { prio = 1 }, S.SPONSORS[b.sponsor])
@@ -142,7 +143,7 @@ function S.redeclare()
         if not G.state.opened[b.id] then
             local T = G.traps
             if b.troll then T.crate_loot[b.id] = { S.TROLL[1 + floor(G.hash(#b.id, floor(b.x * 10), 3) * #S.TROLL) % #S.TROLL] } end
-            T.crate(b.id, b.tier, b.x, 0, b.z, "-x")
+            T.crate(b.id, b.tier, b.x, 0, b.z, b.face or "-x")
         end
     end
 end

@@ -224,7 +224,7 @@ ui.hp,HP
 ui.mp,MP
 ui.dead_title,YOU DIED
 ui.dead_sub,Your demise has been rescheduled.
-ui.help,"LMB / F attack    RMB / Q ability    E interact    R heal    X mana    G throw    I bag    C sheet    J achievements    O / Esc sound settings"
+ui.help,"LMB / F attack    RMB / Q ability    E interact    R heal    X mana    G throw    I bag    C sheet    J achievements    K skills    O / Esc settings"
 ui.interact,[E]
 ui.shop,Vending Machine of Mild Relief
 ui.buy,BUY
@@ -405,3 +405,17 @@ achievement.peta.line,"Achievement: 'Animal Rights Enthusiast'. You freed someth
 ally.freed.1,"You let the {1} out. It looks at you. It looks at the guards. It has chosen a side, and the side has a handbag."
 ally.freed.2,"A {1} is free and has decided you are the nicest thing in the building. This will not last."
 room.captive.1,"{1}. There is something in the cage. Everything else in the room works for it, or against it. Hard to say."
+room.warlord.1,"{1}. A middle manager of violence and his retinue. They have a mission statement. It is on the wall, in blood."
+kill.orc.1,"One Compliance Officer fewer. The audit will be shorter. Possibly in your favour."
+kill.orc.2,"The orc is down. His shield stays standing a moment longer out of loyalty."
+kill.bandit.1,"A contractor, let go without notice. In this economy, that is a mercy."
+kill.bandit.2,"He wanted overtime. He has it now. It is eternal."
+kill.samurai.1,"A samurai, made redundant. His honour was not insured."
+kill.imp.1,"The intern from Marketing has been terminated. Her last tweet is scheduled for tomorrow."
+kill.imp.2,"Down she goes, still holding the staff she was told was a 'learning opportunity'."
+kill.troll.1,"The Troll of the Night Shift clocks out. Permanently. HR is relieved."
+boss.intro_auditor.1,"Please welcome THE CHIEF AUDITOR! One eye, no mercy, and a spreadsheet of everything you have ever hit. He keeps count. He always keeps count."
+boss.intro_auditor.2,"His rating: 2 stars. His HP: enough. His mood: itemised."
+boss.audit.1,"AUDIT! He has reached a hundred blows on the ledger and he would like a word. Several words. They are all 'stomp'."
+boss.audit.2,"The count is in: you hit him a lot. This will be reflected in your treatment. Backup has been requested."
+boss.meter,AUDIT

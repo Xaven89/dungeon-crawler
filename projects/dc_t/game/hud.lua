@@ -328,6 +328,10 @@ local function hud_boss(w, h)
     bar(x, y, bw, 26, B.inst.hp / B.inst.max_hp, "#c03030", nil, nil)
     local ph = B.phase or 1
     for i = 1, 3 do ui.circle(x + bw - 20 - (3 - i) * 22, y - 18, 6, i <= ph and "#ff5050" or "#403040") end
+    if B.inst.meter then
+        bar(x + bw / 2 - 160, y + 34, 320, 14, min(1, B.inst.meter / 100), "#ffcf4a", nil, nil)
+        ui.text(x + bw / 2, y + 52, tr("boss.meter"), { size = 16, color = "#ffcf4a", align = "center" })
+    end
 end
 
 -- ---------------------------------------------------------------------------------------------- the screens

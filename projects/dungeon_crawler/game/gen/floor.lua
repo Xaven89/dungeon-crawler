@@ -410,7 +410,7 @@ F.build_gate = build_gate
 function F.boss_kind(p)
     if p.floor <= 2 then return "manager" end
     local r = L.make_rng(p.seed, p.floor, 4242)
-    return ({ "manager", "golem" })[r.int(1, 2)]
+    return ({ "manager", "golem", "auditor" })[r.int(1, 3)]
 end
 
 function F.lair_of(p)

@@ -44,6 +44,9 @@ E.types = {
               anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "goblin_die", loot = "silver", loot_chance = 0.6, wander = 1.5 },
     cyclops = { model = "figures/monster_cyclop_pink", name = "Cyclops Auditor", hp = 520, dmg = 27, speed = 1.9, reach = 3.0, aggro = 18, xp = 220, gold = { 50, 90 }, cd = 100, height = 3.1, radius = 1.0, miniboss = true,
                 anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "gold", loot_chance = 1 },
+    auditor = { model = "figures/monster_cyclop_pink", name = "The Chief Auditor", hp = 700, dmg = 25, speed = 1.9, reach = 3.1, aggro = 40, xp = 480, gold = { 180, 280 }, cd = 110, height = 3.1, radius = 1.0, boss = true,
+                anim = "clip", die_clip = true, meter = true, clips = { summon = "cast", throw = "cast", slam = "attack", roar = "cast" }, minion = "bandit", kit = { main_hand = "battle_axe.vxm" },
+                splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "platinum", loot_chance = 1 },
     golem = { model = "figures/monster_gold_golem", name = "The Golden Parachute", hp = 800, dmg = 26, speed = 1.7, reach = 3.4, aggro = 40, xp = 520, gold = { 200, 320 }, cd = 130, height = 3.4, radius = 1.3, boss = true,
               anim = "clip", die_clip = true, clips = { summon = "cast", throw = "cast", slam = "attack", roar = "cast" }, minion = "orc", splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "platinum", loot_chance = 1 },
 }
@@ -202,6 +205,7 @@ function E.damage(inst, amount, opts)
     -- aggro: whoever hits it is its business now
     if inst.state == "idle" then E.aggro(inst) end
     if G.show and opts.source ~= "test" then G.show.on_hit(amount) end
+    if inst.T.meter and inst.meter and opts.source ~= "test" then inst.meter = inst.meter + 1.2 + math.min(amount, 40) * 0.12 end        -- the Auditor keeps count of every blow
     if inst.hp <= 0 then E.kill(inst, opts); return end
     -- a flinch (the clip), a stun for the big hits
     local T = inst.T
@@ -383,9 +387,10 @@ end
 E.has_los = has_los
 
 function E.aggro(inst, quiet)
-    if inst.dead or inst.state == "chase" or inst.state == "attack" then return end
+    if inst.dead or inst.captive or inst.ally or inst.state == "chase" or inst.state == "attack" then return end
     inst.state = "chase"
     inst.aggro_tick = time.tick()
+    if inst.affix and not inst.warned then inst.warned = true; G.player.popup(inst.name:upper(), "#ff9a5a", true) end
     local T = inst.T
     if T.ranged then agent.follow(inst.id, T.keep or 8) else agent.follow(inst.id, max(0.9, T.reach * 0.7)) end
     if not quiet and T.pack then

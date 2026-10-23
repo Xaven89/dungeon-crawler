@@ -140,6 +140,14 @@ A.defs = {
     squeegee      = { xp = 60 },
     peta          = { xp = 60 },
     clean_sweep   = { xp = 50 },
+    deep_three    = { xp = 60 },
+    deep_five     = { xp = 120 },
+    contractor    = { xp = 50 },
+    rank_s        = { xp = 80 },
+    mimic_food    = { xp = 40 },
+    favorite      = { xp = 30 },
+    reshuffle     = { xp = 90 },
+    hardcore_two  = { xp = 150 },
     fashionably   = { xp = 30 },
     serial_victim = { xp = 60 },
     pyro          = { xp = 50 },
@@ -157,7 +165,7 @@ A.defs = {
     rolling_stone = { xp = 50 },
     speedrunner   = { xp = 150 },
 }
-A.order = { "check_in", "hello_world", "first_blood", "squeegee", "peta", "clean_sweep", "fashionably", "serial_victim", "pyro", "zero_g", "soggy", "loot_goblin", "crate_exp", "goose", "fine_print", "hoarder", "shopper", "overkill", "rolling_stone", "pacifist_ish", "speedrunner", "boss_down" }
+A.order = { "check_in", "hello_world", "first_blood", "squeegee", "peta", "clean_sweep", "favorite", "contractor", "mimic_food", "deep_three", "deep_five", "rank_s", "reshuffle", "hardcore_two", "fashionably", "serial_victim", "pyro", "zero_g", "soggy", "loot_goblin", "crate_exp", "goose", "fine_print", "hoarder", "shopper", "overkill", "rolling_stone", "pacifist_ish", "speedrunner", "boss_down" }
 A.toasts = {}      -- { id, t } shown on the HUD for a few seconds
 
 function A.has(id) return G.state and G.state.ach and G.state.ach[id] end

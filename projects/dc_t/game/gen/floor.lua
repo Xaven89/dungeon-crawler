@@ -78,6 +78,20 @@ function F.apply_tables(p)
         W.rooms[id] = { x = r.x, z = r.z, w = r.w, d = r.d, h = r.h, name = r.name, kind = r.theme, role = r.role }
         W.checkpoints[id] = { x = r.x + r.w / 2, y = 0.1, z = r.z + r.d / 2 }
     end
+    -- a place to wake up in a room that is not its middle (the middle of a furnace is lava, of a library a shelf): just inside the first door, on the free 4 m along the walls
+    for _, e in ipairs(p.edges) do
+        for _, d in ipairs(e.doors) do
+            local r = p.rooms[d.room]
+            if r.role == "room" or r.role == "boss" then
+                local c = W.checkpoints[d.room]
+                if not c.door then
+                    if d.side == "E" then c.x, c.z = r.x + r.w - 2.5, d.z elseif d.side == "W" then c.x, c.z = r.x + 2.5, d.z
+                    elseif d.side == "S" then c.x, c.z = d.x, r.z + r.d - 2.5 else c.x, c.z = d.x, r.z + 2.5 end
+                    c.door = true
+                end
+            end
+        end
+    end
     W.room_order = p.order
     W.neighbors = p.neighbors
     W.populate_list = {}
@@ -257,14 +271,14 @@ local function stone(b) G.vfill(G.vox(b[1]), G.vox(b[2]), G.vox(b[3]), G.vox(b[4
 -- the voxels of one room by its theme
 local function room_voxels(p, room, ctx)
     local def = F.themes[room.theme]
-    if room.theme == "arrival" then G.gen.safe.voxels(room, {})
-    elseif room.theme == "stairwell" then G.gen.safe.voxels(room, { stairs = true })
+    if room.theme == "arrival" then G.gen.safe.voxels(room, ctx, {})
+    elseif room.theme == "stairwell" then G.gen.safe.voxels(room, ctx, { stairs = true })
     elseif def and def.voxels then def.voxels(room, ctx) end
 end
 local function room_things(p, room, ctx)
     local def = F.themes[room.theme]
-    if room.theme == "arrival" then G.gen.safe.things(room, {})
-    elseif room.theme == "stairwell" then G.gen.safe.things(room, { stairs = true, next_floor = p.floor + 1 })
+    if room.theme == "arrival" then G.gen.safe.things(room, ctx, {})
+    elseif room.theme == "stairwell" then G.gen.safe.things(room, ctx, { stairs = true, next_floor = p.floor + 1 })
     elseif def and def.things then def.things(room, ctx) end
 end
 
@@ -396,7 +410,7 @@ F.build_gate = build_gate
 function F.boss_kind(p)
     if p.floor <= 2 then return "manager" end
     local r = L.make_rng(p.seed, p.floor, 4242)
-    return ({ "manager", "golem" })[r.int(1, 2)]
+    return ({ "manager", "golem", "auditor" })[r.int(1, 3)]
 end
 
 function F.lair_of(p)
