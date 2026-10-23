@@ -183,6 +183,21 @@ function T.crate_in_front(reach, min_dot)
     return best
 end
 
+-- E at a sliding door: open it, and shut it again after a while if nobody is on its plate
+function T.use_door()
+    local px, py, pz = player.pos()
+    local lx, ly, lz = G.to_local(px, py, pz)
+    for _, d in ipairs(T.doors or {}) do
+        if G.dist2(lx, lz, d.x, d.z) < 3.2 then
+            events.command(d.node, "open")
+            after(420, function() if not events.state(d.plate).player then events.command(d.node, "close") end end)
+            G.sfx.play("lever", d.x, 1.2, d.z)
+            return true
+        end
+    end
+    return false
+end
+
 function T.open_crate(id)
     local c = T.crates[id]
     local s = G.state
@@ -198,7 +213,10 @@ function T.open_crate(id)
     -- when the lid is up: glitter, the loot jumps out
     after(24, function()
         fx.play("confetti", floor(units.vox(cx)), floor(units.vox(cy)), floor(units.vox(cz)), 1.2)
-        if emitter.find("crate_light_" .. id) then emitter.burst("crate_light_" .. id, 80) end
+        if emitter.find("crate_light_" .. id) then
+            emitter.burst("crate_light_" .. id, 80)
+            after(300, function() if emitter.find("crate_light_" .. id) then emitter.remove("crate_light_" .. id) end end)      -- the glitter stops after five seconds
+        end
         G.sfx.play("coin", c.cx, c.cy + 0.5, c.cz, 0.6, 1.2)
         local n = G.irange(tdef.rolls[1], tdef.rolls[2])
         local gold = G.irange(tdef.gold[1], tdef.gold[2])
@@ -339,8 +357,25 @@ function T.tick_floating(t)
     end
 end
 
+-- a barrel that burns goes off: its wood turns to ember / char / flame (any fire: a fire bolt, a torch bolt, the lava, the boss's geysers) or is gone
+function T.tick_barrels(t)
+    if t % 12 ~= 0 then return end
+    for _, b in ipairs(T.barrels) do
+        if b.alive and not b.fuse then
+            local m = world.material_at(G.wx(b.x), G.wy(b.y - 0.1), G.wz(b.z))
+            local m2 = world.material_at(G.wx(b.x), G.wy(b.y + 0.35), G.wz(b.z))
+            local burnt = { ember = true, char = true, flame = true, air = true }
+            if m ~= "unloaded" and m2 ~= "unloaded" and (burnt[m] or burnt[m2]) then
+                b.fuse = true
+                after(G.irange(2, 14), function() T.explode_barrel(b) end)
+            end
+        end
+    end
+end
+
 function T.tick(t)
     T.tick_floating(t)
+    T.tick_barrels(t)
     if t % 6 ~= 0 then return end
     local px, py, pz = player.pos()
     local lx, ly, lz = G.to_local(px, py + 0.2, pz)

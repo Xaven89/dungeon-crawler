@@ -305,10 +305,6 @@ function P.attack()
     P.swing_tick = now
     player.hand_play("swing"); player.model_play("attack")          -- the sword in the first-person view and the body in the third (render only)
     G.sfx.play("swing", nil, nil, nil, 0.6, 0.9 + (P.swings % 3) * 0.1)
-    do   -- a little arc of sparks in front of the hand (cosmetic)
-        local px, py, pz = player.pos(); local fx_, fy_, fz_ = player.forward()
-        fx.play("slash", floor((px + fx_ * 1.6) * 16), floor((py + 1.3 + fy_ * 1.6) * 16), floor((pz + fz_ * 1.6) * 16), 0.8)
-    end
     local targets = P.targets_in_cone(w.reach, 0.62, 2)
     local hit = false
     for _, t in ipairs(targets) do
@@ -375,6 +371,7 @@ function P.ability()
             if stop then break end
         end
         fx.fire(floor(x * 16), floor(y * 16), floor(z * 16), 28)
+        G.traps.blast(x, y, z, 3.5)
         fx.play("sparks", floor(x * 16), floor(y * 16), floor(z * 16), 1.4)
         fx.explosion(floor(x * 16), floor(y * 16), floor(z * 16), 10, 0.4)
         for _, inst in pairs(E.list) do
@@ -456,6 +453,7 @@ function P.use_item(id)
         G.sfx.play("swing")
         after(18, function()
             fx.explosion(floor(ex * 16), floor(ey * 16), floor(ez * 16), 14, 0.6)
+            G.traps.blast(ex, ey, ez, 4.5)
             G.enemies.damage_area(ex, ey, ez, 4.2, 38, "player")
         end)
     end

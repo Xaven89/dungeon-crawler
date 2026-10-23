@@ -134,7 +134,10 @@ function E.damage(inst, amount, opts)
     inst.last_damage = time.tick()
     local x, y, z = wpos(inst)
     P.hitmark = time.tick(); P.hitmark_crit = opts.crit; P.hitmark_wall = false
-    P.popup((opts.crit and "CRIT " or "") .. amount, opts.crit and "#ffd24a" or "#ffffff", opts.crit)
+    if x then
+        local kind = (inst.T.boss and "boss") or (opts.source == "fire" and "fire") or (opts.crit and "crit") or "plain"
+        G.vnum.show(amount, x + G.range(-0.25, 0.25), y + inst.height + 0.2 + G.range(0, 0.25), z + G.range(-0.25, 0.25), kind, opts.crit and 1.5 or 1)
+    end
     G.sfx.play(opts.crit and "hit_crit" or "hit", nil, nil, nil, 0.8)
     if inst.T.hit_sfx then G.sfx.play(inst.T.hit_sfx, G.to_local(x, y, z)) end
     if x then fx.play(inst.T.splat or "splat_red", floor(x * 16), floor((y + inst.height * 0.6) * 16), floor(z * 16), 0.7) end

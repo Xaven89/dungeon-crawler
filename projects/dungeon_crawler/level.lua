@@ -3,6 +3,7 @@ include("game/core.lua")
 include("game/items.lua")
 include("game/announcer.lua")
 include("game/player.lua")
+include("game/vnum.lua")
 include("game/enemies.lua")
 include("game/traps.lua")
 include("game/world.lua")
@@ -28,6 +29,7 @@ function on_start()
     G.load()
     G.items.init()
     G.enemies.define_fx()
+    G.vnum.define()
     G.world.build()
     G.world.populate()
     G.music.load_settings()
@@ -90,7 +92,11 @@ function on_action(name, down, pl)
     if name == "attack" then G.player.attack()
     elseif name == "interact" then
         -- E: a chest anywhere on it (the engine's own use handles the levers and buttons it is aimed at)
-        if not G.screen and not G.player.dead then local c = G.traps.crate_in_front(3.0, 0.2); if c then G.traps.open_crate(c.id) end end
+        if not G.screen and not G.player.dead then
+            local c = G.traps.crate_in_front(3.0, 0.2)
+            if c then G.traps.open_crate(c.id)
+            else G.traps.use_door() end
+        end
     elseif name == "ability" then G.player.ability()
     elseif name == "quick_heal" then G.player.quick("heal")
     elseif name == "quick_mana" then G.player.quick("mana")
