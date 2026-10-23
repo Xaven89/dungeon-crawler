@@ -88,6 +88,9 @@ end
 function on_action(name, down, pl)
     if not down or not G.state.class then return end
     if name == "attack" then G.player.attack()
+    elseif name == "interact" then
+        -- E: a chest anywhere on it (the engine's own use handles the levers and buttons it is aimed at)
+        if not G.screen and not G.player.dead then local c = G.traps.crate_in_front(3.0, 0.2); if c then G.traps.open_crate(c.id) end end
     elseif name == "ability" then G.player.ability()
     elseif name == "quick_heal" then G.player.quick("heal")
     elseif name == "quick_mana" then G.player.quick("mana")

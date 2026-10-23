@@ -40,29 +40,68 @@ local tier_paint = { bronze = "brown", silver = "silver", gold = "gold", platinu
 local tier_glow = { bronze = "lantern", silver = "rune", gold = "lantern", platinum = "neon" }
 
 -- a chest 1.25 x 0.75 x 0.75 m at (lx, lz) on the floor level ly, its lock facing `face` ("+z" "-z" "+x" "-x")
+local function chest_dims(face)
+    local alongx = (face == "+z" or face == "-z")
+    return alongx and 20 or 12, alongx and 12 or 20       -- extents in voxels along x and z
+end
+
+-- the lid at an angle (0 = shut, 100 = standing open at the back): a slab of two voxels hinged on the back edge of the body. `draw` true writes it, false clears exactly what a draw would write.
+local function lid_boxes(face, ang)
+    local lx_, lz_ = chest_dims(face)
+    local alongx = (face == "+z" or face == "-z")
+    local D = alongx and lz_ or lx_                         -- depth (from the back to the front)
+    local W = alongx and lx_ or lz_                         -- width along the lock's side
+    local sgn = (face == "+z" or face == "+x") and 1 or -1  -- the direction from the back towards the front
+    local back = (sgn == 1) and 0 or (D - 1)
+    local a = math.rad(ang)
+    local ca, sa = math.cos(a), math.sin(a)
+    local out, seen = {}, {}
+    local u = 0.0
+    while u <= D - 1 + 0.01 do
+        for t = 0, 1 do
+            local pos = math.floor(back + sgn * (u * ca - t * sa) + 0.5)
+            local y = math.floor(9 + u * sa + t * ca + 0.5)
+            local key = pos * 1000 + y
+            if not seen[key] then
+                seen[key] = true
+                if alongx then out[#out + 1] = { 0, y, pos, W - 1, y, pos } else out[#out + 1] = { pos, y, 0, pos, y, W - 1 } end
+            end
+        end
+        u = u + 0.5
+    end
+    return out
+end
+
+local function draw_lid(ox, oy, oz, face, ang, mat)
+    for _, bx in ipairs(lid_boxes(face, ang)) do
+        local x0, y0, z0, x1, y1, z1 = bx[1], bx[2], bx[3], bx[4], bx[5], bx[6]
+        if mat == "air" then edit.clear(ox + x0, oy + y0, oz + z0, ox + x1, oy + y1, oz + z1)
+        else edit.box(ox + x0, oy + y0, oz + z0, ox + x1, oy + y1, oz + z1, mat) end
+    end
+end
+
 local function chest_voxels(tier, lx, ly, lz, face, open)
     local ox, oy, oz = G.wx(lx), G.wy(ly), G.wz(lz)
+    local lx_, lz_ = chest_dims(face)
     local alongx = (face == "+z" or face == "-z")
-    local lx_, lz_ = alongx and 20 or 12, alongx and 12 or 20            -- voxel extents
     local function B(x0, y0, z0, x1, y1, z1, mat, paint)
-        local ax, az, bx, bz = x0, z0, x1, z1
-        edit.box(ox + ax, oy + y0, oz + az, ox + bx, oy + y1, oz + bz, mat)
-        if paint then edit.paint_box(ox + ax, oy + y0, oz + az, ox + bx, oy + y1, oz + bz, paint) end
+        edit.box(ox + x0, oy + y0, oz + z0, ox + x1, oy + y1, oz + z1, mat)
+        if paint then edit.paint_box(ox + x0, oy + y0, oz + z0, ox + x1, oy + y1, oz + z1, paint) end
     end
     B(0, 0, 0, lx_ - 1, 8, lz_ - 1, "dark_wood")                          -- the body
+    local c = tier_paint[tier]
     if open then
         B(1, 8, 1, lx_ - 2, 8, lz_ - 2, "gold")
-        B(0, 9, 0, lx_ - 1, 11, 1, "dark_wood")                           -- the lid, standing open at the back
+        draw_lid(ox, oy, oz, face, 100, "dark_wood")                       -- the lid, standing open at the back
     else
         B(0, 9, 0, lx_ - 1, 10, lz_ - 1, "dark_wood")                      -- the lid
         B(1, 11, 1, lx_ - 2, 11, lz_ - 2, "dark_wood")
     end
     -- bands in the tier's colour
-    local c = tier_paint[tier]
     if alongx then
-        B(3, 0, 0, 4, 10, lz_ - 1, "metal", c); B(lx_ - 5, 0, 0, lx_ - 4, 10, lz_ - 1, "metal", c)
+        B(3, 0, 0, 4, open and 8 or 10, lz_ - 1, "metal", c); B(lx_ - 5, 0, 0, lx_ - 4, open and 8 or 10, lz_ - 1, "metal", c)
     else
-        B(0, 0, 3, lx_ - 1, 10, 4, "metal", c); B(0, 0, lz_ - 5, lx_ - 1, 10, lz_ - 4, "metal", c)
+        B(0, 0, 3, lx_ - 1, open and 8 or 10, 4, "metal", c); B(0, 0, lz_ - 5, lx_ - 1, open and 8 or 10, lz_ - 4, "metal", c)
     end
     -- the lock (the button): 2 x 2 x 1 on the front face
     local lockbox
@@ -74,28 +113,47 @@ local function chest_voxels(tier, lx, ly, lz, face, open)
     return lockbox
 end
 
+-- the lid opens in five steps (about a third of a second), the creak starts at once, the glitter and the loot come when it is up
+local function animate_open(tier, lx, ly, lz, face)
+    local ox, oy, oz = G.wx(lx), G.wy(ly), G.wz(lz)
+    local lx_, lz_ = chest_dims(face)
+    -- clear the shut lid and its band tops first
+    edit.clear(ox, oy + 9, oz, ox + lx_ - 1, oy + 11, oz + lz_ - 1)
+    edit.box(ox + 1, oy + 8, oz + 1, ox + lx_ - 2, oy + 8, oz + lz_ - 2, "gold")
+    local prev
+    local angles = { 12, 32, 55, 80, 100 }
+    for i, ang in ipairs(angles) do
+        after((i - 1) * 4 + 2, function()
+            if prev then draw_lid(ox, oy, oz, face, prev, "air") end
+            draw_lid(ox, oy, oz, face, ang, "dark_wood")
+            prev = ang
+        end)
+    end
+end
+
 -- id: a unique name (saved in state.opened); tier: bronze | silver | gold | platinum
+T.crates = {}
 function T.crate(id, tier, lx, ly, lz, face)
+    face = face or "+z"
     local opened = G.state.opened[id]
+    local lx_, lz_ = chest_dims(face)
     local lockbox
-    if G.should_build() then lockbox = chest_voxels(tier, lx, ly, lz, face or "+z", opened)
+    if G.should_build() then lockbox = chest_voxels(tier, lx, ly, lz, face, opened)
     else
         -- the lock's place again, to declare the button on a loaded world
-        local alongx = (face == "+z" or face == "-z")
-        local lx_, lz_ = alongx and 20 or 12, alongx and 12 or 20
         local ox, oy, oz = G.wx(lx), G.wy(ly), G.wz(lz)
-        if face == "+z" or face == nil then lockbox = { ox + 9, oy + 6, oz + lz_, ox + 10, oy + 7, oz + lz_ }
+        if face == "+z" then lockbox = { ox + 9, oy + 6, oz + lz_, ox + 10, oy + 7, oz + lz_ }
         elseif face == "-z" then lockbox = { ox + 9, oy + 6, oz - 1, ox + 10, oy + 7, oz - 1 }
         elseif face == "+x" then lockbox = { ox + lx_, oy + 6, oz + 9, ox + lx_, oy + 7, oz + 10 }
         else lockbox = { ox - 1, oy + 6, oz + 9, ox - 1, oy + 7, oz + 10 } end
     end
     if opened then return end
+    local cx, cz = lx + lx_ / 32, lz + lz_ / 32                   -- the centre of the chest (metres)
+    T.crates[id] = { id = id, tier = tier, lx = lx, ly = ly, lz = lz, face = face, cx = cx, cy = ly + 0.3, cz = cz }
     local node = events.button{ name = "crate_" .. id, box = lockbox, prompt = "Open the " .. G.items.tiers[tier].name, on = "neon", off = tier_glow[tier], press_ticks = 10 }
-    events.on(node, "pressed", function() T.open_crate(id, tier, lx, ly, lz, face) end)
-    local cx, cz = lx + 0.6, lz + 0.4
-    T.add_interact("crate_" .. id, cx, ly + 0.5, cz, "Open the " .. G.items.tiers[tier].name, 2.4, function() return not G.state.opened[id] end)
+    events.on(node, "pressed", function() T.open_crate(id) end)
+    T.add_interact("crate_" .. id, cx, ly + 0.5, cz, "Open the " .. G.items.tiers[tier].name, 3.0, function() return not G.state.opened[id] end)
     -- a faint light so that it can be found in the dark
-    T.crate_lights = T.crate_lights or {}
     G.torch(cx, ly + 1.4, cz, { preset = "magic_sparks", reach = 5, color = ({ bronze = { 1, .6, .3 }, silver = { .7, .7, 1 }, gold = { 1, .85, .3 }, platinum = { .4, 1, 1 } })[tier], name = "crate_light_" .. id })
 end
 
@@ -108,28 +166,50 @@ function T.build_crate_now(id, tier, lx, ly, lz, face)
     G.rebuilding = was
 end
 
-function T.open_crate(id, tier, lx, ly, lz, face)
+-- the unopened chest that a click (attack, or E) means: the nearest one within `reach` metres whose middle is in front of the player (or very close). Any part of the chest counts, not the lock.
+function T.crate_in_front(reach, min_dot)
+    local px, py, pz = player.pos()
+    local lx, ly, lz = G.to_local(px, py, pz)
+    local fx, fy, fz = player.forward()
+    local best, bd
+    for id, c in pairs(T.crates) do
+        if not G.state.opened[id] then
+            local dx, dy, dz = c.cx - lx, (c.cy + 0.2) - (ly + 1.3), c.cz - lz
+            local d = math.sqrt(dx * dx + dy * dy + dz * dz)
+            local dot = (dx * fx + dy * fy + dz * fz) / math.max(d, 0.01)
+            if d <= reach and (dot >= (min_dot or 0.5) or d < 1.6) and (not bd or d < bd) then best, bd = c, d end
+        end
+    end
+    return best
+end
+
+function T.open_crate(id)
+    local c = T.crates[id]
     local s = G.state
-    if s.opened[id] then return end
+    if not c or s.opened[id] then return end
     s.opened[id] = true
+    local tier, lx, ly, lz, face = c.tier, c.lx, c.ly, c.lz, c.face
     local tdef = G.items.tiers[tier]
     local A = G.announcer
-    -- open it: replace the lid, show the gold
-    chest_voxels(tier, lx, ly, lz, face or "+z", true)
-    local cx, cy, cz = G.mx(lx + 0.6), G.my(ly + 0.8), G.mz(lz + 0.4)
-    fx.play("confetti", floor(units.vox(cx)), floor(units.vox(cy)), floor(units.vox(cz)), 1.2)
-    if emitter.find("crate_light_" .. id) then emitter.burst("crate_light_" .. id, 60) end
-    G.sfx.play("crate_open", lx + 0.6, ly + 0.8, lz + 0.4)
+    local cx, cy, cz = G.mx(c.cx), G.my(c.cy + 0.5), G.mz(c.cz)
+    G.sfx.play("crate_open", c.cx, c.cy, c.cz)
     A.say_key("box." .. tier, { prio = 1 })
-    local n = G.irange(tdef.rolls[1], tdef.rolls[2])
-    local gold = G.irange(tdef.gold[1], tdef.gold[2])
-    G.enemies.drop(cx, cy + 0.3, cz, "gold", gold)
-    for i = 1, n do
-        local item = G.items.roll(tier, i * 31 + #id)
-        if tier == "platinum" and i == 1 then item = ({ "excalibur", "tux", "spoon" })[1 + (s.level or 1) % 3] end
-        G.enemies.drop(cx + G.range(-0.4, 0.4), cy + 0.2 * i, cz + G.range(-0.4, 0.4), "item", item)
-    end
-    if T.crate_hooks[id] then T.crate_hooks[id]() end
+    animate_open(tier, lx, ly, lz, face)
+    -- when the lid is up: glitter, the loot jumps out
+    after(24, function()
+        fx.play("confetti", floor(units.vox(cx)), floor(units.vox(cy)), floor(units.vox(cz)), 1.2)
+        if emitter.find("crate_light_" .. id) then emitter.burst("crate_light_" .. id, 80) end
+        G.sfx.play("coin", c.cx, c.cy + 0.5, c.cz, 0.6, 1.2)
+        local n = G.irange(tdef.rolls[1], tdef.rolls[2])
+        local gold = G.irange(tdef.gold[1], tdef.gold[2])
+        G.enemies.drop(cx, cy + 0.3, cz, "gold", gold)
+        for i = 1, n do
+            local item = G.items.roll(tier, i * 31 + #id)
+            if tier == "platinum" and i == 1 then item = ({ "excalibur", "tux", "spoon" })[1 + (s.level or 1) % 3] end
+            G.enemies.drop(cx + G.range(-0.4, 0.4), cy + 0.2 * i, cz + G.range(-0.4, 0.4), "item", item)
+        end
+        if T.crate_hooks[id] then T.crate_hooks[id]() end
+    end)
     local cnt = A.bump("crates")
     if cnt >= 5 then A.award("loot_goblin") end
     if tier == "gold" or tier == "platinum" then A.award("crate_exp") end
@@ -191,6 +271,20 @@ function T.swing_at(reach)
         end
     end
     return false
+end
+
+-- what a swing that hit no enemy, barrel or chest feels like: chips of whatever it struck, a knock in that material's voice, and a grey hit mark. Returns true when it struck something solid.
+local chip_of = { wood = "chip_wood", dark_wood = "chip_wood", planks = "chip_wood", carpet = "chip_wood", metal = "chip_metal", gold = "chip_metal", hazard_y = "chip_metal", obsidian = "chip_stone" }
+local sound_of = { wood = "wood", dark_wood = "wood", metal = "metal", gold = "metal", glass = "glass", gutter_water = "glass", dirt = "stone" }
+function T.swing_feedback(reach)
+    local _, _, _, hx, hy, hz, d, hit = G.look_ray(reach + 0.2, 0.08)
+    if not hit then return false end
+    local m = world.material_at(floor(hx * 16), floor(hy * 16), floor(hz * 16))
+    G.player.hitmark = time.tick(); G.player.hitmark_crit = false; G.player.hitmark_wall = true
+    fx.play(chip_of[m] or "chip_stone", floor(hx * 16), floor(hy * 16), floor(hz * 16), 1.0)
+    sound.hit(sound_of[m] or "stone", 5 + G.state.level * 0.3, 1.0, hx, hy, hz)
+    if m == "metal" or m == "gold" then G.sfx.play("trap_click", nil, nil, nil, 0.5, 0.7) end
+    return true
 end
 
 function T.secret(name, lx, ly, lz, wall_box)

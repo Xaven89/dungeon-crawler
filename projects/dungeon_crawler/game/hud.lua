@@ -169,7 +169,7 @@ local function hud_world(w, h, input)
     for _, d in ipairs({ { -14, 0, -7, 0 }, { 7, 0, 14, 0 }, { 0, -14, 0, -7 }, { 0, 7, 0, 14 } }) do ui.line(cx + d[1], cy + d[2], cx + d[3], cy + d[4], "#ffffff90", 2) end
     local age = t - P.hitmark
     if age < 10 then
-        local col = P.hitmark_crit and "#ffd24a" or "#ffffff"
+        local col = P.hitmark_crit and "#ffd24a" or (P.hitmark_wall and "#a8b0c0" or "#ffffff")
         local r = 10 + age
         ui.line(cx - r, cy - r, cx - r + 8, cy - r + 8, col, 3); ui.line(cx + r, cy - r, cx + r - 8, cy - r + 8, col, 3)
         ui.line(cx - r, cy + r, cx - r + 8, cy + r - 8, col, 3); ui.line(cx + r, cy + r, cx + r - 8, cy + r - 8, col, 3)
@@ -391,8 +391,10 @@ local function bag_screen(w, h, input)
         ui.text(bx, top, tr("ui.inventory"), { size = 26, color = C.gold })
         local size, gap = 72, 8
         local ev = uikit.slots("bag", inv.bag, bx, top + 40, inv.cols, { size = size, gap = gap, icon = item_icon, tooltip = item_tip, count = inv.bag_n })
-        if ev.click then
-            local it = inv.bag[ev.click]
+        -- a click is the button going UP over the slot it went down on, without a drag (the kit reports `click` on the press AND on the release, which made an item equip twice)
+        local dr = uikit.state.drag
+        if input.released and ev.hover and dr and dr.grid == "bag" and dr.index == ev.hover and (math.abs(input.x - dr.origin_x) + math.abs(input.y - dr.origin_y)) <= 8 and not dr.via_pad then
+            local it = inv.bag[ev.hover]
             if it then ui.run(string.format("Game.player.use_item(%q)", it.id)) end
         end
         if ev.right_click then
@@ -525,7 +527,7 @@ function H.draw(dt)
     if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" then
         if pressed(input, "i") then G.screen = (sc == "bag" and (G.bag_tab or 1) == 1) and nil or "bag"; G.bag_tab = 1
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
-        elseif pressed(input, "o") then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4
+        elseif pressed(input, "o") or (input.keys and input.keys.escape and sc == nil) then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4
         elseif pressed(input, "j") then G.screen = (sc == "bag" and G.bag_tab == 3) and nil or "bag"; G.bag_tab = 3 end
     end
     local drop = uikit.finish()

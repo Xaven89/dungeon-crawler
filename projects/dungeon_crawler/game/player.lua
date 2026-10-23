@@ -317,8 +317,15 @@ function P.attack()
         hit = true
     end
     if not hit then
-        -- the swing may break a barrel or a crate in reach
-        if G.traps and G.traps.swing_at then G.traps.swing_at(w.reach) end
+        -- the swing may open a chest (anywhere on it), set off a barrel, or just hit the wall
+        local T = G.traps
+        local c = T.crate_in_front(w.reach + 0.8, 0.45)
+        if c then
+            P.hitmark = now; P.hitmark_crit = false
+            fx.play("chip_wood", floor(units.vox(G.mx(c.cx))), floor(units.vox(G.my(c.cy + 0.3))), floor(units.vox(G.mz(c.cz))), 0.8)
+            T.open_crate(c.id); hit = true
+        elseif T.swing_at(w.reach) then hit = true
+        else T.swing_feedback(w.reach) end
     end
     return hit
 end

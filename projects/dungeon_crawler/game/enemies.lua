@@ -39,6 +39,11 @@ function E.define_fx()
             { class = "puff", material = mat, count = 4, size = 5, duration = 0.25, darkness = 0.15, direction = { 0, 1, 0 }, speed = 9, spread = 0.7 } } }
     end
     splat("splat_goo", "goo", 22); splat("splat_toxic", "toxic", 22); splat("splat_bone", "bone", 14); splat("splat_red", "carpet", 14); splat("splat_spore", "glowcap", 14)
+    fx.define{ name = "chip_stone", emitters = { { class = "debris", material = "stone", count = 16, speed = 30, speed_jitter = 0.6, spread = 0.9, life = 0.8, size = 1.8, radius = 1.5 },
+                                                  { class = "spark", material = "metal", count = 5, speed = 40, speed_jitter = 0.5, spread = 0.9, life = 0.3, size = 0.5, radius = 1 } } }
+    fx.define{ name = "chip_wood", emitters = { { class = "debris", material = "wood", count = 12, speed = 24, speed_jitter = 0.6, spread = 0.9, life = 0.8, size = 1.2, radius = 1 },
+                                                 { class = "puff", material = "wood", count = 2, size = 3, duration = 0.2, darkness = 0.1, direction = { 0, 1, 0 }, speed = 5, spread = 0.7 } } }
+    fx.define{ name = "chip_metal", emitters = { { class = "spark", material = "metal", count = 24, speed = 55, speed_jitter = 0.5, spread = 0.9, life = 0.5, size = 0.6, radius = 1 } } }
     fx.define{ name = "slash", emitters = { { class = "spark", material = "metal", count = 10, speed = 40, speed_jitter = 0.5, spread = 0.6, life = 0.4, size = 0.6, radius = 1, direction = { 0, 0.3, 1 } } } }
     fx.define{ name = "poof", emitters = { { class = "puff", material = "stone", count = 8, size = 6, duration = 0.3, darkness = 0.3, direction = { 0, 1, 0 }, speed = 8, spread = 0.9 } } }
 end
@@ -128,7 +133,7 @@ function E.damage(inst, amount, opts)
     inst.hp = inst.hp - amount
     inst.last_damage = time.tick()
     local x, y, z = wpos(inst)
-    P.hitmark = time.tick(); P.hitmark_crit = opts.crit
+    P.hitmark = time.tick(); P.hitmark_crit = opts.crit; P.hitmark_wall = false
     P.popup((opts.crit and "CRIT " or "") .. amount, opts.crit and "#ffd24a" or "#ffffff", opts.crit)
     G.sfx.play(opts.crit and "hit_crit" or "hit", nil, nil, nil, 0.8)
     if inst.T.hit_sfx then G.sfx.play(inst.T.hit_sfx, G.to_local(x, y, z)) end

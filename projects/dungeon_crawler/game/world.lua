@@ -144,6 +144,14 @@ end
 -- ================================================================================================ housekeeping: the engine's debug keys cannot be unbound (docs/INPUT.md), so the game defends itself
 
 function W.tick(t)
+    -- the title, the class choice, the shop and the end screen hold the player where he stands (the bag does not: it is opened in a fight)
+    local sc = G.screen
+    if sc == "title" or sc == "class" or sc == "shop" or sc == "end" then
+        if not G.frozen_at then local px, py, pz = player.pos(); G.frozen_at = { px, py, pz } end
+        player.teleport(G.frozen_at[1], G.frozen_at[2], G.frozen_at[3])
+    else
+        G.frozen_at = nil
+    end
     if t % 20 == 0 and G.state and G.state.class and not G.cutscene and camera.mode() == "editor" then camera.mode("first") end      -- the 0 key cycles into the free editor camera: a cheat view
     G.traps.tick_all(t)
     if W.tick_belt then W.tick_belt(t) end

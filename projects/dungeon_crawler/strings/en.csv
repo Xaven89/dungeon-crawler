@@ -221,7 +221,7 @@ ui.hp,HP
 ui.mp,MP
 ui.dead_title,YOU DIED
 ui.dead_sub,Your demise has been rescheduled.
-ui.help,"LMB / F attack    RMB / Q ability    E interact    R heal    T mana    G throw    I bag    C sheet    J achievements    O sound"
+ui.help,"LMB / F attack    RMB / Q ability    E interact    R heal    T mana    G throw    I bag    C sheet    J achievements    O / Esc sound settings"
 ui.interact,[E]
 ui.shop,Vending Machine of Mild Relief
 ui.buy,BUY
