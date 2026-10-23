@@ -206,3 +206,17 @@ Every item: the data, where it hooks into `AnimatedModels::pose()`, the determin
 | P7 agents | 0.5 |
 | P8 quadrupeds | 1.0 |
 | **Total** | **8.5 (9.5 with P6b)** |
+
+
+## The player's model (a body in the third-person view, a weapon in the first-person view)
+The player has no body of its own unless the level gives it one. Both are **rigged `.vxm` models** (the files and clips an agent's model has: `docs/ANIMATION.md` above), **drawn and nothing else**: they live in visual-only animated models (`AnimatedModels(..., visualOnly)`), not in the physics world, so nothing collides with them, they push nothing, they are in no hash and no recording (the file is copied into the clip like any model, so a replay draws them too).
+```lua
+player.model("models/hero.vxm", { idle = "idle", walk = "walk", run = "run", jump = "jump", swim = "swim", attack = "attack" })  -- the body; clip names default to these
+player.model_play("attack" [, speed])      -- a one-shot clip over the walking; when it is over the body goes back to what the player does
+player.model(nil)                          -- takes it away (the debug mannequin of the third-person camera comes back)
+player.hand_model("models/sword.vxm", { offset = {0.28, -0.28, 0.55}, turn = 0, idle = "idle" })   -- hangs on the camera: metres right, up, forward of it; `turn` degrees about the camera's up
+player.hand_play("swing" [, speed])        -- a one-shot (a swing); then the idle clip again;  player.hand_model(nil) takes it away
+```
+**The body** stands with its feet (the middle of the model's bottom) at the player's feet, faces the player's heading and **stands on the player's up** (a gravity flip turns it over), and picks its clip each tick from what the player does: swimming, in the air (`jump`), running (above 5 m/s), walking (above 0.3 m/s, the clip's speed follows the player's), standing; a clip the model lacks is skipped (it keeps what plays; a model with no walk or run clip is animated by the rules of its roles, as an agent without one: the legs swing by the distance walked). It is drawn from outside: third person, the editor camera and free MCP pictures (`screenshot {eye, target}`); not in the first-person view, where the hand model is. A level with a body does not get the box and nose of the third-person camera. Players 1..7 of a networked session: `player.model(file, opts, who)`.
+**The model in the hands** is placed on the camera every frame (not in the simulation), shown in the first-person view only. The model's front (+z) points away from the player at `turn = 0`; a sword is modelled pointing up (+y) and turned about the offset's middle.
+Not built: scaling a model, two models per player, a body for the other players' view of an agent-less peer without the file, mouse look of the head (`model.look_at` works on agents only).

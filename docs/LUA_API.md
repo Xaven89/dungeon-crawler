@@ -223,6 +223,7 @@ sound.hit("metal", speed [, size [, x, y, z]])
 sound.step(creature, material [, speed [, x, y, z]])   -- one footstep of that creature (footsteps.csv, docs/AUDIO.md "Footsteps")
 sound.load("sounds/door.wav")  --> index      -- WAV, relative to the project; -1 when unreadable
 sound.play("sounds/door.wav" | index, x, y, z [, volume [, pitch]])  --> true / false
+sound.play{ file, loop, bus = "sfx" | "music" | "voice", volume, pitch, at = {x, y, z}, fade_in }  --> handle   -- no `at`: 2D; sound.stop(h [, fade]) / sound.volume(h, v [, fade]) / sound.pitch(h, p [, fade]) / sound.bus(name, v)  (docs/AUDIO.md)
 ```
 Cosmetic: nothing is logged or hashed; there is no sound in headless runs, recordings, replays or MCP sessions.
 
@@ -262,3 +263,6 @@ A voxel (or a group of voxels) that is not connected through solid voxels to an 
 
 ### The sky
 `sky.set{ time = 0.75, speed = 0, fog = 2 }` sets the clock (0..1: 0 sunrise, 0.25 noon, 0.5 sunset, 0.75 midnight), how fast it runs (0 stands still, 1 is a day in ten minutes, up to 60) and a multiplier of the fog density; every key is optional (`time` alone keeps a running clock running and stands still otherwise). `sky.get()` gives `{time, speed, fog}`. Render only: nothing in the simulation reads the sky, so it is the same on every peer and in a replay (counted in ticks). `project.cfg` has `time`, `time_speed` and `fog` for the start; a biome's mood multiplies the fog again.
+
+### The player's body and hands
+`player.model(file | nil [, { idle, walk, run, jump, swim, attack }])` gives the player a rigged model (drawn in the third-person view and free pictures), `player.model_play(clip [, speed])` plays a one-shot over it, `player.hand_model(file | nil [, { offset = {right, up, forward}, idle, turn }])` and `player.hand_play(clip [, speed])` the same for a model in the first-person view. Render only, not simulated: docs/ANIMATION.md "The player's model".

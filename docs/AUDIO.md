@@ -60,3 +60,14 @@ Scripts' sounds are cosmetic like all of it: nothing about them is logged; a rep
 ## Not built
 
 Doppler, HRTF, sound files for music (a WAV plays through `sound.play` but there is no streaming or mixer UI), per-bed occlusion (a fire behind a wall is not muffled except by the room), a sound for bodies sliding / rolling, rain on materials (`DropSystem` could emit), liquid sounds at the player's feet.
+
+
+## Music, voices and sounds you can stop: `sound.play{...}` handles, buses, 2D sound, offline output
+```lua
+local m = sound.play{ file = "sounds/hall.wav", loop = true, bus = "music", volume = 0.6, fade_in = 2 }   -- no `at`: 2D, at the listener (no distance, no pan): music, the announcer's voice, a menu click
+local d = sound.play{ file = "sounds/drip.wav", at = {12, 3, 40}, pitch = 0.9 }                          -- with `at`: a place in the world (distance, pan, occlusion as always)
+sound.volume(m, 0.2, 1.5)     -- over 1.5 s;   sound.pitch(m, 1.1, 0.5);   sound.stop(m, 2)  (a stop fades out for 0.05 s unless told otherwise: no click)
+sound.bus("music", 0.5)       -- the volume of a bus (sfx, music, voice), 0..2: a game's sliders
+```
+`sound.play{...}` returns a **handle** (a number). The old call `sound.play(file, x, y, z, volume, pitch)` is unchanged (positional, fire and forget). A loop plays until it is stopped; the 64 voices are shared with the rest of the engine, a script's sounds are not stolen by a pile of impacts. Everything here is cosmetic: the handle table lives in the script host, handles are not in any hash or recording, and a machine without sound simply ignores them.
+**`voxelith --audio-out file.wav`** renders what a headless run, a replay or an MCP session would have played, tick by tick (800 frames at 48 kHz per tick, the same engine as the sound card), and writes the WAV when the program ends: `voxelith --replay log --audio-out run.wav` is how the sound of a recorded session is heard on a machine with no sound card (`--audio-demo` is the same engine on a tour of the built-in sounds).
