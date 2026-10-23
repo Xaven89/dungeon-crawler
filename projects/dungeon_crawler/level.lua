@@ -79,7 +79,7 @@ include("engine/equipment.lua")
 local BODIES = { janitor = "human_man_warrior", pyro = "human_demon_girl", bard = "human_woman_adventurer", accountant = "human_man_adventurer" }
 local WEAPON_LOOK = { mop = "models/items/mop.vxm", torch_used = "models/items/torch.vxm", lute = "models/items/lute.vxm", stapler = "models/items/stapler.vxm", sword_mild = "iron_sword.vxm", excalibur = "iron_sword.vxm", dagger_cd = "iron_sword.vxm", spoon = "iron_sword.vxm",
                       mace_pa = "battle_axe.vxm", axe_ot = "battle_axe.vxm", rolling = "battle_axe.vxm" }
-local HAND_FROM_FILE = { ["models/items/mop.vxm"] = true, ["models/items/torch.vxm"] = true, ["models/items/lute.vxm"] = true, ["models/items/stapler.vxm"] = true }
+local HAND_FROM_FILE = {}      -- (the tools' own `hand` blocks have no `swing` clip yet: ENGINE_FEEDBACK Phase 13; first person keeps models/sword.vxm)
 local CLASS_HAT = { pyro = "wizard_hat.vxm" }
 function G.kit()
     local s, kit = G.state, {}
