@@ -241,6 +241,7 @@ function F.load(seed, floor_n)
     F.gate_of(p)
     p.gate = F.gate_of(p)
     F.make_things(p, false)
+    G.show.redeclare()
 end
 
 function F.tick(t)
@@ -345,7 +346,7 @@ function F.enter_room(id, old)
     A.say_key("room." .. room.theme, { prio = 0, key = "room_" .. id, cooldown = 99999 }, room.name)
     if G.music and G.music.on_room then G.music.on_room(id) end
     G.safe = (room.role == "start" or room.role == "exit")
-    if G.safe then G.player.set_checkpoint(id) end
+    if G.safe then G.player.set_checkpoint(id); G.show.deliver(room) end
     if room.role == "boss" and not s.flags["gate_" .. id] and G.boss then after(120, function() if G.current_room == id then G.boss.begin(F.lair_of(p)) end end) end
     G.world.sync_active(id)
 end

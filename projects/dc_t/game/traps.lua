@@ -7,6 +7,7 @@ G.traps = T
 local floor, max, min = math.floor, math.max, math.min
 
 T.interact = {}      -- { name, x, y, z (local metres), radius, prompt, active = function }
+T.crate_loot = {}    -- crate id -> a list of item ids that replaces the tier's loot (a sponsor's joke)
 T.crate_hooks = {}   -- crate id -> function run when it is opened (events.on keeps only ONE callback per node: see ENGINE_FEEDBACK.md)
 T.barrels = {}
 T.hazards = {}
@@ -14,6 +15,7 @@ T.plates = {}
 
 -- a new floor: forget everything the old one registered (the nodes and bodies themselves go through gen/track.lua)
 function T.reset()
+    T.crate_loot = {}
     T.interact, T.crates, T.all_chests, T.crate_hooks, T.barrels, T.hazards, T.plates, T.doors = {}, {}, {}, {}, {}, {}, {}, nil
     T.floating_list, T.secret_wall, T.boulder = {}, nil, nil
     G.texts = {}
@@ -235,13 +237,15 @@ function T.open_crate(id)
         local n = G.irange(tdef.rolls[1], tdef.rolls[2])
         local gold = G.irange(tdef.gold[1], tdef.gold[2])
         G.enemies.drop(cx, cy + 0.3, cz, "gold", gold)
+        if T.crate_loot[id] then n = #T.crate_loot[id] end
         for i = 1, n do
-            local item = G.items.roll(tier, i * 31 + #id)
+            local item = T.crate_loot[id] and T.crate_loot[id][i] or G.items.roll(tier, i * 31 + #id)
             if tier == "platinum" and i == 1 then item = ({ "excalibur", "tux", "spoon" })[1 + (s.level or 1) % 3] end
             G.enemies.drop(cx + G.range(-0.4, 0.4), cy + 0.2 * i, cz + G.range(-0.4, 0.4), "item", item)
         end
         if T.crate_hooks[id] then T.crate_hooks[id]() end
     end)
+    if G.show then G.show.score(({ bronze = 4, silver = 7, gold = 12, platinum = 25 })[tier] or 4, nil) end
     local cnt = A.bump("crates")
     if cnt >= 5 then A.award("loot_goblin") end
     if tier == "gold" or tier == "platinum" then A.award("crate_exp") end

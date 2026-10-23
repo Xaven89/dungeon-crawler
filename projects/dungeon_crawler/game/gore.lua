@@ -58,6 +58,7 @@ function R.pay(n, cells)
     local gold = math.max(1, floor((cells or 0) / 60))      -- a spatter of a death is a few hundred voxels
     s.gold = s.gold + gold
     G.player.log("+" .. gold .. " gold (cleaning)", "#6fd0ff")
+    if G.show then G.show.score(n * 2, nil) end
     local total = G.announcer.bump("cleaned", n)
     if total >= 40 then G.announcer.award("clean_sweep") end
     G.announcer.say_key("gore.clean", { key = "gore_clean", cooldown = 1800 })

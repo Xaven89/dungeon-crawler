@@ -227,9 +227,13 @@ local function hud_world(w, h, input)
     ui.text(26, 20, tr("title"), { size = 28, color = C.gold })
     ui.text(26, 52, (H.floor_label and H.floor_label() or "FLOOR 1") .. "  " .. (room and room.name or "..."), { size = 20, color = C.dim })
     -- the top right: the show's numbers
-    local viewers = 11200431 + floor(t / 6) * 7 + s.kills * 1400 + s.deaths * 90000 + (s.ach_count or 0) * 25000
-    ui.text(w - 26, 20, "VIEWERS  " .. G.format_int(viewers), { size = 24, color = "#ff6a8a", align = "right" })
-    ui.text(w - 26, 50, string.format("kills %d   deaths %d   achievements %d/%d", s.kills, s.deaths, s.ach_count or 0, #G.announcer.order), { size = 18, color = C.dim, align = "right" })
+    local sh = G.show.st()
+    ui.text(w - 26, 20, tr("show.viewers") .. "  " .. G.format_int(sh.views > 0 and sh.views or G.show.viewers()), { size = 24, color = "#ff6a8a", align = "right" })
+    ui.text(w - 26, 50, string.format("%s %s   %s %d", tr("show.followers"), G.format_int(sh.followers), tr("show.favorites"), sh.favorites), { size = 18, color = "#ffd24a", align = "right" })
+    ui.text(w - 26, 74, string.format("kills %d   deaths %d   achievements %d/%d", s.kills, s.deaths, s.ach_count or 0, #G.announcer.order), { size = 16, color = C.dim, align = "right" })
+    -- the buzz: how loud the audience is right now
+    local buzz = min(1, sh.buzz / 150)
+    if buzz > 0.02 then bar(w - 226, 100, 200, 8, buzz, buzz > 0.6 and "#ff4fa3" or "#c0508a", "#12141c99") end
     -- the help line while the run is young
     if t < 4000 and not G.screen then ui.text(w / 2, h - 118, tr("ui.help"), { size = 20, color = "#ffffff80", align = "center" }) end
 end
@@ -525,7 +529,7 @@ local function end_screen(w, h, input)
         ui.text(w / 2 - 20, 360 + i * 46, r[1], { size = 30, color = C.dim, align = "right" })
         ui.text(w / 2 + 20, 360 + i * 46, r[2], { size = 30, color = "#ffffff" })
     end
-    if uikit.button("end_descend", tr("ui.descend", (G.run.floor_no() or 1) + 1), w / 2 - 190, 650, 380, 56, { color = C.gold }) then ui.run("Game.run.descend()") end
+    if uikit.button("end_descend", tr("ui.descend", (G.run.floor_no() or 1) + 1), w / 2 - 190, 650, 380, 56, { color = C.gold }) then ui.run("Game.run.descend(true)") end
     if uikit.button("end_continue", "Keep exploring Floor " .. (G.run.floor_no() or 1), w / 2 - 190, 720, 380, 56) then ui.run("Game.close_end()") end
 end
 
@@ -550,10 +554,11 @@ function H.draw(dt)
     elseif sc == "bag" then bag_screen(w, h, input)
     elseif sc == "shop" then shop_screen(w, h, input)
     elseif sc == "death" then death_screen(w, h)
-    elseif sc == "end" then end_screen(w, h, input) end
+    elseif sc == "end" then end_screen(w, h, input)
+    elseif sc == "recap" then H.recap_screen(w, h, input) end
     H.announcer(w, h)
     -- keys (only when no modal asks for the pointer)
-    if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" and sc ~= "run" and sc ~= "loading" then
+    if s.class and sc ~= "death" and sc ~= "class" and sc ~= "end" and sc ~= "title" and sc ~= "run" and sc ~= "loading" and sc ~= "recap" then
         if pressed(input, "i") then G.screen = (sc == "bag" and (G.bag_tab or 1) == 1) and nil or "bag"; G.bag_tab = 1
         elseif pressed(input, "c") then G.screen = (sc == "bag" and G.bag_tab == 2) and nil or "bag"; G.bag_tab = 2
         elseif pressed(input, "o") or (input.keys and input.keys.escape and sc == nil) then G.screen = (sc == "bag" and G.bag_tab == 4) and nil or "bag"; G.bag_tab = 4

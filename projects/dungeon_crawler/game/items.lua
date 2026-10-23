@@ -63,6 +63,11 @@ def("gnome",      { kind = "junk", name = "Garden Gnome (Suspicious)",    desc =
 def("goldtooth",  { kind = "junk", name = "Gold Tooth",                   desc = "Not yours. Not anymore.",                            value = 30, rarity = "uncommon" })
 def("gem",        { kind = "junk", name = "Gem of Moderate Sparkle",      desc = "A rock that learned to network.",                    value = 55, rarity = "rare" })
 
+-- the sponsors' jokes
+def("rubber_chicken", { kind = "weapon", name = "Rubber Chicken (Sponsored)", desc = "Squeaks when it hits. It hits for almost nothing. The sponsor is very proud.", dmg = { 2, 4 }, reach = 2.3, cd = 16, value = 1 })
+def("branded_water", { kind = "consumable", name = "Hydration Unit No. 9", desc = "Restores 12 health and 12 mana. Contains a logo.", heal = 12, mana = 12, value = 4 })
+def("autograph", { kind = "junk", name = "Signed Photo of Somebody", desc = "Signed by someone you would rather not meet. Worth something to somebody.", value = 25, rarity = "uncommon" })
+
 -- the loot tables: lists of ids per box tier
 I.tables = {
     bronze   = { "smoothie", "bandage", "energy", "cardboard", "hairball", "receipt", "sword_mild", "dagger_cd", "duck", "firecracker", "hivis" },

@@ -35,10 +35,18 @@ def fight(v, room, max_ticks=2400, step=60):
         out = L(v, """
 local G = Game
 if G.player.dead then return end
+local px, py, pz = player.pos(); local lx, ly, lz = G.to_local(px, py, pz)
+local r = G.floorgen.layout.rooms['%s']
+if lx < r.x - 8 or lx > r.x + r.w + 8 or lz < r.z - 8 or lz > r.z + r.d + 8 then player.teleport(G.mx(r.x + 2.2), G.my(0.1), G.mz(r.z + 2.2)) end
 if G.state.hp < G.player.max_hp() * 0.45 then G.player.quick('heal') end
-print(G.enemies.alive_in('%s'), math.floor(G.state.hp), G.state.deaths)""" % room, step)
+print(G.enemies.alive_in('%s'), math.floor(G.state.hp), G.state.deaths)""" % (room, room), step)
         v.tool("input_action", name="ability", down=True, player=0)
         t += step
+        if t >= 240 and t % 240 == 0:        # (the bot cannot search a room: it goes to the nearest enemy that is still alive)
+            L(v, """local G=Game; local best, bd
+local px, py, pz = player.pos()
+for _, i in pairs(G.enemies.list) do if not i.dead and i.room == '%s' then local x, y, z = G.enemies.position(i); if x then local d = G.dist2(x, z, px, pz); if not bd or d < bd then best, bd = { x, y, z }, d end end end end
+if best and bd > 6 then player.teleport(best[1] + 1.8, best[2] + 0.1, best[3]) end""" % room, 1)
         if out and out[0].split("\t")[0] == "0": break
     v.tool("input_action", name="attack", down=False, player=0)
     L(v, "Game.autoaim = false", 0)
@@ -62,7 +70,8 @@ print(p.floor, p.n, table.concat(ids, ','))""", 0)[0].split("\t")
             rooms = [x.split(":") for x in info[2].split(",")]
             order = [r for r in rooms if r[1] == "room"] + [r for r in rooms if r[1] == "boss"] + [r for r in rooms if r[1] == "exit"]
             for rid, role, theme in order:
-                L(v, "local G=Game; local r=G.floorgen.layout.rooms['%s']; player.teleport(G.mx(r.x+r.w/2), G.my(0.1), G.mz(r.z+r.d/2))" % rid, 150)
+                # (a spot on the walkway near the corner: the middle of a furnace is lava, of a flooded room sludge)
+                L(v, "local G=Game; local r=G.floorgen.layout.rooms['%s']; local edge = r.role == 'room'; player.teleport(G.mx(r.x + (edge and 2.2 or r.w/2)), G.my(0.1), G.mz(r.z + (edge and 2.2 or r.d/2)))" % rid, 150)
                 if role == "exit": break
                 if role == "boss": v.step(500)
                 t, kills, end = fight(v, rid, 3600 if role == "boss" else 2400)

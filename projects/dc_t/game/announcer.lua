@@ -167,6 +167,7 @@ function A.award(id)
     G.state.ach_count = (G.state.ach_count or 0) + 1
     A.toasts[#A.toasts + 1] = { id = id, t = time.tick() }
     G.sfx.play("achievement")
+    if G.show then G.show.score(25, nil) end
     A.say(tr("achievement." .. id .. ".line"), { prio = 1, key = "ach_" .. id, cooldown = 1 })
     if G.player and G.player.add_xp then G.player.add_xp(A.defs[id].xp, "achievement") end
     G.save()

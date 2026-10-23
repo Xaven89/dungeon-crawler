@@ -27,7 +27,7 @@ local function pool(room, ctx, fluid, depth, surface_y)
     end
     return { x0 = x0, z0 = z0, x1 = x1, z1 = z1 }, { x = cx, z = cz }
 end
-local function outside(pl) return function(x, z) return x < pl.x0 - 1 or x > pl.x1 + 1 or z < pl.z0 - 1 or z > pl.z1 + 1 end end
+local function outside(pl) return function(x, z) return x < pl.x0 - 0.6 or x > pl.x1 + 0.6 or z < pl.z0 - 0.6 or z > pl.z1 + 0.6 end end
 local function pool_rect(room) local x0, z0, x1, z1 = inner(room, 4); return { x0 = x0, z0 = z0, x1 = x1, z1 = z1 } end
 
 -- ---------------------------------------------------------------------------------------------- furnace: a lava pool
@@ -54,7 +54,7 @@ F.register("furnace", {
         T.hazard("lava", pl.x0, -3.4, pl.z0, pl.x1, 0.35, pl.z1, 28 + ctx.floor * 2)
         local tier = ctx.floor >= 3 and "gold" or "silver"
         ctx.crate(room, tier, cx - 0.6, cz - 0.4, "+z", 0)
-        F.populate(room, ctx, r, F.head_count(room, ctx.floor, r) - 1, { allow = outside(pl), kinds = { { "goblin", 4 }, { "spitter", 3 }, { "slime_toxic", 1 }, { "intern", 2 } } })
+        F.populate(room, ctx, r, F.head_count(room, ctx.floor, r) - 1, { allow = outside(pl), margin = 1.2, kinds = { { "goblin", 4 }, { "spitter", 3 }, { "slime_toxic", 1 }, { "intern", 2 } } })
     end,
 })
 
@@ -82,7 +82,7 @@ F.register("flooded", {
         emitter.create{ name = room.id .. "_mist", preset = "steam_vent", pos = { G.mx(cx), G.my(0), G.mz(cz) }, rate = 10, size = { (pl.x1 - pl.x0) / 3, 0.3, (pl.z1 - pl.z0) / 3 } }
         T.hazard("toxic", pl.x0, -1.8, pl.z0, pl.x1, -0.2, pl.z1, 4)
         ctx.crate(room, "silver", cx - 0.6, cz - 0.4, "+z", 0)
-        F.populate(room, ctx, r, F.head_count(room, ctx.floor, r), { allow = outside(pl), kinds = { { "slime_toxic", 4 }, { "slime", 3 }, { "rat", 4 }, { "spitter", 1 } } })
+        F.populate(room, ctx, r, F.head_count(room, ctx.floor, r), { allow = outside(pl), margin = 1.2, kinds = { { "slime_toxic", 4 }, { "slime", 3 }, { "rat", 4 }, { "spitter", 1 } } })
     end,
 })
 

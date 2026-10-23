@@ -31,8 +31,9 @@ function F.populate(room, ctx, rng, n, opts)
     local tries = 0
     while #placed < n and tries < n * 40 do
         tries = tries + 1
-        local x = room.x + 3 + rng.next() * (room.w - 6)
-        local z = room.z + 3 + rng.next() * (room.d - 6)
+        local m = opts.margin or 3
+        local x = room.x + m + rng.next() * (room.w - 2 * m)
+        local z = room.z + m + rng.next() * (room.d - 2 * m)
         local ok = not ctx.near_door(room, x, z, 5) and (not opts.allow or opts.allow(x, z))
         if ok then for _, q in ipairs(placed) do if G.dist2(x, z, q[1], q[2]) < 2.5 then ok = false; break end end end
         if ok then placed[#placed + 1] = { x, z } end

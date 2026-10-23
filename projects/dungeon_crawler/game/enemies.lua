@@ -44,7 +44,7 @@ E.types = {
               anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "goblin_die", loot = "silver", loot_chance = 0.6, wander = 1.5 },
     cyclops = { model = "figures/monster_cyclop_pink", name = "Cyclops Auditor", hp = 520, dmg = 27, speed = 1.9, reach = 3.0, aggro = 18, xp = 220, gold = { 50, 90 }, cd = 100, height = 3.1, radius = 1.0, miniboss = true,
                 anim = "clip", die_clip = true, kit = { main_hand = "battle_axe.vxm" }, splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "gold", loot_chance = 1 },
-    golem = { model = "figures/monster_gold_golem", name = "The Golden Parachute", hp = 1000, dmg = 30, speed = 1.7, reach = 3.4, aggro = 40, xp = 520, gold = { 200, 320 }, cd = 110, height = 3.4, radius = 1.3, boss = true,
+    golem = { model = "figures/monster_gold_golem", name = "The Golden Parachute", hp = 800, dmg = 26, speed = 1.7, reach = 3.4, aggro = 40, xp = 520, gold = { 200, 320 }, cd = 130, height = 3.4, radius = 1.3, boss = true,
               anim = "clip", die_clip = true, clips = { summon = "cast", throw = "cast", slam = "attack", roar = "cast" }, minion = "orc", splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "platinum", loot_chance = 1 },
 }
 
@@ -196,6 +196,7 @@ function E.damage(inst, amount, opts)
     if opts.burn and G.rand() < opts.burn then E.ignite(inst) end
     -- aggro: whoever hits it is its business now
     if inst.state == "idle" then E.aggro(inst) end
+    if G.show and opts.source ~= "test" then G.show.on_hit(amount) end
     if inst.hp <= 0 then E.kill(inst, opts); return end
     -- a flinch (the clip), a stun for the big hits
     local T = inst.T
@@ -251,6 +252,7 @@ function E.kill(inst, opts)
     -- overkill: more than twice the hp that was left
     if inst.hp < -inst.max_hp * 0.8 then A.award("overkill") end
     if inst.kind == "slime" or inst.kind == "slime_toxic" then if (A.bump("slimes") or 0) >= 10 then A.award("squeegee") end end
+    if G.show then G.show.on_kill(inst, opts) end
     if inst.burning then A.award("pyro") end
     if x then
         G.gore.wound(inst, x, y + inst.height * 0.4, z, true)

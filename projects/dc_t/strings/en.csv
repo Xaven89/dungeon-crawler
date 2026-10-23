@@ -303,3 +303,41 @@ room.depot.1,"{1}. Everything in here is flammable and labelled with a joke. Cho
 room.prize.1,"{1}. Choose one prize. Choose well. The prizes are watching."
 boss.intro_golem.1,"Please welcome THE GOLDEN PARACHUTE: eleven tons of severance package. He is here to terminate your contract. Permanently. With a fist."
 boss.intro_golem.2,"His rating: 4 stars out of 5. His HP: a lot. His mood: gilded."
+kill.miniboss.1,"{1} has been let go. The severance package was a fist, as agreed."
+kill.miniboss.2,"{1} is down. The audience is delighted, the union is silent and the carpet is ruined."
+show.viewers,VIEWERS
+show.followers,FOLLOWERS
+show.favorites,FAVORITES
+show.favorite,"A FAVORITE! (a sponsor is looking at you)"
+show.kill,SPECTACLE
+show.boss,BOSS DOWN
+show.miniboss,MINIBOSS DOWN
+show.barrel,BOOM
+show.boulder,ROCK AND ROLL
+show.fire,FLAMBE
+show.combo,COMBO x{1}
+show.combo.1,"A combo of {1}! The audience is making a noise. It is a good noise. Possibly."
+show.combo.2,"{1} in a row. Somebody in the cheap seats just fainted. Metaphorically."
+show.sponsor.1,"{1} has seen you perform and sent {2} box(es) to the safe room. They are watching to see how you use them."
+show.sponsor.2,"A gift from {1}, delivered at their own expense, which is yours. Please open it on camera."
+show.thanks.1,"{1}: 'Thank you for being associated with us.' That is the whole message. It is a lot."
+show.troll.1,"{1} sends their regards and a joke. The joke is the box."
+show.troll.2,"A box from {1}. The sponsor wanted you to have something that shows how much they care. It does."
+show.rank.S,"RANK S. The audience will talk about this for days. The audience has nothing else going on."
+show.rank.A,"RANK A. Strong performance. Please do it again, harder."
+show.rank.B,"RANK B. Respectable carnage. Sponsors are 'cautiously positive', which means they have not left."
+show.rank.C,"RANK C. You were there. Things happened near you. It was fine."
+show.rank.D,"RANK D. You walked through a floor like it was a corridor. The audience checked its phone."
+recap.title,FLOOR {1} RECAP
+recap.sub,"A message from your producers, paid for by your sponsors."
+recap.time,Time on the floor
+recap.kills,Kills
+recap.best_hit,Best hit
+recap.combo,Best combo
+recap.gold,Gold earned
+recap.crates,Crates opened
+recap.stains,Stains mopped
+recap.deaths,Deaths
+recap.lowlight,Lowlight (worst hit)
+recap.rank,SPECTACLE
+recap.back,Back to the stairwell

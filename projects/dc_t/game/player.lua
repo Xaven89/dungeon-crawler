@@ -176,6 +176,7 @@ function P.hurt(amount, src, opts)
     end
     amount = floor(amount + 0.5)
     s.hp = s.hp - amount
+    if G.show then G.show.on_hurt(amount, src) end
     P.flash = time.tick()
     P.last_hurt = time.tick()
     P.popup("-" .. amount, "#ff6060")
@@ -200,6 +201,7 @@ function P.die(src)
     local lost = floor(s.gold * 0.2)
     s.gold = s.gold - lost
     P.death_gold_lost = lost
+    if G.show then G.show.score(30, "DEATH (audience favourite)") end
     P.death_src = src or "something"
     G.screen = "death"
     G.sfx.play("death")

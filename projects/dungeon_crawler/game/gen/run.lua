@@ -78,13 +78,17 @@ function R.floor_ready(n)
     player.teleport(G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2))
     G.screen = nil
     G.announcer.say_key("floor.arrive", { prio = 2 }, n)
+    if G.companion and G.companion.id then G.companion.respawn() end
+    G.show.floor_begin()
+    G.show.deliver(r)
     G.save()
 end
 
 -- the stairs down (the button in the exit stairwell, or the end screen of the Orientation)
-function R.descend()
+function R.descend(confirmed)
     local run = R.cur()
     if not run or G.screen == "loading" then return end
+    if not confirmed and run.mode == "gen" then G.show.open_recap(); return end        -- the recap first; its button comes back here
     G.screen = nil
     if run.mode == "orientation" then run.mode = "gen" end
     R.begin_floor(run.floor + 1)
