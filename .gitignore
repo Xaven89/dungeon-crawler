@@ -7,3 +7,5 @@ __pycache__/
 .prefabs/
 *.ini
 projects/*/dev/flags.lua
+bin/
+lib/

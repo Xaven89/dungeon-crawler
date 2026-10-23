@@ -37,6 +37,16 @@ Alternatives considered and left: (a) a second per-voxel byte plane next to the 
 ## Tools (stage C)
 Paint tool: a texture choice next to the colour (colour only, texture only, both); MCP `paint` / `region` `texture`; Lua `edit.texture_sphere / box`; workspace shape ops `"texture": name`; a small texture editor window (kind, scale, width, colours, an 8 x 8 pixel grid, a library list, save to `textures.json`), the texture of the voxel under the pointer on the middle button (eyedropper).
 
+## `textures.json`: a file to copy
+```json
+{ "textures": [
+  { "name": "skull", "kind": "tile", "palette": ["#00000000", "#e0e0e0ff", "#101010ff", "#000000ff"],
+    "pixels": "00111100/01111110/11211211/11111111/01122110/00111100/00122100/00000000" },
+  { "name": "mossy_brick", "kind": "brick", "color": "#556b2f", "color2": "#8a8a7a", "scale": 2 }
+] }
+```
+`kind` is a procedural kind (`flat brick planks tiles blocks stripes speckle noise ...`) or `tile`: an 8 x 8 picture, `pixels` is 8 rows of 8 digits `0..3` joined by `/`, `palette` the four colours (`#rrggbbaa`, digit 0 is usually clear). A file **without** ids adds to the built-ins (a new one gets the next free id, the file is rewritten with ids at the next save); a file **with** ids is the whole table. A bare JSON array is not the format (`{"textures": [...]}`). `--check-project` reads the file, so a level that uses `edit.texture_box(..., "skull")` checks clean.
+
 ## Order of work
 A. data (this note's items 1 to 6 for the voxel, bricks, `.vxm`, helpers, tests) -> B. the table and its GPU upload, the shader reading it -> C. paint tool / MCP / Lua / workspace -> D. the editor window. The conveyor belt (docs/CONVEYOR.md) scrolls a texture along a face: it needs B.
 

@@ -116,7 +116,8 @@ name = Moon pool         seed = 1337        world = 250
 lua = level.lua          materials = materials.csv      settings = settings.ini
 spot = 1                 save = world.vxs      terrain = demo | flat | biomes
 ```
-`--project dir` runs it. Edited chunks are written to the `save` file when you press F11 and when the game exits; the next run loads them back.
+`--project dir` runs it. Edited chunks are written to the `save` file when you press F11 and when the game exits; the next run loads them back. **A headless run (`--headless`) reads the save and the project's files and never writes them** (give `--save file` to write one); an MCP session does neither unless `--save` says so.
+`game = on` makes the project a game, not the sandbox (no digging, undo, rain, clock, fly, teleports or debug keys: docs/INPUT.md "Game mode"); `--game` does the same from the command line, `--debug-keys` brings back F1 to F10 / the number keys / M for the author.
 `terrain = flat` starts the level on an empty grass plain (`world` chunks of 4 m on a side, ground at 25 m, the player in the middle, only the ground's gravity): none of the demo's tower, planetoids, flip room, tubes and liquid yard, so `world.flat_spot` and fixed coordinates just work. The default, `demo`, is the island of the demo level. `terrain = biomes` makes the world from a climate and a biome table (plains, forest, desert, mountain, tundra), with trees by region and optional caves: docs/WORLD_GEN.md.
 `--check-project` runs the level script for ten seconds on a flat stone world, not on the world the project will have: take a building site from `world.top` / `player.pos()`, not from fixed coordinates.
 Level scripts: see `docs/LUA_API.md`.
@@ -189,4 +190,13 @@ format (`# voxelith replay 2`); logs of older builds are refused. While recordin
 ## Other things to try
 - **Sound** (docs/AUDIO.md), **key and controller bindings** (docs/INPUT.md), **saves and `project.store`** (docs/SAVES.md), **a game HUD from Lua** (docs/HUD.md), **mod packs** (docs/PACKS.md), **vehicles** (docs/VEHICLES.md), **walking agents and `nav.path`** (docs/AGENTS.md), **languages and subtitles** (docs/LOCALIZATION.md, docs/ACCESSIBILITY.md), **crash reports and autosave** (docs/RESILIENCE.md).
 - **Playing together** (docs/NETWORK.md): `voxelith --net-host 7777 --net-players 2` on one machine and `voxelith --net-join HOST:7777` on the other (same build, same project); `--net-open --net-min 1` lets people join while it runs. Over the internet use an SSH tunnel (`ssh -L 7777:localhost:7777 host`).
-- **Testing the window without a screen**: `Xvfb :95 &` then `DISPLAY=:95 voxelith --windowed ...` and `DISPLAY=:95 tools/xdrive.py key e 0.3 key F5 0.3` (ctest `window` does this).
+- **Testing the window without a screen**: `Xvfb :95 &` then `DISPLAY=:95 voxelith --windowed ...` and `DISPLAY=:95 tools/xdrive.py key e 0.3 key F5 0.3` (ctest `window` does this; the packaged engine has `tools/xdrive.py` too).
+
+
+## The packaged engine (a folder you got as a tar.gz or `cmake --install`)
+```
+./voxelith --project projects/demo_level          # the launcher sets the library path; bin/voxelith is the program, bin/shaders its shaders
+./voxelith --mcp --project projects/mygame --threads 3    # the MCP server (docs/MCP.md); tools/voxelith_client.py talks to it from Python
+./voxelith --check-project projects/mygame        # what is wrong with a project, with the line numbers
+```
+`assets/prefabs` (the starter kit of models), `assets/lib` (the Lua library: `include("engine/ui_kit.lua")`, `include("engine/inventory.lua")`), `docs/`, `projects/demo_level` and `tools/` (`voxelith_client.py`, `make_prefabs.py`, `make_creatures.py`: how models are generated from code; `xdrive.py`, `xin.py`, `xfuzz.py`, `window_test.sh`: driving a windowed session in Xvfb) live next to `bin/`. `--dump-materials [--materials file.csv]` writes the built-in material table (to `materials.csv` in the current directory when no file is named; it says where first).

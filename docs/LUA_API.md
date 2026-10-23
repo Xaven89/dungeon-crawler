@@ -167,7 +167,7 @@ player.me()                  -- on_hud only: the id of the player this machine p
 -- vehicle.enter(id, i), vehicle.exit(i), vehicle.seated(i), body.grab(id, dist, i), body.release(i), body.throw(speed, i), body.grabbed(i) act for player i
 time.tick()  time.seconds()   -- the tick being run (the same number on_tick(t) and the timers see)
 after(ticks, fn) --> id       every(ticks, fn) --> id    cancel(id)       -- timers (60 ticks = 1 s)
-include("other.lua")          -- relative to the script
+include("other.lua")          -- relative to the script; `include_optional("dev/x.lua")` is the same but returns false for a file that is not there; `file_exists("x.lua")` asks
 print(...)  log(...)          -- to the log
 ```
 
@@ -207,7 +207,7 @@ id = events.gravity_target { name = "room", field = flip, presets = { {{0, -1, 0
 id = events.spawner { name = "drop", pos = {x, y, z}, kind = "box", size = {16, 16, 16}, material = "wood", impulse = 0 }   -- spawn: a body at pos (metres), `impulse` = upward speed m/s
 id = events.effect  { name = "pop", effect = "sparks", pos = {x, y, z}, scale = 1 }                                        -- play
 events.connect(from, "on", to, "toggle" [, { delay = 30, arg = 0 }])     -- (logic `set`: arg = +(input index + 1) sets that input on, -(index + 1) off)     -- signals: on off pulse stay (aliases pressed enter exit opened closed blocked); commands: on off toggle open close stop press enable disable
-events.on(id, "on", function(ev) print(ev.name, ev.signal, ev.tick) end)  -- a function called when the node sends the signal (dropped on a hot reload: declare it in on_start / on_reload)
+local h = events.on(id, "on", function(ev) print(ev.name, ev.signal, ev.tick) end)  -- a function called when the node sends the signal (dropped on a hot reload: declare it in on_start / on_reload); several on one node and signal all run, in the order they were made; the handle goes to `events.off(h)`
 events.fire(id [, "on"])   events.command(id, "open")   events.enable(id, false)   events.remove(id)   id = events.find("name")   events.tag(body_id, "key")
 st = events.state(id)      -- { name, kind, level, enabled; doors: open, moving, position, remaining, blocked (swing doors: angle_deg, body, at_stop; position is 0 or 90); volumes: player, bodies }
 ```
@@ -252,3 +252,10 @@ ui.button(label, x, y, w, h) -> clicked      ui.mouse() -> {x, y, down, clicked}
 
 ## Vehicles, agents, navigation
 `vehicle.spawn / drive / enter / exit / info / list / seated / remove` (docs/VEHICLES.md), `agent.spawn{..., creature = "horse"} (whose feet sound like footsteps.csv says) / walk / follow / wander / stop / speed / info / list / remove`, the callback `on_agent(id, what)`, `nav.path / nav.floor` (docs/AGENTS.md). In a networked session these act for the host's player (`vehicle.enter`, `body.grab`) because the script runs identically on every peer.
+
+
+### Custom input actions (docs/INPUT.md)
+`on_action(name, down, player)` is called in the simulation when a custom action of `input.cfg` (`action.NAME = ...`) goes down or up; `input.down(name [, player])` is true while that player holds it. Both follow the logged actions, so they replay and agree between players.
+
+### Props that touch nothing fall
+A voxel (or a group of voxels) that is not connected through solid voxels to an **anchor** material (the `anchor` flag of `materials.csv`: stone, the ground and the like) becomes a loose body and falls when the tick starts, so a sconce, a sign letter or a crystal built one voxel away from its wall drops to the floor. Build props touching their support, or give the support an anchor material. `status` shows the `bodies` count (a jump after `on_start` is this).
