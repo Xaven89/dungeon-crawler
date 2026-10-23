@@ -1,5 +1,6 @@
 -- THE DESCENT: Season 7, Floor 1. The entry point: includes the modules and wires the engine callbacks. See GAME.md.
 include("game/core.lua")
+include("game/gen/layout.lua")
 include("game/items.lua")
 include("game/announcer.lua")
 include("game/player.lua")
