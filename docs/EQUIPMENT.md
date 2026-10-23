@@ -84,3 +84,10 @@ The child has its own voxel scale (`scale`, e.g. a fine sword on a coarse figure
 see its real speed (a swung blade is not smeared). It costs the item's bodies (a sword of one part: one), which count against the renderer's 48 bodies per 16 x 16 tile (docs/ANIMATION.md): **merge what is rigid, attach what must
 move on its own**, at most 8 attached bodies per figure. When the part the item hangs from has no body (hidden, destroyed) the item is not drawn until it does. Removing the parent (or `detach`, or another item in the same slot)
 removes the child and gives its bricks back. A moved parent (`model.move`) takes its children along without a speed; items may hang on items four deep.
+
+## The kit's sample items
+
+`assets/prefabs/props/items` (plain names, made by `tools/make_items.py`; all at voxel scale 0.6, one part, pointing +y with an `anchor` part, a `hand` block for the held ones): **weapons** `iron_sword` (1 m), `battle_axe`, `wooden_staff`;
+**worn** `iron_helmet`, `wizard_hat` (`head_top`), `pauldron` (`shoulder_l/r`, mirror it), `cape` (`back`, a 3-link spring chain, attach mode), `round_shield` (`grip_l`, faces +z);
+**the office kit** `mop`, `torch` (the flame is the emissive `flame` material), `lute`, `stapler`, `clipboard`, `calculator`. Held items face outward from the carrier in the `ready` stance (a clipboard shows its paper to the viewer);
+`rot = {0, 180, 0}` turns one to face the carrier. `tools/item_anchor.py` makes an item from a loose `.vox`; a new one in `make_items.py` is a ten-line function.

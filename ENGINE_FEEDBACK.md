@@ -295,3 +295,8 @@ Used: `equipment.apply` with main_hand (staff / sword / axe), shoulders (mirrore
 - Our weapons without a kit model (lute, firecracker) show nothing in the hand, and the mop is a wooden staff: the kit lacks a few tools (broom/mop, torch, lute, stapler). Not an engine problem; we may generate them with tools/make_prefabs.py later.
 - The idle clip has to be set by the game when something is held (`ready`): `equipment.stance` exists but I bypassed it (the helper's state is reset after `player.model`, because `reapply` needs the old kit).
 - Not tried: `torso` (replace slot), `off_hand` (shield), agents with `equipment.agent` (enemies carrying things).
+
+## Phase 13 notes (mop, torch, lute, stapler in the kit)
+All four look right on the four bodies (third person, ~/share/gore/40_*, 42_mop_side.png) and, through their `hand` block, in first person (41_*): the mop is big and bright on screen (about a third of the width), the torch's flame glows, fine.
+- **`player.hand_model("mop.vxm")` does not resolve kit plain names** (`player.hand_model: .../projects/X/mop.vxm: cannot read`), while `model.attach` does (docs/EQUIPMENT.md: "a kit model by its plain name"). `equipment.apply` passes the same file to both, so a main_hand with `hand = true` fails for a kit name. Workaround: copy the files to `models/items/`. Please let `player.hand_model` resolve them too.
+- The enemies' own models (intern, goblin_sales, ...) have no sockets, so the clipboard and calculator cannot be given to them without a rig edit (`model_rig_set { sockets }`): not tried.

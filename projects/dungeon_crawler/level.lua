@@ -77,13 +77,14 @@ include("engine/equipment.lua")
 -- the contestant's body by class: the kit's rigged figures (finer voxels than the world, docs/ANIMATION.md "Voxel scale"); the Hero model before a class is chosen.
 -- What is equipped (items.lua) is drawn on it (docs/EQUIPMENT.md): the kit's item models, merged into the body, no extra bodies.
 local BODIES = { janitor = "human_man_warrior", pyro = "human_demon_girl", bard = "human_woman_adventurer", accountant = "human_man_adventurer" }
-local WEAPON_LOOK = { mop = "wooden_staff.vxm", torch_used = "wooden_staff.vxm", sword_mild = "iron_sword.vxm", excalibur = "iron_sword.vxm", dagger_cd = "iron_sword.vxm", spoon = "iron_sword.vxm",
-                      stapler = "iron_sword.vxm", mace_pa = "battle_axe.vxm", axe_ot = "battle_axe.vxm", rolling = "battle_axe.vxm" }
+local WEAPON_LOOK = { mop = "models/items/mop.vxm", torch_used = "models/items/torch.vxm", lute = "models/items/lute.vxm", stapler = "models/items/stapler.vxm", sword_mild = "iron_sword.vxm", excalibur = "iron_sword.vxm", dagger_cd = "iron_sword.vxm", spoon = "iron_sword.vxm",
+                      mace_pa = "battle_axe.vxm", axe_ot = "battle_axe.vxm", rolling = "battle_axe.vxm" }
+local HAND_FROM_FILE = { ["models/items/mop.vxm"] = true, ["models/items/torch.vxm"] = true, ["models/items/lute.vxm"] = true, ["models/items/stapler.vxm"] = true }
 local CLASS_HAT = { pyro = "wizard_hat.vxm" }
 function G.kit()
     local s, kit = G.state, {}
     local w = s.equip.weapon and WEAPON_LOOK[s.equip.weapon]
-    if w then kit.main_hand = { file = w, hand = false } end           -- (the first-person hand keeps the game's own sword.vxm)
+    if w then kit.main_hand = { file = w, hand = HAND_FROM_FILE[w] or false } end      -- (first person: the item's own `hand` block for the tools, the game's own sword.vxm for blades)
     local a = s.equip.armor
     if a == "potlid" then kit.shoulders = { file = "pauldron.vxm", mirror = true }
     elseif a == "tux" or a == "bathrobe" then kit.back = { file = "cape.vxm" }
@@ -97,7 +98,7 @@ function G.setup_player_models()
     player.model(body and ("models/figures/" .. body .. ".vxm") or "models/hero.vxm", { idle = body and kit.main_hand and "ready" or "idle", walk = "walk", attack = "attack" })
     equipment.state.p0 = nil                                          -- (a new player.model starts bare)
     if body then equipment.apply(equipment.player(0), kit) end
-    player.hand_model("models/sword.vxm", { offset = { 0.35, -0.05, 1.0 }, turn = 0, idle = "idle" })
+    if not (kit.main_hand and kit.main_hand.hand) then player.hand_model("models/sword.vxm", { offset = { 0.35, -0.05, 1.0 }, turn = 0, idle = "idle" }) end
 end
 
 function on_tick(t)
