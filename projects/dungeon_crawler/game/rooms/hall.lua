@@ -48,7 +48,7 @@ W.things[#W.things + 1] = function()
     for x = 38, 70, 8 do G.lamp(x, 11, 7.0, 1.2, { reach = 12 }) end
     G.torch(70, 2.4, 4, { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 9, name = "hall_crystal" })
     G.torch(36.5, 1.5, 31.5, { reach = 9 })
-    emitter.create{ name = "hall_dust", preset = "dust_motes", pos = { G.mx(51), G.my(3.5), G.mz(11) }, size = { 18, 3, 7 } }
+    G.dust("hall_dust", "dust_motes", { G.mx(51), G.my(3.5), G.mz(11) }, { 18, 3, 7 })
     -- the barrels beside the secret wall (explosive: swing at them, or fire)
     T.barrel(36.6, 0, 18.7); T.barrel(37.9, 0, 18.7); T.barrel(39.2, 0, 18.7); T.barrel(37.3, 0, 17.5); T.barrel(38.6, 0, 17.5)
     T.secret("hall_south", 38, 1.4, 20.1)

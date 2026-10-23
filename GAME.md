@@ -99,3 +99,10 @@ The dungeon is described in metres in a local frame (x east, z south, y up from 
 * A generated outdoor "plaza" with `terrain = biomes` above the dungeon, and caves from the generator instead of carved spheres (the engine's `caves = on` would have punctured the hand-built rooms; see WORLD_GEN.md).
 * Mouse buttons in play mode for attacks (needs an engine feature, ENGINE_FEEDBACK.md), a weapon in the first-person view, knockback, a proper third-person player model.
 * More enemy types with real behaviours (the Mimic crate), a skill tree, crafting, a second companion.
+
+
+## Round 4 fixes
+- Ballroom vent: the service tunnel exit into the corridor was walled (opening `60.6,0,110.7 .. 63.4,4.6,111.4`, repair flag `fix_v5` for old saves). Verified: flip lever, ride up, walk the tunnel down and out.
+- Emitters: floating dust/fireflies/embers use `fx.mote` (`G.as_motes`, `G.embers`, `G.dust`), nothing glows on the floor any more.
+- Chests are `chest_wood` (tough, not flammable) and `T.redraw_all_chests()` repairs damaged ones when a saved world loads.
+- Playthrough (pyro) replays to hash `0b615730ca570529`.

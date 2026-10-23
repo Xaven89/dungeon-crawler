@@ -142,6 +142,17 @@ function G.corridor(c)
 end
 
 -- ---------------------------------------------------------------------------------------------- lights (emitters with a light: the GI lights the probes of the room with them)
+-- the presets with sparks (magic_sparks, dust_motes, fireflies) make `spark` particles, which FALL: they landed on the floors and lay there glowing ("red glowing particles lying around" in the
+-- lobby). `mote` particles fly straight and never land: the same look, drifting in the air.
+MOTE_PRESETS = { magic_sparks = true, dust_motes = true, fireflies = true }
+function G.as_motes(def, speed, rate)
+    def.kind = "mote"; def.speed = speed; def.speed_var = 0.6; def.spread = 3.14; def.life = { 1.5, 3.5 }; def.rate = rate; def.particle_size = { 0.5, 0.9 }
+    return def
+end
+-- the `embers` preset throws sparks that fall and lie around glowing; the same as motes that drift upwards and go out
+function G.embers(def) def.kind = "mote"; def.direction = "up"; def.speed = 2.2; def.speed_var = 0.7; def.spread = 0.7; def.life = { 1.5, 4.0 }; def.rate = 10; def.particle_size = { 0.5, 0.9 }; return def end
+function G.dust(name, preset, pos, size) return emitter.create(G.as_motes({ name = name, preset = preset, pos = pos, size = size }, 0.8, 5)) end
+
 local torch_n = 0
 G.torches = {}
 function G.torch(xm, ym, zm, opts)
@@ -152,8 +163,10 @@ function G.torch(xm, ym, zm, opts)
     local col = opts.color or { 1.0, 0.55, 0.2 }
     local m = math.max(col[1], col[2], col[3], 0.001)
     col = { col[1] / m, col[2] / m, col[3] / m }
-    emitter.create{ name = name, preset = opts.preset or "torch", pos = { G.mx(xm), G.my(ym), G.mz(zm) },
-                    light = { color = col, intensity = opts.intensity or 11, reach = opts.reach or 14, flicker = opts.flicker ~= false } }
+    local def = { name = name, preset = opts.preset or "torch", pos = { G.mx(xm), G.my(ym), G.mz(zm) },
+                  light = { color = col, intensity = opts.intensity or 11, reach = opts.reach or 14, flicker = opts.flicker ~= false } }
+    if MOTE_PRESETS[def.preset] then G.as_motes(def, 2.5, 14) end
+    emitter.create(def)
     G.torches[#G.torches + 1] = name
     return name
 end

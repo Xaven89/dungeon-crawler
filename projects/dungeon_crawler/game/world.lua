@@ -83,7 +83,7 @@ local function build_lobby_things()
     for _, x in ipairs({ 5, 12, 19 }) do G.sconce(x + 1.5, 3.2, 22, "-z") end
     for _, z in ipairs({ 4, 18 }) do G.sconce(0, 3.2, z, "+x") end
     G.torch(3, 2.6, 11, { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 9, name = "lobby_crystal" })
-    emitter.create{ name = "lobby_dust", preset = "dust_motes", pos = { G.mx(13), G.my(4), G.mz(11) }, size = { 11, 4, 9 } }
+    G.dust("lobby_dust", "dust_motes", { G.mx(13), G.my(4), G.mz(11) }, { 11, 4, 9 })
     -- the gate is plain voxels that this script removes (not an event door: a door's state is saved apart from the voxels, and when the world was rebuilt but the state kept, the
     -- door believed it was open while the bars stood in the corridor). Applied again at every start.
     if G.state.flags.gate_lobby then W.gate_apply(W.GATE) end
@@ -105,6 +105,11 @@ function W.build()
     build_lobby_things()
     -- a world saved by an earlier version still has the plugs in the secret passage: take them out once
     -- one-time repairs of worlds saved by earlier versions (flag per repair)
+    if not G.should_build() and not G.state.flags.fix_v5 then
+        G.clear(60.6, 0, 110.7, 63.4, 4.6, 111.4)                       -- where the service stairs meet the corridor: the corridor's north wall closed the way out of the vent
+        W.pending_chest_redraw = true
+        G.state.flags.fix_v5 = true
+    elseif G.should_build() then G.state.flags.fix_v5 = true end
     if not G.should_build() and not G.state.flags.fix_v3 then
         G.clear(36.6, 0, 44.3, 39.4, 3.4, 46.2)                         -- the secret tunnel's crossing
         for _, i in ipairs({ 1, 2 }) do local z = 126 + i * 3.5; G.clear(53.9, 0, z, 55.8, 3.7, z + 3) end       -- the two bookcases in the stairwell's entrance
@@ -126,6 +131,7 @@ function W.build()
     elseif G.should_build() then G.state.flags.fix_secret_walls = true end
     if W.repair_signs then W.repair_signs() end
     for _, f in ipairs(W.things or {}) do f() end
+    if W.pending_chest_redraw then W.pending_chest_redraw = nil; G.traps.redraw_all_chests() end       -- (after the rooms have declared their chests)
 end
 
 -- the rooms next to each other (enemies exist only in the room the player is in and the rooms next to it)

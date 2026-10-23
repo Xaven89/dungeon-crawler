@@ -27,7 +27,7 @@ W.things[#W.things + 1] = function()
     for z = 28, 64, 12 do G.sconce(114, 3.2, z, "+x"); G.sconce(122, 3.2, z + 5, "-x") end
     for z = 26, 62, 9 do G.lamp(118, z, 6.0, 1.0, { color = { 1.0, 0.45, 0.25 }, reach = 12, mat = "neon_red" }) end
     G.torch(118, -1.5, 65, { preset = "campfire", color = { 1, 0.3, 0.1 }, reach = 16, name = "furnace_glow" })
-    emitter.create{ name = "furnace_embers", preset = "embers", pos = { G.mx(118), G.my(-1), G.mz(65) }, size = { 1.8, 0.5, 2.6 } }
+    emitter.create(G.embers{ name = "furnace_embers", preset = "embers", pos = { G.mx(118), G.my(-1), G.mz(65) }, size = { 1.8, 0.5, 2.6 } })
     T.hazard("lava", 116, -6.4, 62, 120, 0.3, 68, 60)
     local belt = events.belt{ name = "conveyor", box = { G.wx(116), G.wy(-0.25), G.wz(22), G.wx(120) - 1, G.wy(0) - 1, G.wz(62) - 1 }, dir = { 0, 0, 1 }, speed = 1.6, texture = "stripes", lit = true }
     local lever = events.lever{ name = "conveyor_lever", box = { G.wx(121.0), G.wy(1.4), G.wz(43.8), G.wx(121.4) - 1, G.wy(2.0), G.wz(44.2) - 1 }, prompt = "Emergency stop", on = "neon", off = "metal", lit = false }

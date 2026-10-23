@@ -88,14 +88,14 @@ local function chest_voxels(tier, lx, ly, lz, face, open)
         edit.box(ox + x0, oy + y0, oz + z0, ox + x1, oy + y1, oz + z1, mat)
         if paint then edit.paint_box(ox + x0, oy + y0, oz + z0, ox + x1, oy + y1, oz + z1, paint) end
     end
-    B(0, 0, 0, lx_ - 1, 8, lz_ - 1, "dark_wood")                          -- the body
+    B(0, 0, 0, lx_ - 1, 8, lz_ - 1, "chest_wood")                          -- the body
     local c = tier_paint[tier]
     if open then
         B(1, 8, 1, lx_ - 2, 8, lz_ - 2, "gold")
-        draw_lid(ox, oy, oz, face, 100, "dark_wood")                       -- the lid, standing open at the back
+        draw_lid(ox, oy, oz, face, 100, "chest_wood")                       -- the lid, standing open at the back
     else
-        B(0, 9, 0, lx_ - 1, 10, lz_ - 1, "dark_wood")                      -- the lid
-        B(1, 11, 1, lx_ - 2, 11, lz_ - 2, "dark_wood")
+        B(0, 9, 0, lx_ - 1, 10, lz_ - 1, "chest_wood")                      -- the lid
+        B(1, 11, 1, lx_ - 2, 11, lz_ - 2, "chest_wood")
     end
     -- bands in the tier's colour
     if alongx then
@@ -125,7 +125,7 @@ local function animate_open(tier, lx, ly, lz, face)
     for i, ang in ipairs(angles) do
         after((i - 1) * 4 + 2, function()
             if prev then draw_lid(ox, oy, oz, face, prev, "air") end
-            draw_lid(ox, oy, oz, face, ang, "dark_wood")
+            draw_lid(ox, oy, oz, face, ang, "chest_wood")
             prev = ang
         end)
     end
@@ -133,6 +133,7 @@ end
 
 -- id: a unique name (saved in state.opened); tier: bronze | silver | gold | platinum
 T.crates = {}
+T.all_chests = {}
 function T.crate(id, tier, lx, ly, lz, face)
     face = face or "+z"
     local opened = G.state.opened[id]
@@ -147,6 +148,7 @@ function T.crate(id, tier, lx, ly, lz, face)
         elseif face == "+x" then lockbox = { ox + lx_, oy + 6, oz + 9, ox + lx_, oy + 7, oz + 10 }
         else lockbox = { ox - 1, oy + 6, oz + 9, ox - 1, oy + 7, oz + 10 } end
     end
+    T.all_chests[#T.all_chests + 1] = { tier = tier, lx = lx, ly = ly, lz = lz, face = face, id = id }
     if opened then return end
     local cx, cz = lx + lx_ / 32, lz + lz_ / 32                   -- the centre of the chest (metres)
     T.crates[id] = { id = id, tier = tier, lx = lx, ly = ly, lz = lz, face = face, cx = cx, cy = ly + 0.3, cz = cz }
@@ -155,6 +157,11 @@ function T.crate(id, tier, lx, ly, lz, face)
     T.add_interact("crate_" .. id, cx, ly + 0.5, cz, "Open the " .. G.items.tiers[tier].name, 3.0, function() return not G.state.opened[id] end)
     -- a faint light so that it can be found in the dark
     G.torch(cx, ly + 1.4, cz, { preset = "magic_sparks", reach = 5, color = ({ bronze = { 1, .6, .3 }, silver = { .7, .7, 1 }, gold = { 1, .85, .3 }, platinum = { .4, 1, 1 } })[tier], name = "crate_light_" .. id })
+end
+
+-- worlds saved by earlier versions: chests that a blast or a fire has damaged (the old body was ordinary, burnable wood) are drawn again, in the tough wood
+function T.redraw_all_chests()
+    for _, c in ipairs(T.all_chests) do chest_voxels(c.tier, c.lx, c.ly, c.lz, c.face, G.state.opened[c.id] and true or false) end
 end
 
 -- a crate made while the game runs (the boss's reward): the voxels now, and the button

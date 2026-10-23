@@ -39,6 +39,7 @@ W.builders[#W.builders + 1] = function()
         G.clear(60.6, top, 100 + 0.4 * k, 63.4, top + 3.0, 100.4 + 0.4 * k + 0.8)
     end
     G.corridor{ x = 29.5, z = 112.6, len = 33.5, w = 3, h = 3.2, axis = "x", floor = "flagstone", wall = "dungeon_brick" }
+    W.openings[#W.openings + 1] = { 60.6, 0, 110.7, 63.4, 4.6, 111.4 }               -- where the stairs come out into the corridor (its north wall was in the way: nobody could leave the vent)
     W.openings[#W.openings + 1] = { 29.3, 0, 111.4, 30.1, 3.2, 113.8 }               -- into the arena's own tunnel
     -- the lever plinth (south wall, west side)
     G.fill(41.2, 0, 94.6, 42.8, 0.9, 96.2, "marble", "blocks"); G.fill(41.8, 0.9, 95.2, 42.2, 1.5, 95.6, "metal")
@@ -63,7 +64,7 @@ W.things[#W.things + 1] = function()
     -- light: the windows, chandeliers and a few braziers
     for _, p in ipairs({ { 50, 76 }, { 57, 82 }, { 64, 76 }, { 50, 90 }, { 64, 90 } }) do G.torch(p[1], 8.3, p[2], { color = { 1, 0.8, 0.45 }, reach = 14, preset = "fireflies", name = "chandelier_" .. p[1] .. "_" .. p[2] }) end
     G.brazier(40, 68, { reach = 12 }); G.brazier(74, 68, { reach = 12 }); G.brazier(74, 96, { reach = 12 })
-    emitter.create{ name = "ballroom_dust", preset = "magic_sparks", pos = { G.mx(57), G.my(6), G.mz(82) }, size = { 8, 5, 8 } }
+    G.dust("ballroom_dust", "magic_sparks", { G.mx(57), G.my(6), G.mz(82) }, { 8, 5, 8 })
     T.crate("ballroom_a", "silver", 71, 1.08, 68, "-z")
     G.torch(62, 13.6, 84, { reach = 8 }); G.torch(62, 1.2, 111, { reach = 8 }); G.torch(45, 1.8, 112.2, { reach = 9 })
     W.zones[#W.zones + 1] = { id = "vent", y0 = 11.5, x0 = 60.5, z0 = 80, x1 = 63.5, z1 = 100, on_enter = function() G.announcer.award("fine_print"); G.announcer.say_key("room.secret", { prio = 1 }) end }

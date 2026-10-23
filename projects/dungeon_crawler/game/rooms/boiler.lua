@@ -45,7 +45,7 @@ W.things[#W.things + 1] = function()
     G.torch(93, 0.2, 20, { preset = "campfire", color = { 1, 0.35, 0.1 }, reach = 18, name = "lava_glow_2" })
     emitter.create{ name = "boiler_steam_1", preset = "steam_vent", pos = { G.mx(84), G.my(0.2), G.mz(22) } }
     emitter.create{ name = "boiler_steam_2", preset = "steam_vent", pos = { G.mx(104), G.my(0.2), G.mz(22) } }
-    emitter.create{ name = "boiler_embers", preset = "embers", pos = { G.mx(93), G.my(0.4), G.mz(13) }, size = { 3, 0.5, 12 } }
+    emitter.create(G.embers{ name = "boiler_embers", preset = "embers", pos = { G.mx(93), G.my(0.4), G.mz(13) }, size = { 3, 0.5, 12 } })
     T.hazard("lava", 90, -3.4, 0, 96, 0.35, 26, 28)
     -- the drawbridge: a vertical slab on the west bank, lowered by the lever
     local bridge = events.door{ name = "drawbridge", material = "metal", box = { G.wx(90), G.wy(0), G.wz(10.8), G.wx(90) + 3, G.wy(0) + 94, G.wz(13.2) - 1 },

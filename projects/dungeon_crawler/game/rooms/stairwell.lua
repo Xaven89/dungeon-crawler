@@ -40,7 +40,7 @@ W.things[#W.things + 1] = function()
     G.torch(62, 0.7, 124.8, { preset = "campfire", color = { 1, 0.55, 0.2 }, reach = 14, name = "stairwell_fire" })
     G.sconce(54, 3.3, 126, "+x"); G.sconce(70, 3.3, 136, "-x"); G.sconce(57, 3.3, 140, "-z"); G.sconce(67, 3.3, 140, "-z")
     G.torch(67.1, 2.6, 125.7, { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 10, name = "stairwell_crystal" })
-    emitter.create{ name = "stairwell_dust", preset = "dust_motes", pos = { G.mx(62), G.my(2.5), G.mz(132) }, size = { 6, 2, 6 } }
+    G.dust("stairwell_dust", "dust_motes", { G.mx(62), G.my(2.5), G.mz(132) }, { 6, 2, 6 })
     -- the vending machine
     local btn = events.button{ name = "vending_machine", box = { G.wx(67.55), G.wy(0.9), G.wz(129.1), G.wx(67.7) - 1, G.wy(1.2), G.wz(129.6) - 1 }, prompt = "Vending Machine of Mild Relief", on = "neon", off = "gold", press_ticks = 8 }
     events.on(btn, "pressed", function() if G.shop then G.shop.open() end end)
