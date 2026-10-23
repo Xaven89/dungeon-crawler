@@ -20,7 +20,7 @@ function B.begin(lair)
     if B.started or G.state.flags.boss_dead then return end
     B.started = true
     local A = G.announcer
-    local inst = E.spawn(L_.kind or "manager", L_.x, 0, L_.z, { room = L_.room, still = true, hp_mult = (1 + (G.state.level - 1) * 0.04) * (L_.hp_mult or 1) })
+    local inst = E.spawn(L_.kind or "manager", L_.x, 0, L_.z, { room = L_.room, still = true, hp_mult = (1 + (G.state.level - 1) * ((L_.room == "arena") and 0.04 or 0.02)) * (L_.hp_mult or 1) * G.run.diff().hp })
     if not inst then B.started = false; return end
     inst.ai = B.ai
     inst.no_flinch = true

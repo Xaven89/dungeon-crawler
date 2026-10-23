@@ -27,7 +27,7 @@ function H.run_screen(w, h, input)
         local sel = (H.diff == d)
         if uikit.button("diff_" .. d, tr("run.diff." .. d), bx, 332, 160, 40, { color = sel and C.gold or nil }) then H.diff = d end
     end
-    local cw, ch = 520, 300
+    local cw, ch = 520, 335
     local x1, x2, y = w / 2 - cw - 30, w / 2 + 30, 400
     for i, spec in ipairs({ { x1, "orientation", "#6fd0ff", false }, { x2, "dungeon", "#ff8a3c", true } }) do
         local x = spec[1]

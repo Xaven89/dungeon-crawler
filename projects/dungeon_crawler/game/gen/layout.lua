@@ -59,22 +59,43 @@ local function attempt(seed, floor_n, att)
     local idx = {}          -- cell key -> room index
     for k, c in ipairs(list) do idx[cell_key(c[1], c[2])] = k end
     local parent, depth, in_tree = {}, { [1] = 0 }, { [1] = true }
-    local tree_edges, frontier = {}, {}
-    local function add_frontier(a)
-        for _, d in ipairs(DIRS) do
-            local b = idx[cell_key(list[a][1] + d[1], list[a][2] + d[2])]
-            if b and not in_tree[b] then frontier[#frontier + 1] = { a, b } end
+    local tree_edges = {}
+    local style = (r.next() < 0.5) and "prim" or "dfs"          -- a bushy floor (many short ways) or a winding one (one long way, dead ends)
+    if style == "prim" then
+        local frontier = {}
+        local function add_frontier(a)
+            for _, d in ipairs(DIRS) do
+                local b = idx[cell_key(list[a][1] + d[1], list[a][2] + d[2])]
+                if b and not in_tree[b] then frontier[#frontier + 1] = { a, b } end
+            end
         end
-    end
-    add_frontier(1)
-    while #frontier > 0 do
-        local k = r.int(1, #frontier)
-        local e = frontier[k]; frontier[k] = frontier[#frontier]; frontier[#frontier] = nil
-        if not in_tree[e[2]] then
-            in_tree[e[2]] = true
-            parent[e[2]] = e[1]; depth[e[2]] = depth[e[1]] + 1
-            tree_edges[#tree_edges + 1] = e
-            add_frontier(e[2])
+        add_frontier(1)
+        while #frontier > 0 do
+            local k = r.int(1, #frontier)
+            local e = frontier[k]; frontier[k] = frontier[#frontier]; frontier[#frontier] = nil
+            if not in_tree[e[2]] then
+                in_tree[e[2]] = true
+                parent[e[2]] = e[1]; depth[e[2]] = depth[e[1]] + 1
+                tree_edges[#tree_edges + 1] = e
+                add_frontier(e[2])
+            end
+        end
+    else
+        local stack = { 1 }
+        while #stack > 0 do
+            local a = stack[#stack]
+            local opts = {}
+            for _, d in ipairs(DIRS) do
+                local b = idx[cell_key(list[a][1] + d[1], list[a][2] + d[2])]
+                if b and not in_tree[b] then opts[#opts + 1] = b end
+            end
+            if #opts == 0 then stack[#stack] = nil
+            else
+                local b = opts[r.int(1, #opts)]
+                in_tree[b] = true; parent[b] = a; depth[b] = depth[a] + 1
+                tree_edges[#tree_edges + 1] = { a, b }
+                stack[#stack + 1] = b
+            end
         end
     end
     -- 3. the exit: the deepest room (a leaf); its parent is the boss room
@@ -89,7 +110,7 @@ local function attempt(seed, floor_n, att)
     for _, e in ipairs(tree_edges) do edges[#edges + 1] = { e[1], e[2] } end
     local has = {}
     for _, e in ipairs(edges) do has[e[1] * 100 + e[2]] = true; has[e[2] * 100 + e[1]] = true end
-    local extra, tries = r.int(1, 2), 0
+    local extra, tries = (style == "dfs") and 1 or r.int(1, 2), 0
     while extra > 0 and tries < 30 do
         tries = tries + 1
         local a = r.int(1, #list)
@@ -168,7 +189,7 @@ local function attempt(seed, floor_n, att)
         neighbors[e.b][#neighbors[e.b] + 1] = e.a
     end
     return { seed = seed, floor = floor_n, rooms = rooms, order = order, edges = out_edges, neighbors = neighbors, start = ids[1], exit = ids[exit_i], boss = ids[boss_i],
-             n = #list, attempt = att }
+             n = #list, attempt = att, style = style }
 end
 
 function L.generate(seed, floor_n)

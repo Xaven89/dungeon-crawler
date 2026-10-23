@@ -7,6 +7,16 @@ local floor, max, min = math.floor, math.max, math.min
 
 H.seed_text = nil
 
+-- a seed from what was typed: a number as it is, words by a plain hash (the same words are the same dungeon on every machine)
+function H.seed_of(text)
+    text = text or ""
+    local n = tonumber(text)
+    if n and n >= 0 and n < 2147483647 and n == math.floor(n) then return math.floor(n) end
+    local h = 5381
+    for i = 1, #text do h = (h * 33 + text:byte(i)) % 2147483629 end
+    return h + 1
+end
+
 -- the way in: a seed and two doors
 function H.run_screen(w, h, input)
     uikit.open_screen()
@@ -15,10 +25,11 @@ function H.run_screen(w, h, input)
     ui.text(w / 2, 220, tr("run.sub"), { size = 26, color = C.dim, align = "center" })
     if not H.seed_text then H.seed_text = tostring(G.run.entropy_seed(input.x, input.y)) end
     ui.text(w / 2 - 330, 292, tr("run.seed"), { size = 30, color = "#eef1f8" })
-    local txt = uikit.text_input("run_seed", H.seed_text, w / 2 - 200, 284, 300, 46, { hint = "123456", max = 9, filter = "%D" })
+    local txt = uikit.text_input("run_seed", H.seed_text, w / 2 - 200, 284, 300, 46, { hint = "a number or any words", max = 24 })
     if txt and txt ~= H.seed_text then H.seed_text = txt end
     if uikit.button("run_roll", tr("run.roll"), w / 2 + 120, 284, 200, 46) then H.seed_text = tostring(G.run.entropy_seed(input.x, input.y)) end
-    local seed = tonumber(H.seed_text) or 1
+    local seed = H.seed_of(H.seed_text)
+    if not tonumber(H.seed_text or "") then ui.text(w / 2 + 340, 296, "= " .. tostring(seed), { size = 20, color = C.dim }) end
     -- the difficulty: three buttons
     H.diff = H.diff or "normal"
     ui.text(w / 2 - 330, 340, tr("run.diff"), { size = 26, color = "#eef1f8" })

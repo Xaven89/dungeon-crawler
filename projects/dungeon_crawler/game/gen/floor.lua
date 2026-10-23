@@ -415,7 +415,7 @@ end
 
 function F.lair_of(p)
     local r = p.rooms[p.boss]
-    return { room = p.boss, x = r.x + r.w / 2, z = r.z + r.d / 2, kind = F.boss_kind(p), hp_mult = 1 + (p.floor - 1) * 0.3,
+    return { room = p.boss, x = r.x + r.w / 2, z = r.z + r.d / 2, kind = F.boss_kind(p), hp_mult = 1 + (p.floor - 1) * 0.18,
              on_dead = function()
                  G.world.gate_open(p.gate, "gate_" .. p.boss)
                  G.announcer.say_key("floor.gate", { prio = 1 })

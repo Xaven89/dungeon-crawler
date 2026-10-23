@@ -51,10 +51,10 @@ E.types = {
                          anim = "clip", die_clip = true, kit = { main_hand = "iron_sword.vxm", off_hand = "round_shield.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "gold", loot_chance = 1 },
     rival_witch = { model = "figures/human_woman_adventurer", name = "Rival Crawler", hp = 300, dmg = 18, speed = 1.9, reach = 12, aggro = 20, xp = 260, gold = { 80, 140 }, cd = 110, height = 1.8, radius = 0.5, miniboss = true, rival = true, ranged = true, keep = 9, cast = "ember",
                     anim = "clip", die_clip = true, kit = { main_hand = "wooden_staff.vxm" }, splat = "splat_red", hit_sfx = "goblin_hit", die_sfx = "goblin_die", loot = "gold", loot_chance = 1 },
-    auditor = { model = "figures/monster_cyclop_pink", name = "The Chief Auditor", hp = 700, dmg = 25, speed = 1.9, reach = 3.1, aggro = 40, xp = 480, gold = { 180, 280 }, cd = 110, height = 3.1, radius = 1.0, boss = true,
+    auditor = { model = "figures/monster_cyclop_pink", name = "The Chief Auditor", hp = 600, dmg = 23, speed = 1.9, reach = 3.1, aggro = 40, xp = 480, gold = { 180, 280 }, cd = 110, height = 3.1, radius = 1.0, boss = true,
                 anim = "clip", die_clip = true, meter = true, clips = { summon = "cast", throw = "cast", slam = "attack", roar = "cast" }, minion = "bandit", kit = { main_hand = "battle_axe.vxm" },
                 splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "platinum", loot_chance = 1 },
-    golem = { model = "figures/monster_gold_golem", name = "The Golden Parachute", hp = 800, dmg = 26, speed = 1.7, reach = 3.4, aggro = 40, xp = 520, gold = { 200, 320 }, cd = 130, height = 3.4, radius = 1.3, boss = true,
+    golem = { model = "figures/monster_gold_golem", name = "The Golden Parachute", hp = 650, dmg = 24, speed = 1.7, reach = 3.4, aggro = 40, xp = 520, gold = { 200, 320 }, cd = 130, height = 3.4, radius = 1.3, boss = true,
               anim = "clip", die_clip = true, clips = { summon = "cast", throw = "cast", slam = "attack", roar = "cast" }, minion = "orc", splat = "splat_red", hit_sfx = "boss_hit", die_sfx = "boss_die", loot = "platinum", loot_chance = 1 },
 }
 
