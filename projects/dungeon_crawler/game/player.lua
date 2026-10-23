@@ -328,7 +328,10 @@ function P.attack()
             fx.play("chip_wood", floor(units.vox(G.mx(c.cx))), floor(units.vox(G.my(c.cy + 0.3))), floor(units.vox(G.mz(c.cz))), 0.8)
             T.open_crate(c.id); hit = true
         elseif T.swing_at(w.reach) then hit = true
-        else T.swing_feedback(w.reach) end
+        else
+            T.swing_feedback(w.reach)
+            if (s.equip.weapon or "mop") == "mop" then local px, py, pz = player.pos(); G.gore.mop(px, py, pz) end
+        end
     end
     return hit
 end
@@ -350,6 +353,7 @@ function P.ability()
     if s.class == "janitor" then
         G.sfx.play("sweep")
         fx.play("sparks", units.vox(px), units.vox(py) + 8, units.vox(pz), 0.8)
+        G.gore.sweep(px, py, pz)
         for _, inst in pairs(E.list) do
             if not inst.dead then
                 local x, y, z = E.position(inst)

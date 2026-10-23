@@ -157,7 +157,10 @@ function E.damage(inst, amount, opts)
     end
     G.sfx.play(opts.crit and "hit_crit" or "hit", nil, nil, nil, 0.8)
     if inst.T.hit_sfx then G.sfx.play(inst.T.hit_sfx, G.to_local(x, y, z)) end
-    if x then fx.play(inst.T.splat or "splat_red", floor(x * 16), floor((y + inst.height * 0.6) * 16), floor(z * 16), 0.7) end
+    if x then
+        fx.play(inst.T.splat or "splat_red", floor(x * 16), floor((y + inst.height * 0.6) * 16), floor(z * 16), 0.7)
+        if inst.hp > 0 then G.gore.wound(inst, x, y + inst.height * 0.4, z, false) end
+    end
     if opts.burn and G.rand() < opts.burn then E.ignite(inst) end
     -- aggro: whoever hits it is its business now
     if inst.state == "idle" then E.aggro(inst) end
@@ -218,6 +221,7 @@ function E.kill(inst, opts)
     if inst.kind == "slime" or inst.kind == "slime_toxic" then if (A.bump("slimes") or 0) >= 10 then A.award("squeegee") end end
     if inst.burning then A.award("pyro") end
     if x then
+        G.gore.wound(inst, x, y + inst.height * 0.4, z, true)
         fx.play(((T.splat or "splat_red"):gsub("^splat", "gore")), floor(x * 16), floor((y + inst.height * 0.4) * 16), floor(z * 16), T.boss and 2.2 or (T.miniboss and 1.6 or 1.1))
         if T.ragdoll then
             local fx_, fy_, fz_ = player.forward()

@@ -106,3 +106,8 @@ The dungeon is described in metres in a local frame (x east, z south, y up from 
 - Emitters: floating dust/fireflies/embers use `fx.mote` (`G.as_motes`, `G.embers`, `G.dust`), nothing glows on the floor any more.
 - Chests are `chest_wood` (tough, not flammable) and `T.redraw_all_chests()` repairs damaged ones when a saved world loads.
 - Playthrough (pyro) replays to hash `0b615730ca570529`.
+
+## Gore (walk-through stains)
+- `game/gore.lua`: `G.gore.splat/wound/clean/mop/sweep`; materials 96-99 (`passable = 1`); every wound and death splatters, `G.state.stains` remembers the spots (cap 200).
+- Cleaning: the Janitor's mop swung at nothing cleans 1.5 m in front, Mop Sweep (ability) 4.5 m around; 1 gold per spot, achievement `clean_sweep` after 40 spots, GLEE comments (`gore.clean.*`).
+- `fx.splat` position is in world METRES (see ENGINE_FEEDBACK Phase 7).

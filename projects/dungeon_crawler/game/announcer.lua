@@ -138,6 +138,7 @@ A.defs = {
     hello_world   = { xp = 20 },
     first_blood   = { xp = 25 },
     squeegee      = { xp = 60 },
+    clean_sweep   = { xp = 50 },
     fashionably   = { xp = 30 },
     serial_victim = { xp = 60 },
     pyro          = { xp = 50 },
@@ -155,7 +156,7 @@ A.defs = {
     rolling_stone = { xp = 50 },
     speedrunner   = { xp = 150 },
 }
-A.order = { "check_in", "hello_world", "first_blood", "squeegee", "fashionably", "serial_victim", "pyro", "zero_g", "soggy", "loot_goblin", "crate_exp", "goose", "fine_print", "hoarder", "shopper", "overkill", "rolling_stone", "pacifist_ish", "speedrunner", "boss_down" }
+A.order = { "check_in", "hello_world", "first_blood", "squeegee", "clean_sweep", "fashionably", "serial_victim", "pyro", "zero_g", "soggy", "loot_goblin", "crate_exp", "goose", "fine_print", "hoarder", "shopper", "overkill", "rolling_stone", "pacifist_ish", "speedrunner", "boss_down" }
 A.toasts = {}      -- { id, t } shown on the HUD for a few seconds
 
 function A.has(id) return G.state and G.state.ach and G.state.ach[id] end

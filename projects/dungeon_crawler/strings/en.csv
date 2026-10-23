@@ -152,6 +152,9 @@ achievement.first_blood.line,"Achievement: 'Minimum Wage Murderer'. Your first k
 achievement.squeegee.name,Squeegee Salvation
 achievement.squeegee.desc,Kill 10 slimes.
 achievement.squeegee.line,"Achievement: 'Squeegee Salvation'. Ten slimes. The sewer sends a fruit basket."
+achievement.clean_sweep.name,Clean Sweep
+achievement.clean_sweep.desc,Mop up 40 stains.
+achievement.clean_sweep.line,"Achievement: 'Clean Sweep'. Forty stains. The Show notes that you are paid per stain. The Show also notes that the stains are paid for by you."
 achievement.fashionably.name,Fashionably Dead
 achievement.fashionably.desc,Die for the first time.
 achievement.fashionably.line,"Achievement: 'Fashionably Dead'. You are late to your own funeral. How chic."
@@ -255,3 +258,6 @@ ui.bus.voice,GLEE's voice
 ui.settings_hint,"Volumes are saved with your run. Drag the sliders; 100% is as the show was mixed."
 ui.capture,Click in the window to capture the mouse (Esc lets it go). Moonlight: relative mouse mode, Ctrl+Alt+Shift+M
 ui.flat_numbers,Damage numbers as flat text (instead of voxel particles)
+gore.clean.1,"Mopping up after a massacre. Management would like you to know that it is billed at the standard rate. Which is nothing."
+gore.clean.2,"A clean floor. The next contestant will not appreciate it either."
+gore.clean.3,"I see you are tidying the crime scene. The crime scene is not grateful."
