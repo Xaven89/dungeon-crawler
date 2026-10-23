@@ -305,7 +305,6 @@ local function class_screen(w, h, input)
     ui.rect(0, 0, w, h, "#05060acc")
     ui.text(w / 2, 170, tr("ui.class_title"), { size = 64, color = C.gold, align = "center" })
     ui.text(w / 2, 245, tr("ui.class_hint"), { size = 24, color = C.dim, align = "center" })
-    ui.text(w / 2, h - 40, tr("ui.no_cursor_hint"), { size = 22, color = "#ffd24a", align = "center" })
     local cw, ch, gap = 410, 610, 24
     local total = #G.player.class_order * (cw + gap) - gap
     local x0 = (w - total) / 2
@@ -540,6 +539,9 @@ function H.draw(dt)
         ui.rect(w / 2 - tw / 2, h / 2 + 150, tw, 60, "#ffd24a", { radius = 12, outline = true, thickness = 3 })
         ui.text(w / 2, h / 2 + 164, msg, { size = 30, color = "#ffffff", align = "center" })
     end
+    -- a menu closed: the look takes the mouse back at once (the class choice, the bag, the shop ...), no extra click needed
+    if H.prev_screen and not G.screen and s.class and input.free and ui.capture then ui.capture() end
+    H.prev_screen = G.screen
     local drop = uikit.finish()
     if drop then ui.run(string.format("inventory.apply_move(%q, %q, %d, %q, %d, %q)", "player", drop.from_grid, drop.from, drop.to_grid, drop.to, drop.split or "")) end
 end

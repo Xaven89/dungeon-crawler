@@ -17,6 +17,8 @@ python3 tools/make_dungeon_models.py ; python3 tools/make_sounds.py             
 ```
 A new run: delete `projects/dungeon_crawler/world.vxs*`, `.state`, `.events`, `.prefabs` (the level builds its voxels only when `project.first_run()`; the progress is in `.state/store.json`).
 
+**Streaming (Sunshine / Moonlight):** click once in the window to capture the mouse for looking (Esc lets it go: it also opens the settings). In Moonlight use the *relative mouse mode* (Ctrl+Alt+Shift+M, or turn off "optimize mouse for remote desktop"), otherwise the absolute virtual mouse fights the engine's pointer warp. `tools/stream-descent.sh` is the Sunshine launcher (two app entries: continue / new run).
+
 ### Keys (`game = on` switches the engine's sandbox keys off; the game's own actions are in `input.cfg`)
 | key | |
 |---|---|
