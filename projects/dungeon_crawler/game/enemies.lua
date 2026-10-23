@@ -105,7 +105,11 @@ function E.spawn(kind, lx, ly, lz, opts)
                    next_attack = 0, stun_until = 0, room = opts.room, height = T.height, radius = T.radius, home = { lx, ly, lz }, born = time.tick(), name = name, index = opts.index,
                    dmg_mult = opts.dmg_mult or 1, affix = opts.affix, rematch = opts.rematch }
     if G.gen and G.gen.rules and G.floorgen.active then G.gen.rules.on_spawn(inst) end
-    if T.kit and equipment then pcall(equipment.apply, equipment.agent(id), (function() local k = {}; for slot, f in pairs(T.kit) do k[slot] = { file = f } end; return k end)()) end
+    -- what it holds: items as models of their own that follow the hand ("attach"): a merged item changes the agent's hidden collision box, and that made recordings of fights replay to another hash
+    if T.kit then
+        local sock = { main_hand = "grip_r", off_hand = "grip_l" }
+        for slot, f in pairs(T.kit) do pcall(model.attach, id, f, sock[slot], { mode = "attach", name = slot }) end
+    end
     E.list[id] = inst
     E.by_model[inst.mdl] = inst
     if T.wander and not opts.still then agent.wander(id, T.wander) end

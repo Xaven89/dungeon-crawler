@@ -56,9 +56,10 @@ if best and bd > 6 then local dx, dz = cx - best[1], cz - best[3]; local n = mat
 
 def main():
     report = []
-    with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--record", log]) as v:
+    with Voxelith(["--project", os.environ.get("GEN_PROJECT", "projects/dungeon_crawler"), "--threads", "3", "--record", log]) as v:
         v.step(400)
         L(v, "Game.screen = 'run'; Game.run.start(%d, true)" % seed, 2)
+        if os.environ.get("GEN_PRELUDE"): L(v, os.environ["GEN_PRELUDE"], 1)
         L(v, "Game.player.pick_class('%s')" % cls, 2)
         print("floor 1 built in", wait_floor(v), "s")
         v.step(200)
@@ -88,6 +89,8 @@ for _, s in ipairs(G.items.inv.bag) do
     if d and d.kind == 'armor' and (d.def or 0) > ((G.items.defs[G.state.equip.armor or ''] or {}).def or -1) then G.player.equip(s.id) end
   end
 end""", 5)
+                if "--checkpoints" in sys.argv:
+                    print("CP", v.status()["tick"], v.state_hash(), rid)
                 line = "  %-6s %-6s %-9s ticks %4d kills %2d  hp %s deaths %s level %s" % (rid, role, theme, t, kills, end[1], end[2], end[3])
                 print(line); sys.stdout.flush(); report.append(line)
             print("  descending ...")
