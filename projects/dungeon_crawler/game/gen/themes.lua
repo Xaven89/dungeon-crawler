@@ -73,6 +73,7 @@ function F.populate(room, ctx, rng, n, opts)
             end
             if ctx.floor >= 2 and rng.next() < min(0.3, 0.07 * (ctx.floor - 1)) then extra = { affix = AFFIXES[rng.int(1, 3)] } end
         end
+        if opts.still then extra = extra or {}; extra.still = true end
         ctx.add(room, kind or F.pick_kind(rng, ctx.floor), q[1], q[2], opts.y or 0, extra)
     end
     return #placed
@@ -89,7 +90,8 @@ end
 -- the layout grammar's view of a room for the game (gen/furnish.lua: the same pure plan as the hook): the layout, the blocking footprints and the spots in the floor's coordinates;
 -- nil for a theme without a row
 function F.furnished(room, ctx)
-    local lay = deco_layout(room.theme, F.lroom(room), F.local_doors(room), ctx.mk(room), ctx.floor)
+    local lay
+    if ctx.floor == 4 then lay = transit_layout(room.info, ctx.mk(room)) else lay = deco_layout(room.theme, F.lroom(room), F.local_doors(room), ctx.mk(room), ctx.floor) end
     if not lay then return nil end
     local ox, oz = F.off(room)
     local rects, spots = {}, {}

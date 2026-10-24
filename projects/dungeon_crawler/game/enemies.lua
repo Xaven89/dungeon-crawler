@@ -126,7 +126,7 @@ function E.spawn_entry(room, list, i)
     local e = list[i]
     if not e then return nil end
     local fl = (G.run and G.run.floor_no() or 1) - 1
-    local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = (1 + (G.state.level - 1) * 0.03) * (1 + fl * 0.2) * (e.hp or 1) * G.run.diff().hp, dmg_mult = (1 + fl * 0.1) * G.run.diff().dmg, affix = e.affix, name = e.name, rematch = e.rematch, index = i })
+    local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = (1 + (G.state.level - 1) * 0.03) * (1 + fl * 0.2) * (e.hp or 1) * G.run.diff().hp, dmg_mult = (1 + fl * 0.1) * G.run.diff().dmg, affix = e.affix, name = e.name, rematch = e.rematch, index = i, still = e.still })
     if inst and e.captive then inst.captive = e.captive; agent.stop(inst.id) end
     return inst
 end

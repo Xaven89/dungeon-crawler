@@ -37,19 +37,19 @@ function transit_region(rx, rz, wh, run)
         carve(rx0, p0, rx1, p1, yl, top)                          -- the platform hall
         for k = 0, 15 do                                           -- the steps: 0.5 m a metre of run
             local z0 = north and k or (31 - k)
-            F(13, 0, z0, 19, 0.5 * (k + 1), z0 + 1, "flagstone")
+            F(13, 0, z0, 19, 0.5 * (k + 1), z0 + 1, "marble")
         end
-        floor_mat(rx0, p0, rx1, p1, yl, "flagstone")
+        floor_mat(rx0, p0, rx1, p1, yl, "marble")
         F(rx0, 0, p0, rx1, yl - 0.125, p1, "dungeon_brick")
-        floor_mat(13, s0, 19, s1, 0, "flagstone")
+        floor_mat(13, s0, 19, s1, 0, "marble")
         -- the rail along the edge of the platform up there and at the head of the stair
         for _, zz in ipairs(north and { 16 } or { 15.9 }) do F(13, yl, zz, 19, yl + 0.1, zz + 0.1, "metal") end
     elseif code == "X" then
         carve(rx0, rz0, rx1, rz1, 0, top)                         -- the hall: two storeys, 14 m
-        floor_mat(rx0, rz0, rx1, rz1, 0, "flagstone")
+        floor_mat(rx0, rz0, rx1, rz1, 0, "marble")
         -- the upper deck (Blue, +8 m): a slab 1 m thick over the whole hall except the stair strip along the north wall (z 4 .. 7)
-        F(rx0, yl - 1, rz0 + 3, rx1, yl, rz1, "dungeon_brick"); floor_mat(rx0, rz0 + 3, rx1, rz1, yl, "flagstone")
-        for k = 0, 23 do F(rx0 + k, 0, rz0, rx0 + k + 1, (k + 1) * yl / 24, rz0 + 3, "flagstone") end     -- the stair: 24 steps eastward along the north wall, up to the deck
+        F(rx0, yl - 1, rz0 + 3, rx1, yl, rz1, "dungeon_brick"); floor_mat(rx0, rz0 + 3, rx1, rz1, yl, "marble")
+        for k = 0, 23 do F(rx0 + k, 0, rz0, rx0 + k + 1, (k + 1) * yl / 24, rz0 + 3, "marble") end     -- the stair: 24 steps eastward along the north wall, up to the deck
         F(rx0, yl, rz0 + 3, rx1 - 1, yl + 1.0, rz0 + 3.1, "metal")                                          -- the rail along the stair's opening
         -- the pit: a round hole in the deck, a guard ring and the glow of the Abyss
         for _, p in ipairs({ { 22, 22 } }) do B.pillar(p[1], p[2], 2.6, yl - 1, yl, nil); B.ring(p[1], p[2], 2.6, 3.0, yl, yl + 1.0, "metal") end
@@ -57,13 +57,13 @@ function transit_region(rx, rz, wh, run)
         for _, p in ipairs({ { 6, 9 }, { 26, 9 }, { 6, 23 }, { 26, 23 } }) do B.pillar(p[1], p[2], 0.6, 0, yl, "metal") end
     elseif code == "c" then
         carve(rx0, rz0, rx1, rz1, 0, room.h)
-        floor_mat(rx0, rz0, rx1, rz1, 0, "flagstone")
+        floor_mat(rx0, rz0, rx1, rz1, 0, "dungeon_brick")                  -- (plain brick floors in the tunnels: the ground cover rows are for the flagstone rooms)
     elseif code == "d" or code == "s" then
         carve(rx0, rz0, rx1, rz1, 0, room.h)
         floor_mat(rx0, rz0, rx1, rz1, 0, "flagstone")
     else                                                          -- tunnels, hubs, Yellow stations: along the axis
         carve(rx0, rz0, rx1, rz1, yl, yl + room.h)
-        floor_mat(rx0, rz0, rx1, rz1, yl, (code == "H" or code == "Y") and "marble" or "flagstone")
+        floor_mat(rx0, rz0, rx1, rz1, yl, (code == "H" or code == "Y") and "marble" or "dungeon_brick")
     end
 
     -- ------------------------------------------------------------------------------------------ the halls to the doors
@@ -78,10 +78,10 @@ function transit_region(rx, rz, wh, run)
             -- the stair corridor itself reaches the border: nothing to add
         else
             local a, b = c - hw / 2, c + hw / 2
-            if side == "E" then carve(rx1 - 0.0, a, 32, b, dl, dl + hh); floor_mat(rx1, a, 32, b, dl, "flagstone")
-            elseif side == "W" then carve(0, a, rx0, b, dl, dl + hh); floor_mat(0, a, rx0, b, dl, "flagstone")
-            elseif side == "S" then carve(a, rz1, b, 32, dl, dl + hh); floor_mat(a, rz1, b, 32, dl, "flagstone")
-            else carve(a, 0, b, rz0, dl, dl + hh); floor_mat(a, 0, b, rz0, dl, "flagstone") end
+            if side == "E" then carve(rx1 - 0.0, a, 32, b, dl, dl + hh); floor_mat(rx1, a, 32, b, dl, "dungeon_brick")
+            elseif side == "W" then carve(0, a, rx0, b, dl, dl + hh); floor_mat(0, a, rx0, b, dl, "dungeon_brick")
+            elseif side == "S" then carve(a, rz1, b, 32, dl, dl + hh); floor_mat(a, rz1, b, 32, dl, "dungeon_brick")
+            else carve(a, 0, b, rz0, dl, dl + hh); floor_mat(a, 0, b, rz0, dl, "dungeon_brick") end
         end
     end
 
@@ -188,8 +188,12 @@ function transit_region(rx, rz, wh, run)
         B.sphere(c.x, 1.55, c.z, 0.5, "rune")
     end
 
+    -- the layout grammar's items: benches, kiosks, banners, crates ... (hubs, Yellow stations, dens)
+    local lay = transit_layout(info, function(salt) return deco_rng(cellgen_hash_from(wh, run), fl, ci, cj, salt or 1) end)
+    if lay then for _, it in ipairs(lay.items) do if it.y0 == nil then it.y0 = 0 end; deco_item_draw(B, it, fl) end end
+
     -- ------------------------------------------------------------------------------------------ the rooms the grammar furnishes (dens, the stairwell)
-    if code == "d" or code == "s" then
+    if code == "s" then
         local doors = {}
         for _, d in ipairs({ "E", "S", "W", "N" }) do if info.open[d] then doors[#doors + 1] = { side = d, pos = info.door[d] } end end
         deco_room(B, info.theme, room, doors, function(salt) return deco_rng(cellgen_hash_from(wh, run), fl, ci, cj, salt or 1) end, fl)

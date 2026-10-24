@@ -225,3 +225,39 @@ function transit_checkpoint(info)
     if info.code == "|" then return 13, 16 end
     return nil
 end
+
+-- the layout grammar's view of a cell of the Iron Tangle (hubs, Yellow stations, dens): the room with the bed of the track and the hub's fixtures reserved; shared by the hook and the game
+function transit_layout(info, mk)
+    local theme = ({ H = "hub", Y = "station", d = "den" })[info.code]
+    if not theme then return nil end
+    local room = info.room
+    local doors = {}
+    for _, d in ipairs({ "E", "S", "W", "N" }) do if info.open[d] then doors[#doors + 1] = { side = d, pos = info.door[d] } end end
+    local reserve = {}
+    if info.code ~= "d" then
+        if info.axis == "x" then reserve[#reserve + 1] = { room.x, 16 - 2.6, room.x + room.w, 16 + 2.6 } else reserve[#reserve + 1] = { 16 - 2.6, room.z, 16 + 2.6, room.z + room.d } end
+    end
+    if info.code == "H" then
+        local f = transit_hub_fixtures(info)
+        reserve[#reserve + 1] = { f.vend.x - 1.5, f.vend.z - 0.3, f.vend.x + 1.5, f.vend.z + 2.0 }
+        reserve[#reserve + 1] = { f.crystal.x - 1.4, f.crystal.z - 0.6, f.crystal.x + 1.4, f.crystal.z + 1.6 }
+        if info.axis == "z" then
+            reserve[#reserve] = { f.crystal.x - 0.6, f.crystal.z - 1.4, f.crystal.x + 1.6, f.crystal.z + 1.4 }
+            reserve[#reserve - 1] = { f.vend.x - 0.3, f.vend.z - 1.5, f.vend.x + 2.0, f.vend.z + 1.5 }
+        end
+    end
+    return deco_layout(theme, room, doors, mk, 4, { reserve = reserve, door_half = 3.0, door_depth = 3.5 })
+end
+
+-- where a car stops in a cell (cell metres) and the places of the crowd that waits for it: two on each platform, 3 m either side of the middle of the car
+function transit_crowd_spots(info)
+    local sx, sz = 16, 16
+    if info.code == "B" then sz = (info.cj == 1) and 23 or 9 end
+    local out = {}
+    if info.axis == "x" then
+        for _, dz in ipairs({ -5, 5 }) do for _, dx in ipairs({ -3, 3 }) do out[#out + 1] = { x = sx + dx, z = sz + dz, kind = "idle" } end end
+    else
+        for _, dx in ipairs({ -5, 5 }) do for _, dz in ipairs({ -3, 3 }) do out[#out + 1] = { x = sx + dx, z = sz + dz, kind = "idle" } end end
+    end
+    return out
+end

@@ -47,6 +47,7 @@ function deco_catalogue()
         tomb_c     = { cat = "tomb", model = "models/kit/graveyard_tomb_3.vxm", msize = { 16, 15, 12 }, mfront = "+z", anchor = "free", clear = 0.7 },
         -- the lantern on a chain (E13): the hook draws the bracket at the ceiling, the game hangs the chain and its light (G.chain_lantern); none under an open sky
         chain_lamp = { cat = "chain", w = 0.4, d = 0.4, h = 0, anchor = "free", clear = 0, blocks = false },
+        kiosk      = { cat = "kiosk", w = 2.0, d = 0.9, h = 2.4, anchor = "wall", clear = 0.9, spots = { { "idle", 0, 1.3 } } },
         -- lairs, bars
         dais       = { cat = "dais", w = 7.0, d = 3.0, h = 0.4, anchor = "far_wall", clear = 1.0, blocks = false, spots = { { "boss", 0, 2.35 } } },
         throne     = { cat = "throne", w = 1.6, d = 1.2, h = 2.6, on = "dais", clear = 0.3 },
@@ -121,6 +122,16 @@ function deco_layout_themes()
             { id = "pub_stool" },
             { id = "bench", base = 1, jit = 1 },
             { id = "chain_lamp", base = 2, jit = 2 },
+        } },
+        hub = { margin = 0.8, fill = {
+            { id = "bench", base = 2, jit = 2 }, { id = "kiosk", base = 1, jit = 1 }, { id = "banner", base = 2, jit = 2 }, { id = "urn", base = 1, jit = 1 }, { id = "chain_lamp", base = 1, jit = 1 },
+        } },
+        station = { margin = 0.8, fill = {
+            { id = "bench", base = 2, jit = 2 }, { id = "banner", base = 1, jit = 2 }, { id = "urn", base = 0, jit = 2 }, { id = "chain_lamp", base = 0, jit = 2 },
+        } },
+        den = { margin = 1.5, fill = {
+            { id = "crates", area = 1.6, jit = 2 }, { id = "barrels", base = 1, jit = 1 }, { id = "bench", base = 1, jit = 2 }, { id = "table", base = 1, jit = 1 }, { id = "chair" },
+            { id = "banner", base = 1, jit = 2 }, { id = "chain_lamp", base = 1, jit = 1 },
         } },
         depot = { margin = 3.0, fill = {
             { id = "rack", wall = 0.14, jit = 1 },
@@ -625,6 +636,10 @@ function deco_item_draw(B, it, fl)
         local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
         B.fill(cx - 0.2, it.ceil - 0.1, cz - 0.2, cx + 0.2, it.ceil, cz + 0.2, "metal")
         B.fill(cx - 0.05, it.ceil - 0.3, cz - 0.05, cx + 0.05, it.ceil - 0.1, cz + 0.05, "metal")
+    elseif id == "kiosk" then
+        box(0, 0, 0, W, 1.0, D, "dark_wood"); box(-0.05, 1.0, -0.05, W + 0.05, 1.08, D + 0.1, "marble")
+        box(0.05, 1.08, 0.05, 0.12, 2.2, 0.12, "metal"); box(W - 0.12, 1.08, 0.05, W - 0.05, 2.2, 0.12, "metal"); box(0, 2.2, 0, W, 2.4, D, "metal")
+        box(0.2, 2.25, D - 0.04, W - 0.2, 2.35, D, "lantern"); box(0.3, 1.1, 0.3, 0.7, 1.4, 0.6, "gold"); box(1.0, 1.1, 0.3, 1.5, 1.35, 0.7, "chest_wood")
     elseif id == "bones" then
         box(0, 0, 0, 0.5, 0.15, 0.3, "bone"); box(0.1, 0.15, 0.05, 0.25, 0.3, 0.2, "bone")
     end

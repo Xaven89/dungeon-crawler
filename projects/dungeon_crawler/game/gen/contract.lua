@@ -41,6 +41,19 @@ function K.check_transit(plan, CG)
             elseif nb.open[dd[3]] ~= kind or nb.door[dd[3]] ~= info.door[side] then bad(4, id .. ": the door " .. side .. " does not meet its partner (" .. tostring(nb.open[dd[3]]) .. " " .. tostring(nb.door[dd[3]]) .. " vs " .. kind .. " " .. info.door[side] .. ")") end
         end
     end
+    -- 15. the furniture of the stations and dens (the layout grammar, the track bed and the hub's fixtures reserved)
+    local n15 = 0
+    for _, id in ipairs(plan.order) do
+        local info = plan.cells[id]
+        local lay = transit_layout(info, function(salt) return deco_rng(CG.H, ctx.floor, info.ci, info.cj, salt or 1) end)
+        if lay then
+            n15 = n15 + 1
+            local doors = {}
+            for _, d in ipairs({ "E", "S", "W", "N" }) do if info.open[d] then doors[#doors + 1] = { side = d, pos = info.door[d] } end end
+            for _, b in ipairs(deco_layout_check(lay, info.room, doors)) do bad(15, id .. " (" .. info.theme .. "): " .. b) end
+        end
+    end
+    S.furnished = n15
     -- 17. the cars: every waypoint and every stop in carved air, the whole sweep (the engine's yaw rule at top speed) in carved air; Blue and Yellow never share a level
     local lines = transit_lines()
     S.lines = #lines
@@ -304,7 +317,8 @@ function K.check(plan, CG)
                     local k = info.open[d]
                     if k and k ~= "internal" and info.door and info.door[d] then doors[#doors + 1] = { side = d, pos = info.door[d] } end
                 end
-                local lay = deco_layout(info.theme, info.room, doors, function(salt) return deco_rng(CG.H, ctx.floor, info.ci, info.cj, salt or 1) end, ctx.floor)
+                local mkf = function(salt) return deco_rng(CG.H, ctx.floor, info.ci, info.cj, salt or 1) end
+                local lay = (ctx.floor == 4) and transit_layout(info, mkf) or deco_layout(info.theme, info.room, doors, mkf, ctx.floor)
                 if lay then
                     n15 = n15 + 1
                     for _, b in ipairs(deco_layout_check(lay, info.room, doors)) do bad(15, id .. " (" .. info.theme .. "): " .. b) end
