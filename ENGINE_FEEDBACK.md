@@ -348,3 +348,15 @@ Floor 1 is 256 x 512 m. A per-edge flood (two cells with 4.5 m trimmed off every
 - ## Hook regions need `min_h`: placements are limited to 192 voxels beyond the region; a 32 m cell = one region fits, but a hall that jogs past the border needs the neighbour's region
 kind: idea        severity: nice to have
 My workaround is that each cell carves its OWN half of every shared hall and jog (both cells compute both door positions), so no placement crosses a region border and the order between regions does not matter. It works (0 problems over 10 seeds x 167 edges); worth saying in docs/WORLD_GEN.md as the recommended pattern: "build everything of a region inside the region, let the neighbour build its half".
+
+## Phase 19: big floors at runtime (P2)
+- **Worked**: the floors are only the region hook's now (about 38,000 placements for three floors, mean 0.9 ms / max 8.5 ms per region, 0 failed); a recording of three floors (24,280 ticks, bot) replays to the recorded hash; a saved run resumes in its band (`worldgen.seed` from the save's sidecar, `--seed` only for a new world); `status.render.lights` shows authored / drawn / cut and the light budget is enough for nine cells around the player (17 authored lights in a typical spot because of `light.far`).
+- ## `status.render.lights` and `cpu_ms / gpu_ms` are zero until a picture has been rendered
+kind: unclear docs        severity: nice to have
+what I tried: `status` after 200 ticks of a floor with ~100 emitter lights; expected `authored` > 0. happened: `{"authored": 0, ...}` and `gpu_ms 0`; after one `screenshot` the same call said `authored 17, probe_lights 17, gpu_ms 4.6`. A one-line note in docs/MCP.md ("render numbers are those of the last rendered frame: take a screenshot first") would do.
+- ## A player that is teleported (or resumed) into a region the hook has not generated yet ends up inside the rock
+kind: unclear docs        severity: annoying
+what I tried: `player.teleport` to a checkpoint on a hook floor in `on_start` of a saved run. happened: the player stood at y 6.6 inside the brick mass (the plain was there when the teleport happened, the hook's floor came after the world was made again). workaround: a loading veil that holds the player (`player.teleport` every tick) until `world.material_at` of the floor under the target is not `unloaded` and not `air`, then teleports. A `world.preload(box)` / "teleport waits for its chunks" option would remove the veil logic.
+- ## `save_world` needs `--save FILE` even when the project has `save = world.vxs`
+kind: unclear docs        severity: annoying. `saved in memory only (no --save file / project save)` for a project whose project.cfg names a save file; the MCP server did not take it from there. workaround: pass `--save projects/X/world.vxs`.
+- Observation: `status.sim.bodies` was 191 awake bodies on a floor with about 15 cells alive (loot, gore and the floating orbs): not a problem yet, worth watching in P5.
