@@ -125,13 +125,14 @@ F.register("stairs_free", {
     names = { "Stairwell", "Service Stairs", "The Way Down" },
     things = function(room, ctx)
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
-        G.torch(cx, 2.2, cz, { preset = "campfire", color = { 1, 0.8, 0.4 }, reach = 14, far = 26, name = room.id .. "_glow" })
+        G.torch(cx, 1.4, cz, { preset = "campfire", color = { 1, 0.8, 0.4 }, reach = 14, far = 26, name = room.id .. "_glow" })
         F.sconces(room, ctx, 8, 3.2)
         local id = room.id .. "_down"
-        local box = { G.wx(cx - 1.8), G.wy(-1.4), G.wz(cz - 1.8), G.wx(cx + 1.8) - 1, G.wy(-0.4), G.wz(cz + 1.8) - 1 }
+        -- the foot of the stair (the east half of the hole, 2.25 m down)
+        local box = { G.wx(cx - 0.5), G.wy(-2.2), G.wz(cz - 1.5), G.wx(cx + 3.0) - 1, G.wy(-1.0), G.wz(cz + 1.5) - 1 }
         local vol = events.volume{ name = id, box = box, player = true, bodies = false }
-        events.on(vol, "enter", function() F.stairs_enter() end)
-        G.traps.add_interact(id, cx, 0.4, cz, tr("ui.descend", G.run.next_floor(ctx.floor) or "?"), 3.4)
+        events.on(vol, "enter", function() F.stairs_enter(room.id) end)
+        G.traps.add_interact(id, cx - 3.4, 0.4, cz, tr("ui.descend", G.run.next_floor(ctx.floor) or "?"), 3.6, function() return F.stairs_open(room.id) end)
     end,
 })
 
@@ -146,9 +147,8 @@ F.register("arena", {
             G.brazier(cx + math.cos(a) * 9, cz + math.sin(a) * 7, { reach = 16, far = 26 })
         end
         G.lamp(cx, cz, room.h, 2.0, { reach = 18, far = 26, intensity = 16 * G.gen.rules.dark() })
-        local kind = (ctx.floor >= 3) and "cyclops" or "troll"
-        ctx.add(room, kind, cx, cz, 0, { hp = (kind == "troll") and 2.4 or 1.6, name = "Neighbourhood boss" })
-        F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { own = true, kinds = { { "orc", 4 }, { "bandit", 3 }, { "goblin", 3 } }, allow = function(x, z) return G.dist2(x, z, cx, cz) > 5 end })
+        -- the boss himself is made by G.boss.begin when the player steps in (F.lair_of): here only his guards
+        F.populate(room, ctx, r, F.STAGING.quarter.guards, { own = true, kinds = { { "orc", 4 }, { "bandit", 3 }, { "goblin", 3 } }, allow = function(x, z) return G.dist2(x, z, cx, cz) > 5 end })
     end,
 })
 F.register("ante", {

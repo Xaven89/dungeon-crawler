@@ -16,6 +16,7 @@ C.defs = {
     night_owl         = { dmg = 0.25, mp = -0.5 },
     bulk_discount     = { shop = -0.30, sell = -0.5 },
     glass_cannon      = { dmg = 0.40, hp = -0.25 },
+    stasis            = { edmg = -0.15, gold = -0.20 },
 }
 C.order = { "hazard_pay", "product_placement", "union_dues", "fine_print", "exclusive", "night_owl", "bulk_discount", "glass_cannon" }
 
@@ -50,7 +51,10 @@ function C.offer(seed, floor_n)
     local r = G.gen.layout.make_rng(seed, floor_n, 909)
     r.shuffle(pool)
     local out = {}
-    for i = 1, min(3, #pool) do out[i] = pool[i] end
+    local forced = G.state.flags.forced_contract
+    if forced and C.defs[forced] and not C.has(forced) then out[1] = forced end
+    for i = 1, #pool do if #out >= 3 then break end; if pool[i] ~= forced then out[#out + 1] = pool[i] end end
+    G.state.flags.forced_contract = nil
     return out
 end
 

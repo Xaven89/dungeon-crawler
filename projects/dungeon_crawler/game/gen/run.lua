@@ -70,6 +70,7 @@ end
 function R.begin_floor(n)
     local run = R.cur()
     run.floor = n
+    run.fclock, run.fstage, run.collapsed = 0, 0, nil
     G.save()
     G.screen = "loading"
     G.safe = false
@@ -105,6 +106,8 @@ function R.descend(confirmed)
     if not run or G.screen == "loading" then return end
     if not confirmed and run.mode == "gen" then G.show.open_recap(); return end        -- the recap first; its button comes back here
     G.screen = nil
+    if run.early_descent and G.floorgen.active then G.floorgen.early_penalty() end
+    run.early_descent = nil
     if run.mode == "orientation" then run.mode = "gen" end
     local nxt = R.next_floor(run.floor)
     if not nxt then G.finish_floor(); return end

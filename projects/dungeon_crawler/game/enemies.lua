@@ -121,6 +121,16 @@ end
 -- and taken away again when he leaves; what was killed stays dead (W.remaining), a room that was cleared stays cleared (saved).
 E.remaining = {}      -- room -> { [index] = true } of the entries still alive
 E.spawned = {}        -- room -> true while its enemies exist
+-- one entry of a room's list (the boss' arena guards, the exiled coming back): i = its index
+function E.spawn_entry(room, list, i)
+    local e = list[i]
+    if not e then return nil end
+    local fl = (G.run and G.run.floor_no() or 1) - 1
+    local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = (1 + (G.state.level - 1) * 0.03) * (1 + fl * 0.2) * (e.hp or 1) * G.run.diff().hp, dmg_mult = (1 + fl * 0.1) * G.run.diff().dmg, affix = e.affix, name = e.name, rematch = e.rematch, index = i })
+    if inst and e.captive then inst.captive = e.captive; agent.stop(inst.id) end
+    return inst
+end
+
 function E.spawn_room(room, list)
     if G.state.cleared[room] or E.spawned[room] then return 0 end
     E.spawned[room] = true
@@ -129,27 +139,61 @@ function E.spawn_room(room, list)
     for i, e in ipairs(list) do
         if e.captive and G.state.opened[e.captive] then rem = rem            -- (let out already)
         elseif not rem or rem[i] then
-            local fl = (G.run and G.run.floor_no() or 1) - 1
-            local inst = E.spawn(e[1], e[2], e[4] or 0, e[3], { room = room, hp_mult = (1 + (G.state.level - 1) * 0.03) * (1 + fl * 0.2) * (e.hp or 1) * G.run.diff().hp, dmg_mult = (1 + fl * 0.1) * G.run.diff().dmg, affix = e.affix, name = e.name, rematch = e.rematch, index = i })
-            if inst then n = n + 1; if e.captive then inst.captive = e.captive; agent.stop(inst.id) end end
+            if E.spawn_entry(room, list, i) then n = n + 1 end
         end
     end
     return n
 end
 
+-- an enemy that went where it must not (a safe room): taken away for `ticks`, then it is back at its place (its entry stays owed in the room's list)
+E.exiled = {}
+function E.exile(inst, ticks)
+    if inst.dead or not inst.room or not inst.index then return end
+    E.exiled[#E.exiled + 1] = { room = inst.room, index = inst.index, at = time.tick() + ticks }
+    pcall(agent.remove, inst.id)
+    E.list[inst.id] = nil
+    E.by_model[inst.mdl] = nil
+end
+function E.tick_exiled(t)
+    for i = #E.exiled, 1, -1 do
+        local x = E.exiled[i]
+        if t >= x.at then
+            table.remove(E.exiled, i)
+            local list = G.world.populate_list[x.room]
+            if E.spawned[x.room] and list and not G.state.cleared[x.room] and E.alive_count() < 60 then E.spawn_entry(x.room, list, x.index) end
+        end
+    end
+end
+
 function E.despawn_room(room)
     if not E.spawned[room] then return end
     E.spawned[room] = nil
+    -- what is still to be spawned the next time: every entry of the room's list that was not killed (an entry that never spawned, because the engine's agents were used up, is still owed)
+    local old = E.remaining[room]
     local rem = {}
+    local list = G.world.populate_list[room]
+    for i = 1, #(list or {}) do if old == nil or old[i] then rem[i] = true end end
     for id, inst in pairs(E.list) do
         if inst.room == room then
-            if not inst.dead then rem[inst.index or 0] = true end
+            if inst.dead and inst.index then rem[inst.index] = nil end
+            if not inst.dead and inst.index and not rem[inst.index] and not (list and list[inst.index]) then rem[inst.index] = true end
             agent.remove(id)
             E.list[id] = nil
             E.by_model[inst.mdl] = nil
         end
     end
     E.remaining[room] = rem
+    if G.boss and G.boss.on_room_despawn then G.boss.on_room_despawn(room) end
+end
+
+-- how many entries of a room's list are still to be spawned (not killed, not let out)
+function E.owed(room, list)
+    if G.state.cleared[room] then return 0 end
+    local rem, n = E.remaining[room], 0
+    for i, e in ipairs(list or {}) do
+        if not (e.captive and G.state.opened[e.captive]) and (not rem or rem[i]) then n = n + 1 end
+    end
+    return n
 end
 
 -- a new floor: nobody of the old one is left (the dead are gone with their rooms)
@@ -160,6 +204,7 @@ function E.reset_floor()
     for _, l in ipairs(E.loot) do pcall(body.remove, l.body) end
     for _, p in ipairs(E.projectiles) do pcall(body.remove, p.body) end
     E.loot, E.projectiles = {}, {}
+    E.exiled = {}
 end
 
 function E.alive_in(room)
@@ -592,6 +637,7 @@ function E.tick(t)
         if (t + inst.id) % E.AI_PERIOD == 0 then E.ai(inst, t) end
     end
     if t % 4 == 0 then E.tick_loot(t); E.tick_projectiles(t) end
+    if t % 30 == 0 and #E.exiled > 0 then E.tick_exiled(t) end
 end
 
 function on_agent(id, what)

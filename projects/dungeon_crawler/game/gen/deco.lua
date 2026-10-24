@@ -193,6 +193,68 @@ function deco_barrel(B, x, y, z)
     B.vbox(cx - 2, cy + 14, cz - 2, cx + 2, cy + 14, cz + 2, "hazard_y")
 end
 
+-- ---------------------------------------------------------------------------------------------- the borough lair: a static spiral of rings in the courtyard (the 2 x 2 cells = 64 x 64 m, centre at 32, 32)
+-- walls (half-sizes of squares around the centre): W1 22 -> 20.8 (gap S), ring C1 20.8 -> 17, W2 17 -> 15.8 (gap N), ring C2 15.8 -> 12, W3 12 -> 10.8 (gap S), the arena inside 10.8 (21.6 m square);
+-- the stairwell pit sits in the arena's north part under a forcefield slab (a glowing voxel slab, cleared by the game when the boss falls). Coordinates are super-cell local metres.
+function deco_borough_geom()
+    return {
+        cx = 32, cz = 32, wall = 1.2, gap = 2.5, h = 6.2,
+        w1 = 22, w2 = 17, w3 = 12,                     -- outer half-sizes of the three walls
+        arena = 10.8,                                  -- half-size of the arena
+        pit = { x0 = 30, z0 = 32 - 8, x1 = 34, z1 = 32 - 4 },     -- the stairwell pit under the forcefield (4 x 4 m)
+        gaps = { w1 = "S", w2 = "N", w3 = "S" },
+    }
+end
+
+-- cu, cv: which cell of the 2 x 2 (0 / 1): the builder clips to the cell's own 32 x 32 m
+function deco_borough(B, cu, cv)
+    local g = deco_borough_geom()
+    local ox, oz = cu * 32, cv * 32
+    local function bb(x0, y0, z0, x1, y1, z1, mat)
+        x0, x1, z0, z1 = x0 - ox, x1 - ox, z0 - oz, z1 - oz
+        if x1 <= 0 or z1 <= 0 or x0 >= 32 or z0 >= 32 then return end
+        B.fill(math.max(0, x0), y0, math.max(0, z0), math.min(32, x1), y1, math.min(32, z1), mat)
+    end
+    local cx, cz, t, hw = g.cx, g.cz, g.wall, g.gap
+    local H = g.h
+    -- a square wall of outer half-size h with a gap on one side
+    local function wall(h, gapside, mat)
+        local i = h - t
+        -- N and S strips (full width), W and E strips (between them)
+        local function strip(x0, z0, x1, z1, side)
+            if side == gapside then
+                if side == "N" or side == "S" then
+                    bb(x0, 0, z0, cx - hw, H, z1, mat); bb(cx + hw, 0, z0, x1, H, z1, mat)
+                    bb(cx - hw, 4.8, z0, cx + hw, H, z1, mat)          -- the lintel over the opening
+                end
+            else bb(x0, 0, z0, x1, H, z1, mat) end
+        end
+        strip(cx - h, cz - h, cx + h, cz - i, "N"); strip(cx - h, cz + i, cx + h, cz + h, "S")
+        strip(cx - h, cz - i, cx - i, cz + i, "W"); strip(cx + i, cz - i, cx + h, cz + i, "E")
+    end
+    wall(g.w1, g.gaps.w1, "dungeon_brick"); wall(g.w2, g.gaps.w2, "mossy"); wall(g.w3, g.gaps.w3, "marble")
+    -- the roof over the ring corridors and the walls (the arena keeps the courtyard's ceiling)
+    local function roof(h0, h1)
+        bb(cx - h1, H, cz - h1, cx + h1, H + 0.5, cz - h0, "dungeon_brick"); bb(cx - h1, H, cz + h0, cx + h1, H + 0.5, cz + h1, "dungeon_brick")
+        bb(cx - h1, H, cz - h0, cx - h0, H + 0.5, cz + h0, "dungeon_brick"); bb(cx + h0, H, cz - h0, cx + h1, H + 0.5, cz + h0, "dungeon_brick")
+    end
+    roof(g.arena, g.w1)
+    -- the drawbridge: two posts and a lintel of gold in front of the outer gap, a rug to the door
+    bb(cx - hw - 0.4, 0, cz + g.w1, cx - hw, 5.4, cz + g.w1 + 0.4, "gold"); bb(cx + hw, 0, cz + g.w1, cx + hw + 0.4, 5.4, cz + g.w1 + 0.4, "gold")
+    bb(cx - hw, 5.0, cz + g.w1, cx + hw, 5.4, cz + g.w1 + 0.4, "gold")
+    bb(cx - hw, 0, cz + g.w1 + 0.4, cx + hw, 0.05, cz + g.w1 + 4, "neon_red")
+    -- the arena: a gold ring on the floor, the stairwell pit and its forcefield
+    local p = g.pit
+    local pitw = { x0 = p.x0 - 0.3, z0 = p.z0 - 0.3, x1 = p.x1 + 0.3, z1 = p.z1 + 0.3 }
+    bb(p.x0, -1.5, p.z0, p.x1, 0, p.z1, nil)
+    bb(pitw.x0, 0, pitw.z0, p.x0, 0.5, pitw.z1, "marble"); bb(p.x1, 0, pitw.z0, pitw.x1, 0.5, pitw.z1, "marble")
+    bb(p.x0, 0, pitw.z0, p.x1, 0.5, p.z0, "marble"); bb(p.x0, 0, p.z1, p.x1, 0.5, pitw.z1, "marble")
+    bb(p.x0, -1.55, p.z0, p.x1, -1.5, p.z1, "gold")
+    bb(p.x0, 0, p.z0, p.x1, 0.5, p.z1, "neon_red")                                   -- the forcefield: a glowing slab that fills the pit up to the rim
+    -- a ring of gold in the arena floor
+    B.ring(cx - ox, cz - oz, 7.5, 8.2, 0, 0.1, "gold")
+end
+
 -- ---------------------------------------------------------------------------------------------- the decoration of a room by its theme (the hook)
 function deco_room(B, theme, room, doors, mk, fl)
     local floor = math.floor
@@ -315,6 +377,18 @@ function deco_room(B, theme, room, doors, mk, fl)
         B.fill(x0 + 1.5, 0.9, z1 - 0.2, x0 + 1.9, 1.3, z1 + 0.1, "gold")
     elseif theme == "arena" then
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        for _, d in ipairs(doors or {}) do                                    -- the themed door: a gold frame and a sign (the notice) over the opening
+            local p = d.pos
+            if d.side == "E" or d.side == "W" then
+                local x = (d.side == "E") and room.x + room.w - 0.5 or room.x
+                B.fill(x, 0, p - 3.4, x + 0.5, 5.2, p - 3.0, "gold"); B.fill(x, 0, p + 3.0, x + 0.5, 5.2, p + 3.4, "gold"); B.fill(x, 4.6, p - 3.4, x + 0.5, 5.2, p + 3.4, "gold")
+                local xs = (d.side == "E") and x - 0.15 or x + 0.5; B.fill(xs, 3.8, p - 1.2, xs + 0.15, 4.5, p + 1.2, "neon_red")
+            else
+                local z = (d.side == "S") and room.z + room.d - 0.5 or room.z
+                B.fill(p - 3.4, 0, z, p - 3.0, 5.2, z + 0.5, "gold"); B.fill(p + 3.0, 0, z, p + 3.4, 5.2, z + 0.5, "gold"); B.fill(p - 3.4, 4.6, z, p + 3.4, 5.2, z + 0.5, "gold")
+                local zs = (d.side == "S") and z - 0.15 or z + 0.5; B.fill(p - 1.2, 3.8, zs, p + 1.2, 4.5, zs + 0.15, "neon_red")
+            end
+        end
         B.ring(cx, cz, 7.5, 8.2, 0, 0.1, "gold")
         for i = 0, 7 do
             local a = i * math.pi / 4 + math.pi / 8
@@ -359,12 +433,15 @@ function deco_room(B, theme, room, doors, mk, fl)
         B.fill(cx + 1.5, 0, cz - 1.5, cx + 3.5, 0.8, cz + 0.5, "marble"); B.fill(cx + 1.7, 0.8, cz - 1.3, cx + 3.3, 0.95, cz + 0.3, "gutter_water")       -- the fountain
         B.fill(room.x + room.w - 0.6, 1.4, room.z + 3, room.x + room.w - 0.4, 2.6, room.z + 7, "lantern")                                                   -- a screen on the east wall
     elseif theme == "stairs_free" then
+        -- the stairwell of the books: a round hole of 3.3 m radius with a lit rim, a wide stair (0.45 m steps) down its west side to a floor 2.25 m below
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
-        B.fill(cx - 2, -1.5, cz - 2, cx + 2, 0, cz + 2)                                                   -- the stairwell: a pit of 4 x 4 m, 1.5 m deep (the game's descend volume sits in it)
-        B.fill(cx - 2.3, 0, cz - 2.3, cx - 2, 0.5, cz + 2.3, "marble"); B.fill(cx + 2, 0, cz - 2.3, cx + 2.3, 0.5, cz + 2.3, "marble")
-        B.fill(cx - 2, 0, cz - 2.3, cx + 2, 0.5, cz - 2, "marble"); B.fill(cx - 2, 0, cz + 2, cx + 2, 0.5, cz + 2.3, "marble")
-        B.fill(cx - 2, -1.55, cz - 2, cx + 2, -1.5, cz + 2, "gold")
-        for _, d in ipairs({ { -1.6, -1.6 }, { 1.6, -1.6 }, { -1.6, 1.6 }, { 1.6, 1.6 } }) do B.fill(cx + d[1] - 0.15, -1.5, cz + d[2] - 0.15, cx + d[1] + 0.15, 0.4, cz + d[2] + 0.15, "lantern") end
+        B.pillar(cx, cz, 3.3, -2.3, 0, nil)
+        B.ring(cx, cz, 3.3, 3.7, 0, 0.45, "marble")
+        for k = 1, 5 do B.fill(cx - 3.3 + (k - 1) * 0.9, -2.3, cz - 1.6, cx - 3.3 + k * 0.9, -0.45 * k, cz + 1.6, "marble") end
+        B.pillar(cx, cz, 3.3, -2.35, -2.3, "gold")
+        for i = 0, 7 do local a = i * math.pi / 4 + math.pi / 8; local px, pz = cx + math.cos(a) * 3.55, cz + math.sin(a) * 3.55; B.fill(px - 0.12, 0.45, pz - 0.12, px + 0.12, 0.85, pz + 0.12, "lantern") end
+    elseif theme == "borough" then
+        deco_borough(B, (room.x == 0) and 1 or 0, (room.z == 0) and 1 or 0)
     end
     for _, c in ipairs(deco_crates(theme, room, doors, mk, fl or 1)) do deco_chest(B, c.tier, c.x, c.y, c.z, c.face) end
     if theme == "depot" then

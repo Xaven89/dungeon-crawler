@@ -252,7 +252,7 @@ end
 local links = { { "lobby", "hall" }, { "hall", "boiler" }, { "boiler", "conveyor" }, { "conveyor", "gutter" }, { "gutter", "ballroom" }, { "ballroom", "grotto" }, { "grotto", "arena" }, { "arena", "stairwell" } }
 -- the map of a big floor: a window of 260 x 260 px around the player (0.8 px per metre: 10 cells), the rooms the contestant has seen, the halls between them, the safe rooms and the stairwells
 -- within two cells (even in the fog), the arrow of the player
-local MM_COL = { safe = "#2f6f4f", rest = "#2f6f4f", guild = "#3f6f6f", stairs_free = "#a88a2a", arena = "#8a2f2f", ante = "#5a3f3f", prize = "#7a5fa0", connector = "#2a3347", borough = "#4a3f2f" }
+local MM_COL = { safe = "#2f8f5f", rest = "#2f8f5f", guild = "#3f8f8f", stairs_free = "#c8a83a", arena = "#b03a3a", ante = "#7a4f4f", prize = "#8a6fc0", connector = "#4a5878", borough = "#6a5a3a", borough_arena = "#b03a3a" }
 function G.minimap_cells(w, h)
     local F, s = G.floorgen, G.state
     local P = F.layout
@@ -284,7 +284,7 @@ function G.minimap_cells(w, h)
             local special = (r.theme == "safe" or r.theme == "rest" or r.theme == "stairs_free" or r.theme == "guild")
             if seen or (special and near) then
                 local cur = (G.current_room == id)
-                local col = seen and (cur and "#4a6a9a" or (MM_COL[r.theme] or "#2a3347")) or (MM_COL[r.theme] or "#2a3347") .. "80"
+                local col = seen and (cur and "#5a86c4" or (MM_COL[r.theme] and MM_COL[r.theme] or "#4a5878")) or (MM_COL[r.theme] or "#2a3347") .. "a0"
                 clipped(sx(r.x), sz(r.z), r.w * sc, r.d * sc, col, { radius = 2 })
                 if cur then clipped(sx(r.x), sz(r.z), r.w * sc, r.d * sc, "#9fd0ff", { radius = 2, outline = true, thickness = 2 }) end
                 if r.theme == "stairs_free" then ui.text(sx(r.x + r.w / 2) - 4, sz(r.z + r.d / 2) - 8, "v", { size = 16, color = "#ffe27a" }) end
@@ -294,8 +294,18 @@ function G.minimap_cells(w, h)
     local fx, fy, fz = player.forward()
     local n = math.max(0.01, math.sqrt(fx * fx + fz * fz))
     local ax, ay = mx + size / 2, my + size / 2
-    ui.line(ax, ay, ax + fx / n * 12, ay + fz / n * 12, "#ffd24a", 3)
-    ui.circle(ax, ay, 4.5, "#ffd24a")
+    ui.line(ax, ay, ax + fx / n * 16, ay + fz / n * 16, "#ffd24a", 4)
+    ui.circle(ax, ay, 7, "#ffd24a")
+    ui.circle(ax, ay, 3, "#0b0d14")
+    -- the floor's clock under the map: the time left and what the clock allows now
+    local f = F.frac()
+    local left = F.remaining_s()
+    local state, col = "stairwells sealed", "#c0c8d8"
+    if f >= 1 then state, col = "COLLAPSE", "#ff5050"
+    elseif f >= F.AT_CLOSE then state, col = "safe rooms closed", "#ff7a5a"
+    elseif f >= F.AT_LATE then state, col = "stairs free, service open", "#7fe08a"
+    elseif f >= F.AT_OPEN then state, col = "stairs open (leaving now costs viewers)", "#ffd24a" end
+    ui.text(mx, my + size + 14, string.format("%d:%02d  %s", floor(left / 60), left % 60, state), { size = 18, color = col })
 end
 
 function G.minimap(w, h)

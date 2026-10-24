@@ -61,7 +61,13 @@ for seed in seeds:
             cells[(ci, cj)] = dict(role=p[3], theme=p[4], room=[float(x) for x in p[5:9]], sides=sides)
         problems = []
         checks = 0
-        def check(label, lo_m, hi_m, frm_m):
+        # the boroughs: origin cell of every 2 x 2 super-cell; the fortress (a static spiral of rings, super-cell metres 10 .. 54) is checked by its own flood of the whole courtyard
+        origins = set()
+        for (ci, cj), c in cells.items():
+            if c["theme"] == "borough":
+                origins.add((ci - (1 if c["sides"]["W"][0] == "internal" else 0), cj - (1 if c["sides"]["N"][0] == "internal" else 0)))
+        forts = [(oi * 32 + 10, oj * 32 + 10, oi * 32 + 54, oj * 32 + 54) for oi, oj in sorted(origins)]
+        def check(label, lo_m, hi_m, frm_m, strict=False):
             global checks
             checks += 1
             try: r, lo, hi = flood(v, lo_m, hi_m, frm_m)
@@ -72,6 +78,8 @@ for seed in seeds:
             bz = (fl * 32 + 2) * 32.0
             # an island that is not at floor level (+-4 voxels) is decoration (the top of a sarcophagus, a shelf, a crate stack) or a pit (lava, the stairwell): not a place the walker must reach
             real = [(isl["cells"], (isl["min"][0] / 16, isl["min"][2] / 16 - bz, isl["max"][0] / 16, isl["max"][2] / 16 - bz)) for isl in r["islands"] if abs(isl["seed"][1] - 128) <= 4 and isl["cells"] > 40]
+            # (a box that cuts a fortress cuts its rings: the courtyard check covers them)
+            if not strict: real = [x for x in real if not any(x[1][0] >= f[0] - 1 and x[1][1] >= f[1] - 1 and x[1][2] <= f[2] + 1 and x[1][3] <= f[3] + 1 for f in forts)]
             if real or (r.get("islands_cut") and not r["islands"]): problems.append("%s: %d unreached, islands %s" % (label, r["unreached"], real[:3]))
         for (ci, cj), c in sorted(cells.items(), key=lambda kv: (kv[0][1], kv[0][0])):
             rm = c["room"]
@@ -85,7 +93,7 @@ for seed in seeds:
             for d, (dx, dz) in (("E", (1, 0)), ("S", (0, 1))):
                 kind, dr = c["sides"][d]
                 if kind in (None, "artery"): continue
-                if kind == "internal": dr = (rm[1] if d == "E" else rm[0]) + 4        # (inside a super-cell: any spot of the quarter room)
+                if kind == "internal": continue                                        # (inside a super-cell: the courtyard check below)
                 ni, nj = ci + dx, cj + dz
                 if (ni, nj) not in cells: continue
                 x0, z0 = ci * 32, cj * 32
@@ -102,6 +110,8 @@ for seed in seeds:
                 if d == "N": lo[1] -= 5
                 lo, hi = shrunk(lo, hi, W, H, keep=d)
                 check("c%d_%d artery door %s" % (ci, cj, d), lo, hi, inside_door(d, dr))
+        for oi, oj in sorted(origins):
+            check("borough %d_%d courtyard (every ring up to the arena)" % (oi, oj), (oi * 32, oj * 32), (oi * 32 + 64, oj * 32 + 64), (oi * 32 + 20, oj * 32 + 58 - 1.5), strict=True)
         hk = v.tool("status")["world"].get("hook") or {}
         if hk.get("failed"): problems.append("the region hook failed in %d region(s) (see the log)" % hk["failed"])
         print("seed %d floor %d: %d checks, %d problems, %.0f s" % (seed, fl, checks, len(problems), time.time() - t0))

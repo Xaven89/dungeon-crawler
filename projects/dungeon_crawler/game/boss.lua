@@ -17,8 +17,16 @@ B.lair = { room = "arena", x = 30, z = 136.5, kind = "manager" }
 function B.begin(lair)
     if lair then B.lair = lair end
     local L_ = B.lair
-    if B.started or G.state.flags.boss_dead then return end
+    local flag = L_.flag or "boss_dead"
+    if G.state.flags[flag] then return end
+    if B.started then
+        -- another lair's boss may still stand (the player left its room): a boss that is not in this fight any more is let go
+        if B.lair_prev and B.lair_prev ~= L_.room and B.inst and not B.inst.dead and not B.active then
+            pcall(agent.remove, B.inst.id); E.list[B.inst.id] = nil; E.by_model[B.inst.mdl] = nil; B.started = false
+        else return end
+    end
     B.started = true
+    B.lair_prev = L_.room
     local A = G.announcer
     local inst = E.spawn(L_.kind or "manager", L_.x, 0, L_.z, { room = L_.room, still = true, hp_mult = (1 + (G.state.level - 1) * ((L_.room == "arena") and 0.04 or 0.02)) * (L_.hp_mult or 1) * G.run.diff().hp })
     if not inst then B.started = false; return end
@@ -174,8 +182,17 @@ function B.on_event(inst, event, x, y, z)
     elseif event == "summon" then B.summon(inst, x, y, z) end
 end
 
+-- the room of the boss went away (the player is far): the fight starts over when he comes back (the boss has full health again; a dead boss stays dead by its flag)
+function B.on_room_despawn(room)
+    if B.lair and B.lair.room == room and B.started and B.inst and not B.inst.dead then
+        B.started, B.active, B.inst = false, false, nil
+        if G.cutscene then camera.mode("first"); G.cutscene = false end
+    end
+end
+
 function B.on_dead(inst)
-    G.state.flags.boss_dead = true
+    G.state.flags[B.lair.flag or "boss_dead"] = true
+    B.started = false
     B.active = false
     local A = G.announcer
     A.award("boss_down")

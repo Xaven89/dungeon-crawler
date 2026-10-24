@@ -83,7 +83,7 @@ function shell_region(rx, rz, wh)
             floor_mat(r.x, r.x + r.w, r.z, r.z + r.d, FLOOR[theme] or "flagstone")
             -- ceiling lights: a grid of 8 m
             for x = r.x + 4, r.x + r.w - 2, 8 do for z = r.z + 4, r.z + r.d - 2, 8 do light(x, z, YF + hv - 1) end end
-            deco = { theme = (theme == "borough") and "hall" or theme, room = r }
+            deco = { theme = theme, room = r }
         end
         -- the halls: from one metre inside the room to the cell border, and the jog to the neighbour's door
         for _, d in ipairs({ "E", "S", "W", "N" }) do
@@ -109,6 +109,16 @@ function shell_region(rx, rz, wh)
                         elseif d == "S" then carve(lo, hi, 32 - t, 32, hh) else carve(lo, hi, 0, t, hh) end
                     end
                 end
+                -- a bathroom door: a landmark on the wall at the middle of some halls (a plain plate and a sign; it sits at the middle of the hall, never on a door band)
+                if (d == "E" or d == "S") and (kind == "tree" or kind == "loop") and H_(0, fl * 1000 + 830, ci, cj, (d == "E") and 1 or 2) < 0.3 then
+                    if d == "E" then
+                        local xm = (r.x + r.w + 32) / 2
+                        box(xm - 0.8, xm + 0.8, a - 0.12, a, YF, YF + 38, "dark_wood"); box(xm - 0.4, xm + 0.4, a - 0.12, a, YF + 42, YF + 50, "lantern")
+                    else
+                        local zm = (r.z + r.d + 32) / 2
+                        box(a - 0.12, a, zm - 0.8, zm + 0.8, YF, YF + 38, "dark_wood"); box(a - 0.12, a, zm - 0.4, zm + 0.4, YF + 42, YF + 50, "lantern")
+                    end
+                end
                 -- a light in the middle of every hall's half
                 if kind ~= "alley" then
                     if d == "E" then light(r.x + r.w + (32 - r.x - r.w) / 2, c, YF + hh - 1) elseif d == "W" then light(r.x / 2, c, YF + hh - 1)
@@ -127,12 +137,13 @@ function shell_region(rx, rz, wh)
                 local w1 = math.floor(math.sqrt(RV * RV - dz * dz) + 0.5)
                 local lo, hi = X0 + R(cx) - w1, X0 + R(cx) + w1
                 local z = Z0 + R(cz) + dz
+                local kind = mat and "box" or "clear"
                 if math.abs(dz) >= R0 then
-                    ops[#ops + 1] = { kind = "box", lo = { lo, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
+                    ops[#ops + 1] = { kind = kind, lo = { lo, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
                 else
                     local w0 = math.floor(math.sqrt(R0 * R0 - dz * dz) + 0.5)
-                    ops[#ops + 1] = { kind = "box", lo = { lo, yv(y0), z }, hi = { X0 + R(cx) - w0 - 1, yv(y1) - 1, z }, material = mat }
-                    ops[#ops + 1] = { kind = "box", lo = { X0 + R(cx) + w0 + 1, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
+                    ops[#ops + 1] = { kind = kind, lo = { lo, yv(y0), z }, hi = { X0 + R(cx) - w0 - 1, yv(y1) - 1, z }, material = mat }
+                    ops[#ops + 1] = { kind = kind, lo = { X0 + R(cx) + w0 + 1, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
                 end
             end
         end

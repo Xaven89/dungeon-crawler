@@ -2,7 +2,9 @@
 """A bot that plays a run on the BIG floors through the MCP server (P2): starts a generated run (skipping the Orientation), and on every floor follows the plan's path from the arrival to the
 nearest free stairwell (teleporting from room to room: the walking is tools/p1_walk.py's), fights the rooms on the way with the game's own functions (Game.autoaim, heal items), opens their crates,
 equips better gear, takes the stairs. It records the session (--record) and replays it at the end to check the hash; it prints the agent and light counts of every floor.
-usage: tools/p2_playthrough.py [SEED] [class] [floors] [--no-replay] [--project P]"""
+usage: tools/p2_playthrough.py [SEED] [class] [floors] [--no-replay] [--project P] [--borough]
+  --borough: on floor 1 the bot goes to the nearest borough, kills its boss in the rotunda and takes ITS stairwell (the forcefield falls with the boss); the other floors use the free stairwells.
+  The floor clock of the bot is 24000 ticks (400 s) so that every threshold (30 / 80 / 95 / 100 %) can be reached; the stairs are waited for if the clock has not opened them."""
 import os, subprocess, sys, time, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
@@ -81,6 +83,32 @@ def counts(v):
     n = L(v, "print(Game.enemies.alive_count(), #Game.floorgen.made_list, Game.gen.track.count and 0 or 0)", 0)[0].split("\t")
     return "agents %s cells %s lights %s" % (n[0], n[1], json.dumps(st["render"].get("lights", {})))
 
+def borough_run(v):
+    """go to the borough of the floor, kill its boss, take the stairwell behind the forcefield"""
+    info = L(v, "local P = Game.floorgen.layout; local r = P.ring_list[1]; if not r then print('none') return end; print(r.id, r.origin, r.pit.x0, r.pit.z0, r.pit.x1, r.pit.z1)", 0)[0].split("\t")
+    if info[0] == "none": print("   no borough on this floor"); return False
+    rid, origin = info[0], info[1]
+    print("  borough", rid, "origin", origin)
+    L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z))" % origin, 200)
+    L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z)); Game.state.hp = Game.player.max_hp()" % rid, 400)
+    print("   current room:", L(v, "print(Game.current_room, Game.boss.started)", 0))
+    v.step(500)
+    for k in range(6):
+        t, kills, end = fight(v, rid, 4800)
+        print("   fight", k, "ticks", t, "kills", kills, "hp", end[1], "deaths", end[2], "boss dead:", L(v, "print(Game.state.flags['boss_dead_%s'])" % rid, 0))
+        if L(v, "print(Game.state.flags['boss_dead_%s'])" % rid, 0)[0].startswith("true"): break
+        L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z)); Game.state.hp = Game.player.max_hp()" % rid, 300)
+    v.step(400)
+    print("   forcefield:", L(v, "print(Game.state.flags['ff_%s'])" % rid, 0))
+    # into the pit
+    L(v, "local G=Game; local r = G.floorgen.layout.rings['%s']; local p = r.pit; player.teleport(G.mx((p.x0 + p.x1) / 2), G.my(-1.1), G.mz((p.z0 + p.z1) / 2))" % rid, 60)
+    print("   screen after the pit:", L(v, "print(Game.screen)", 0))
+    L(v, "Game.run.descend(true)", 2)
+    print("floor %d built in" % 2, wait_floor(v), "s")
+    v.step(200)
+    L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
+    return True
+
 def main():
     maxagents = 0
     with Voxelith(["--project", project, "--threads", "3", "--seed", str(seed), "--record", log]) as v:
@@ -91,6 +119,8 @@ def main():
         v.step(200)
         L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
         for fl in range(1, floors + 1):
+            L(v, "Game.run.cur().floor_ticks = 24000", 0)
+            if "--borough" in sys.argv and fl == 1 and borough_run(v): continue
             info = L(v, PATH, 0)[0].split("\t")
             print("FLOOR", info[0], "cells", info[1], "path", info[2])
             rooms = [x.split(":") for x in info[2].split(",")]
@@ -111,7 +141,10 @@ end""", 5)
                 print("  %-6s %-11s ticks %4d kills %2d  hp %s deaths %s level %s   %s" % (rid, theme, t, kills, end[1], end[2], end[3], counts(v))); sys.stdout.flush()
             print("  at the stairwell: the recap, then down")
             if fl < floors:
-                L(v, "Game.run.descend()", 3)                 # the recap first (the stairwell's own pit calls this)
+                L(v, "local G = Game; local F = G.floorgen; local P = F.layout; local id = P.free_list[1]; if id and not F.stairs_open(id) then G.run.cur().fclock = math.floor(F.floor_ticks() * F.AT_OPEN) + 60 end", 120)    # (the clock opens the stairs)
+                L(v, "local G = Game; local F = G.floorgen; local P = F.layout; local best; for _, id in ipairs(P.plan.stairs) do if id:sub(1, 1) == 'c' and (not best) then best = id end end; local r = P.rooms[best]; F.stairs_enter(best)", 3)    # (the pit does this when the player steps down)
+                if not L(v, "print(Game.screen == 'recap')", 0)[0].startswith('true'):
+                    L(v, "Game.run.descend()", 3)
                 print("   screen:", L(v, "print(Game.screen)", 0))
                 L(v, "Game.run.descend(true)", 2)
                 print("floor %d built in" % (fl + 1), wait_floor(v), "s")
