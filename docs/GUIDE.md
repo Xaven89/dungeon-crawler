@@ -129,6 +129,7 @@ Level scripts: see `docs/LUA_API.md`.
 ## Materials
 `voxelith --dump-materials --materials materials.csv` writes the table. Edit a line while the game runs: colours, roughness, emission, density, toughness,
 restitution and friction **hot reload** within half a second. The flags (anchor, liquid, transparent, viscosity, flammability, burn time, fire spread) are read at start.
+`bump` (the last column, 31st, 0..255) cuts the pattern's seams and specks into the shading and `roughness` / `metalness` now make a sun highlight and a reflection (docs/BUMP.md: what to put in them, `bump = 0` / `gloss = 0` in `project.cfg` switch them off); they hot reload too.
 `fire_spread` (column 24, 0..255, default 255) is how much of the spread chance a fire between two materials keeps (the larger of the two counts):
 grass has 15, so a grass fire stays a patch of about a hundred cells (up to a few hundred) and goes out (16 and 17 can creep on for minutes, 19 can run away over a whole meadow, 21 takes
 it all), while a tree or a house burns through and lights the grass around it (expect a halo of a few burnt voxels of grass around every burning tree, and a house still catches from a meadow fire). Lines may name only the first 15 columns to change just those; new ids add materials.

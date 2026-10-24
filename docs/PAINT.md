@@ -37,3 +37,5 @@ The **state byte** of a solid, non-liquid voxel is its paint: palette index 1..2
 ## For a player's paintbrush
 
 Nothing in the engine is editor-only: a game gives its player a paintbrush by calling `edit.paint_sphere` at the look point (or sending the `paint` action) with the colour the player picked from the palette; the editor's stroke code is the model (dabs a radius apart, one undo step per stroke). There is no in-game item yet.
+
+**Bump (E18)**: the `bump` column of `materials.csv` (0..255) cuts a material's pattern into its normal: recessed seams, grooved planks, pitted stone (docs/BUMP.md; the built-ins brick, wood, stone and concrete have it, `bump = 0` in `project.cfg` turns it off).
