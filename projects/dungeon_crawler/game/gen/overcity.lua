@@ -42,13 +42,13 @@ function OC.enter(P)
     OC.state = nil
     local t = OC.sky_time(G.floorgen.frac())
     local c0 = OC.sky_colours(t)
-    sky.set{ time = t, speed = 0, zenith = c0.zenith, horizon = c0.horizon, ground = c0.ground, tint = PALETTE.tint, fog_tint = PALETTE.fog_tint, sun = PALETTE.sun, ambient = PALETTE.ambient, fog = PALETTE.fog, blend = 2 }
+    sky.set{ time = t, speed = 0, zenith = c0.zenith, horizon = c0.horizon, ground = c0.ground, tint = PALETTE.tint, fog_tint = PALETTE.fog_tint, sun = PALETTE.sun, ambient = PALETTE.ambient, fog = PALETTE.fog, blend = 2, exposure_max = (t < 0.5) and 0.9 or false }
     OC.state = (t >= 0.5) and "night" or "day"
 end
 
 function OC.leave()
     OC.npcs, OC.lights, OC.pubs, OC.night_added = {}, {}, {}, {}
-    sky.set{ time = 0.75, speed = 0, tint = false, fog_tint = false, sun = false, ambient = false, zenith = false, horizon = false, ground = false, fog = 1, blend = 0 }
+    sky.set{ time = 0.75, speed = 0, exposure_max = false, tint = false, fog_tint = false, sun = false, ambient = false, zenith = false, horizon = false, ground = false, fog = 1, blend = 0 }
 end
 
 -- ---------------------------------------------------------------------------------------------- NPCs
@@ -321,7 +321,7 @@ function OC.tick(t)
         local f = G.floorgen.frac()
         local st = OC.sky_time(f)
         local c = OC.sky_colours(st)
-        sky.set{ time = st, speed = 0, zenith = c.zenith, horizon = c.horizon, ground = c.ground }
+        sky.set{ time = st, speed = 0, zenith = c.zenith, horizon = c.horizon, ground = c.ground, exposure_max = (st < 0.5) and 0.9 or false }
         local state = (st >= 0.5) and "night" or "day"
         if state ~= OC.state then
             OC.state = state

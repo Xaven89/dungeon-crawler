@@ -35,9 +35,13 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         for y in range(0, h, 16):
             row = raw[y * stride + 1:(y + 1) * stride]; tot += sum(row[::bpp * 8]); cnt += len(row[::bpp * 8])
         return tot / max(1, cnt)
+    EXPO = { "hall_f1": 5.2, "hall_f5": 4.8, "hall_f6": 6.1, "hall_f7": 7.4, "hall_f8": 4.1, "corridor_f2": 4.9, "borough_f2": 7.1, "hub_f4": 4.1,
+             "square_f3_day": 0.9, "street_f3_day": 0.9, "meadow_f3": 0.9, "pub_f3_inside": 0.9, "square_f3_night": 5.6 }       # (voxel-art, palette/E19b_rules.md: from mean luminance, approximate) used with --fixed
     def shot(name, bz, y0, ex, ey, ez, tx, ty, tz, fov=85, settle=300):
         for attempt in range(3):               # (the first picture after a new binary or a cold start has come out black: wait and take it again)
+            if "--fixed" in sys.argv and name in EXPO: L(v, "sky.set{ exposure = %s }" % EXPO[name], 2)          # (a fixed exposure per view so before / after are comparable; auto again afterwards)
             v.screenshot(os.path.join(SH, name + ".png"), hud=False, settle=settle + attempt * 200, eye=[ex, y0 + ey, bz + ez], target=[tx, y0 + ty, bz + tz], fov=fov)
+            if "--fixed" in sys.argv and name in EXPO: L(v, "sky.set{ exposure = false }", 2)
             if mean_brightness(os.path.join(SH, name + ".png")) > 6: break
             print("  %s was black (attempt %d): again" % (name, attempt + 1))
     if "hall_f1" in only:                       # floor 1: the first hall, from its north-west corner toward the middle

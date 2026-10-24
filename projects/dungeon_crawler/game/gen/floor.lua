@@ -133,9 +133,10 @@ local FOG = { [1] = { 0.12, 0.105, 0.10 }, [2] = { 0.22, 0.10, 0.04 }, [4] = { 0
 -- the ceiling lamps per floor (voxel-art bucket E): 5 cold green, 6 furnace orange, 7 cold white, 8 a dim red; the default is G.LAMP
 local LAMP = { [5] = { 0.75, 1.0, 0.85 }, [6] = { 1.0, 0.6, 0.3 }, [7] = { 0.85, 0.9, 1.0 }, [8] = { 1.0, 0.5, 0.28 } }
 local TORCH = { [5] = { 0.75, 1.0, 0.8 }, [6] = { 1.0, 0.6, 0.3 }, [7] = { 0.9, 0.92, 1.0 }, [8] = { 1.0, 0.5, 0.28 } }
+local AMB_FLOOR = { [2] = { 0.0200, 0.0120, 0.0060 }, [5] = { 0.0200, 0.0300, 0.0260 }, [6] = { 0.0800, 0.0480, 0.0200 }, [7] = { 0.0260, 0.0260, 0.0300 }, [8] = { 0.0350, 0.0140, 0.0080 } }   -- (voxel-art, E19b) the least ambient a surface gets on the floor
 function F.fog(fl)
     local c = FOG[fl] or { 0.09, 0.09, 0.11 }
-    sky.set{ horizon = c, fog = 1.4, blend = 0 }
+    sky.set{ horizon = c, fog = 1.4, blend = 0, ambient_floor = AMB_FLOOR[fl] or false, floor_band = false }
     G.LAMP = LAMP[fl] or { 1.0, 0.93, 0.84 }
     G.LIGHT.intensity = (fl == 6) and 0.9 or ((fl == 8) and 0.65 or ((fl == 5) and 0.45 or 0.55))
     G.WARM = TORCH[fl] or { 1.0, 0.8, 0.55 }
