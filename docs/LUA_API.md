@@ -50,6 +50,7 @@ edit.model("models/house.vxm", x, y, z [, rotation])    -- .vxm or MagicaVoxel .
 world.material_at(x, y, z)  --> "stone" / "air" / "unloaded" (outside the streamed area the world is not known; edits there wait until it loads)
 world.solid(x, y, z)        --> true / false
 world.top(x, z [, from_y [, skip_walk_through]])  --> y of the highest solid voxel of the column (the voxel's own y: stand on y + 1), -1 if none; the 4th argument `true` skips walk-through voxels (stains), still the voxel's y
+world.reset_region(x0, y0, z0, x1, y1, z1)  --> chunks reset: the whole chunks the box touches (voxels) forget every edit and come back from the generator a moment later (edits made after the call wait for them); also forgotten in the save file; the undo history, prefabs wholly inside, loose bodies and fire there are cleaned up (docs/WORLD_GEN.md "Resetting a region")
 ```
 Edits become visible one tick after the call, so a query right after `edit.*` still sees the old world.
 
@@ -112,6 +113,7 @@ Light materials (wood) float, heavy ones (stone, metal) sink.
 ## worldgen: the generator's hash
 ```lua
 worldgen.seed                  -- the world's seed (a number; read-only; the same value as `worldgen.seed` inside on_region): the project's `seed =`, or `--seed N` when the command line gave one
+worldgen.run_seed([n])        -- the run seed (0 .. 4294967295, an integer; 0 at the start): the third argument of `on_region(rx, rz, run)`. With a number it changes: the hook is asked again, the world around the player is made again (edited chunks keep their edits), the player waits for its ground (docs/WORLD_GEN.md "The run seed"). Without: the present one
 worldgen.hash(x, z [, salt])   -- 0..1: the generator's pure hash of the integer position, the salt and the world's seed (in any world, with a region hook or without one); the same values as inside the region hook (docs/WORLD_GEN.md), so a script and its on_region agree on a cell without a copy of the hash. Read-only
 ```
 
