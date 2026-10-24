@@ -26,9 +26,11 @@ F.ENEMY_CAP = 56
 function F.register(name, def) def.name = name; F.themes[name] = def end
 
 -- ---------------------------------------------------------------------------------------------- the plan: the same pure code as the hook
-local CGobj, Hobj
+local CGobj, Hobj, CGrun
+function F.run_no() return (worldgen.run_seed and worldgen.run_seed()) or 0 end        -- the run number the hook builds with (0: the first version's floors)
 function F.cg()
-    if not CGobj then Hobj = cellgen_hash_from(worldgen.hash); CGobj = cellgen_make(Hobj) end
+    local run = F.run_no()
+    if not CGobj or CGrun ~= run then Hobj = cellgen_hash_from(worldgen.hash, run); CGobj = cellgen_make(Hobj); CGrun = run end
     return CGobj, Hobj
 end
 function F.world_seed() return floor(worldgen.seed or 0) end
@@ -47,7 +49,7 @@ F.cid = cid
 function F.build_plan(fl)
     local CG = F.cg()
     local plan = CG.plan(0, fl, "small")
-    local seed = F.world_seed()
+    local seed = (F.world_seed() * 31 + F.run_no()) % 2147483629        -- (the seed of rules, contracts and rng of the run: the world and the run number)
     local P = { floor = fl, seed = seed, big = true, plan = plan, ctx = plan.ctx, order = {}, start = plan.arrival, W = plan.W, H = plan.H, rooms = {}, doors = {} }
     P.dist = CG.bfs(plan, { plan.arrival })
     P.rules = G.gen.rules.choose(seed, fl)
@@ -391,6 +393,7 @@ function F.teardown_all()
 end
 
 function F.enter(fl, on_done)
+    F.touched = true
     G.gen.track.teardown("orientation")
     F.teardown_all()
     G.state.flags.boss_dead = nil
@@ -411,6 +414,7 @@ end
 
 -- a saved run: the frame and the plan, the cells come alive around the player when the hook has made them
 function F.load(fl)
+    F.touched = true
     G.gen.track.teardown("orientation")
     F.teardown_all()
     F.frame(fl)
@@ -432,8 +436,8 @@ function F.load(fl)
     F.job = { i = 0, room = cpid, at = { c.x, c.z }, done = function() G.frozen_at = nil; if G.screen == "loading" then G.screen = nil end end }
 end
 
--- back to the hand built Orientation
-function F.restore_authored(on_done)
+-- everything of a big floor goes (the cells, the floor, the over-city's sky), the world's tables are the Orientation's again and the frame too
+function F.leave_all()
     local W = G.world
     F.teardown_all()
     G.traps.reset(); G.enemies.reset_floor(); G.torches = {}
@@ -442,6 +446,11 @@ function F.restore_authored(on_done)
     F.active, F.layout, G.bigfloor = false, nil, false
     G.gen.overcity.leave()
     F.frame(0)
+end
+
+-- back to the hand built Orientation
+function F.restore_authored(on_done)
+    F.leave_all()
     G.gen.track.scope = "orientation"
     G.world.build()                                          -- (the things; the voxels are in the world)
     G.world.populate()

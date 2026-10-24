@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The contract of the big floors (game/gen/contract.lua) over many seeds and floors, in the engine's Lua through the MCP (no world is touched).
-usage: tools/plan_check.py [SEEDS=200] [--floors 1,2,3,5,6,7,8] [--setting small|large] [--first N] [--hash mixer|world]  (world = the engine's worldgen.hash through the adapter, as in the hook)
+usage: tools/plan_check.py [SEEDS=200] [--floors 1,2,3,5,6,7,8] [--setting small|large] [--first N] [--hash mixer|world] [--run N]  (world = the engine's worldgen.hash through the adapter, as in the hook)
 Prints violations by item (with a few examples) and the statistics (largest distance to a safe room, dead ends, stairwells ...)."""
 import os, sys, time, collections
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -15,7 +15,8 @@ def opt(name, default):
     return default
 floors = [int(x) for x in opt("--floors", "1,2,3,5,6,7,8").split(",")]
 setting = opt("--setting", "small")
-maker = "Game.gen.cell.make_cellgen(Game.gen.cell.hash_from(worldgen.hash))" if opt("--hash", "mixer") == "world" else "Game.gen.cell.make_cellgen()"
+run = int(opt("--run", "0"))
+maker = "Game.gen.cell.make_cellgen(Game.gen.cell.hash_from(worldgen.hash, %d))" % run if (opt("--hash", "mixer") == "world" or run) else "Game.gen.cell.make_cellgen()"
 first = int(opt("--first", "1"))
 by_item, examples, stats = collections.Counter(), collections.defaultdict(list), collections.defaultdict(list)
 t0 = time.time()

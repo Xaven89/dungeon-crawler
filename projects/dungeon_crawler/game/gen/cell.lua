@@ -780,12 +780,15 @@ end
 
 -- The hash adapter: the plan calls H(seed, floor * 1000 + salt, a, b, c) with integers; worldgen.hash takes (x, z, salt) and mixes the world's seed itself.
 -- Fold without collisions over the real domain (every argument -8 .. 4087 after the offset, floor * 1000 + salt < 16384):
---   x = (a + 8) * 4096 + (b + 8)     z = (c + 8) * 4096 + (seed % 4096)     salt = floor * 1000 + salt
--- The run seed is the world seed (design M1 (a)): the engine adds it, `seed % 4096` only keeps the offline tests (plan_check over many seeds) apart.
-function cellgen_hash_from(wh)
+--   x = (a + 8) * 4096 + (b + 8)     z = (c + 8) * 4096 + (n % 4096)     salt = floor * 1000 + salt + 16384 * ((n // 4096) % 64)
+-- where n = seed + run: the RUN number of the game (0 .. 262,143 of the engine's 32-bit run seed: `on_region(rx, rz, run)`, `worldgen.run_seed`) makes the floors of every run different, run 0 is the
+-- floors of the first version; `seed` stays for the offline tests (plan_check over many seeds).
+function cellgen_hash_from(wh, run)
+    run = run or 0
     return function(s, f, a, b, c)
         assert(a >= -8 and a < 4088 and b >= -8 and b < 4088 and c >= -8 and c < 4088 and f >= 0 and f < 16384, "cellgen hash argument out of range")
-        return wh((a + 8) * 4096 + (b + 8), (c + 8) * 4096 + (s % 4096), f)
+        local n = s + run
+        return wh((a + 8) * 4096 + (b + 8), (c + 8) * 4096 + (n % 4096), f + 16384 * ((n // 4096) % 64))
     end
 end
 

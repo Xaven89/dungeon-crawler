@@ -54,6 +54,7 @@ function on_start()
     G.enemies.define_fx()
     G.vnum.define()
     G.run.ensure()
+    if worldgen.run_seed and (G.state.run_no or 0) ~= 0 then worldgen.run_seed(G.state.run_no) end      -- (the engine does not save the run number: the game does)
     local resumed = G.run.resume()
     if not resumed then
         G.world.build()
@@ -162,6 +163,6 @@ function on_anim(m, event, clip)
 end
 
 -- the region hook (docs/WORLD_GEN.md): one 32 m cell of a big floor per region; only used by projects with terrain = biomes (the one-row table)
-function on_region(rx, rz)
-    return shell_region(rx, rz, worldgen.hash)
+function on_region(rx, rz, run)
+    return shell_region(rx, rz, worldgen.hash, run)
 end

@@ -498,3 +498,4 @@ oc.loc_pub,"A pub is about %d cells away."
 oc.loc_safe,"A safe room is about %d cells away."
 oc.loc_rest,"A rest stop is about %d cells away."
 oc.note,"A note pinned to the board: 'The stairs are in column %d, row %d of the ruin. They were not always there. Neither were we.'"
+run.world,WORLD

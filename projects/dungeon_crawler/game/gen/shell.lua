@@ -5,16 +5,16 @@
 -- What: every region starts with a solid mass of dungeon brick over its whole cell (y 6 m .. 21.6 m) and CARVES: its room, its half of every hall (to the cell border, with the jog to the neighbour's door:
 -- both cells carve their own half of the jog, so no region ever touches another), the 4 m strips of the arteries on the block borders, then the floor layer and the ceiling lights.
 -- Heights: the floor is at y = 128 voxels (8 m), rooms 6-10 m (arena 12), arteries 9 m, halls 5 m, alleys 3 m.
-function shell_region(rx, rz, wh)
+function shell_region(rx, rz, wh, run)
     local V = 16
     local fl = (rz - 1) // 32
     local ci, cj = rx, rz - fl * 32 - 2
     if fl < 1 or fl > 8 or fl == 4 then return {} end
-    local CG = cellgen_make(cellgen_hash_from(wh))
+    local CG = cellgen_make(cellgen_hash_from(wh, run))
     local P = CG.params(fl, "small")
     if not P or (P.kind ~= "grid" and P.kind ~= "ruin") or ci < -1 or cj < -1 or ci > P.W or cj > P.H then return {} end
     local ctx = CG.new(0, fl, "small")
-    local H_ = cellgen_hash_from(wh)
+    local H_ = cellgen_hash_from(wh, run)
     local info_open, info_door
     local W, H = P.W, P.H
     local X0, Z0 = rx * 512, rz * 512

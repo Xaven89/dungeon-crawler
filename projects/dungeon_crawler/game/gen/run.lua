@@ -6,6 +6,7 @@ local G = Game
 G.gen = G.gen or {}
 local R = {}
 G.run = R
+local floor = math.floor
 
 function R.cur() return G.state and G.state.run end
 function R.is_gen() local r = R.cur(); return r ~= nil and r.mode == "gen" end
@@ -43,13 +44,46 @@ function R.next_floor(n)
     return nil
 end
 
--- the run screen's answer: `skip` = start on a generated floor instead of the Orientation. The run's seed is the world's (design M1 a): the typed seed is not used any more, a new seed is a new
--- world (`tools/play.sh new [SEED]`).
+-- the run number of a typed seed (any number or words: gen/run seed_of in hud_run): 0 .. 16,777,215. The run number is the engine's run seed (worldgen.run_seed, E7): the floors of every run differ,
+-- the world's own seed stays (tools/play.sh new [SEED] is a new WORLD, a new run is a new run number inside the same world)
+function R.run_of(seed) return floor(seed or 0) % 16777216 end
+function R.can_new_run() return worldgen.run_seed ~= nil end
+
+-- the world of a run: every band the big floors may have made goes back to the generator and (when the Orientation was played) its volume too, then the run number is set; all in one tick
+function R.reset_world(no, orient)
+    for n = 1, 8 do world.reset_region(-1024, 0, (n * 32 + 1) * 512, 19 * 512, 700, (n * 32 + 21) * 512 - 1) end
+    if orient then world.reset_region(1072 - 64, 0, 848 - 64, 1072 + 130 * 16 + 64, 420, 848 + 160 * 16 + 64) end
+    if no ~= worldgen.run_seed() then worldgen.run_seed(no) end
+end
+
+-- the run screen's answer: `seed` = a number: the run number (when the engine can set one), `skip` = start on a generated floor instead of the Orientation
 function R.start(seed, skip, diff)
     if G.screen ~= "run" then return end
+    local can = R.can_new_run()
+    local no = can and R.run_of(seed) or nil
     reset_state()
-    G.state.run = { mode = skip and "gen" or "orientation", seed = G.floorgen.world_seed(), floor = 1, started = time.tick(), diff = diff or "normal" }
+    G.state.run = { mode = skip and "gen" or "orientation", seed = (G.floorgen.world_seed() * 31 + (no or 0)) % 2147483629, floor = 1, started = time.tick(), diff = diff or "normal" }
+    G.state.run_no = no or 0
     G.state.checkpoint = "lobby"
+    local F = G.floorgen
+    local orient_again = (not skip) and project.fetch("orient_used", false)
+    if can and (no ~= F.run_no() or F.touched or orient_again) then
+        -- a new run in the same session: the old floors go, in this tick (before any cell can come alive on old voxels), then the veil while the world is made again
+        G.screen = "loading"
+        F.leave_all()
+        R.reset_world(no, orient_again)
+        F.touched = false
+        G.gen.track.teardown("orientation"); G.gen.track.scope = "orientation"
+        G.rebuilding = orient_again or false
+        G.world.build()
+        G.rebuilding = false
+        G.world.populate()
+        if not skip then project.store("orient_used", true) end
+        G.world.respawn_orientation()
+        after(150, function() if G.screen == "loading" then G.screen = "class" end end)
+        return
+    end
+    if not skip then project.store("orient_used", true) end
     if not skip and G.floorgen.active then
         G.screen = "loading"
         G.floorgen.restore_authored(function()

@@ -23,11 +23,22 @@ function H.run_screen(w, h, input)
     ui.rect(0, 0, w, h, "#05060af2")
     ui.text(w / 2, 120, tr("run.title"), { size = 84, color = C.gold, align = "center" })
     ui.text(w / 2, 220, tr("run.sub"), { size = 26, color = C.dim, align = "center" })
-    -- the run's seed is the world's: a new seed is a new world (tools/play.sh new [SEED])
-    local seed = G.floorgen.world_seed()
-    ui.text(w / 2 - 330, 292, tr("run.seed"), { size = 30, color = "#eef1f8" })
-    ui.text(w / 2 - 200, 290, tostring(seed), { size = 34, color = C.gold })
-    ui.text(w / 2 + 20, 298, tr("run.newseed"), { size = 20, color = C.dim })
+    -- the run number: typed (a number or any words: the same words are the same floors) or rolled; the world's seed stays (a new world: tools/play.sh new [SEED])
+    local seed
+    if G.run.can_new_run() then
+        if not H.seed_text then H.seed_text = tostring((G.state and G.state.run_no) or 0) end
+        ui.text(w / 2 - 330, 292, tr("run.seed"), { size = 30, color = "#eef1f8" })
+        local txt = uikit.text_input("run_seed", H.seed_text, w / 2 - 200, 284, 300, 46, { hint = "a number or any words", max = 24 })
+        if txt and txt ~= H.seed_text then H.seed_text = txt end
+        if uikit.button("run_roll", tr("run.roll"), w / 2 + 120, 284, 200, 46) then H.seed_text = tostring(G.run.entropy_seed(input.x, input.y)) end
+        seed = H.seed_of(H.seed_text)
+        ui.text(w / 2 - 330, 346 - 4, tr("run.world") .. " " .. tostring(G.floorgen.world_seed()), { size = 18, color = C.dim })
+    else
+        seed = G.floorgen.world_seed()
+        ui.text(w / 2 - 330, 292, tr("run.seed"), { size = 30, color = "#eef1f8" })
+        ui.text(w / 2 - 200, 290, tostring(seed), { size = 34, color = C.gold })
+        ui.text(w / 2 + 20, 298, tr("run.newseed"), { size = 20, color = C.dim })
+    end
     -- the difficulty: three buttons
     H.diff = H.diff or "normal"
     ui.text(w / 2 - 330, 340, tr("run.diff"), { size = 26, color = "#eef1f8" })
