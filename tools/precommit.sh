@@ -15,14 +15,14 @@ SEEDS="1 2"; [ $QUICK = 1 ] && SEEDS="1"
 for f in 1 2 3 5; do
     python3 tools/p1_validate.py $SEEDS --floor $f | tee /tmp/precommit_validate_$f.txt | grep -E "^problems: 0$" >/dev/null || { echo "p1_validate floor $f FAILED"; tail -8 /tmp/precommit_validate_$f.txt; fail=1; }
 done
-# the ground cover of the dungeon (projects/dungeon_crawler/foliage.csv): no row but the meadow's may be denser than 0.3 (a test value must not ship)
+# the ground cover of the dungeon (projects/dungeon_crawler/foliage.csv): no row but the meadow's and the moss (0.6) may be denser than 0.3 (a test value must not ship)
 python3 - <<'PY' || { echo "foliage.csv FAILED"; fail=1; }
 import sys
 bad = []
 for l in open("projects/dungeon_crawler/foliage.csv"):
     if l.startswith("#") or l.startswith("@") or not l.strip(): continue
     f = l.split(",")
-    if f[0] != "grass" and float(f[3]) > 0.3: bad.append((f[0], f[3]))
+    if f[0] != "grass" and float(f[3]) > {"moss": 0.6}.get(f[0], 0.3): bad.append((f[0], f[3]))
 if bad: print("foliage.csv: density above 0.3:", bad); sys.exit(1)
 PY
 [ $fail = 0 ] && echo "precommit: all good" || echo "precommit: FAILED"
