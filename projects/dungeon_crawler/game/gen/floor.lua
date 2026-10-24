@@ -373,7 +373,7 @@ function F.enter(fl, on_done)
     F.apply_tables(P)
     local r = P.rooms[P.start]
     local x, y, z = G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2)
-    player.teleport(x, y, z)
+    player.teleport(x, y, z, { wait = true })              -- (holds the player until the chunk under it is resident; the veil below also waits for the room to exist)
     G.frozen_at = { x, y, z }                                -- (the veil holds the player where the floor will appear)
     G.current_room = nil
     F.job = { i = 0, done = on_done }
@@ -395,7 +395,7 @@ function F.load(fl)
     if not P.rooms[cpid] then cpid = P.start end
     local c = G.world.checkpoints[cpid]
     local x, y, z = G.mx(c.x), G.my(0.1), G.mz(c.z)
-    player.teleport(x, y, z)
+    player.teleport(x, y, z, { wait = true })              -- (holds the player until the chunk under it is resident; the veil below also waits for the room to exist)
     G.frozen_at = { x, y, z }
     G.screen = "loading"
     F.job = { i = 0, room = cpid, at = { c.x, c.z }, done = function() G.frozen_at = nil; if G.screen == "loading" then G.screen = nil end end }
