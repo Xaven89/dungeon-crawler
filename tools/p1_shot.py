@@ -7,12 +7,16 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
 os.chdir(ROOT)
 from voxelith_client import Voxelith
+import glob as _g, shutil as _sh
+def _fresh_scratch():
+    for p in _g.glob('/tmp/descent_scratch.vxs*'): (_sh.rmtree if os.path.isdir(p) else os.remove)(p)
+_fresh_scratch()   # (the engine of 2026-10-24 needs --save for a project with save=: a scratch file keeps the game's own world.vxs untouched)
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 fl, ci, cj = int(args[0]), int(args[1]), int(args[2])
 name = args[3] if len(args) > 3 else "f%d_c%d_%d" % (fl, ci, cj)
 SH = os.path.expanduser("~/share/big_floors_p1"); os.makedirs(SH, exist_ok=True)
 BX, BZ = ci * 32.0, fl * 1024.0 + 64.0 + cj * 32.0
-with Voxelith(["--project", "projects/dc_p1", "--threads", "3"]) as v:
+with Voxelith(["--project", "projects/dc_p1", "--threads", "3", "--save", "/tmp/descent_scratch.vxs"]) as v:
     v.step(30)
     out = v.lua("""
 local CG = cellgen_make(cellgen_hash_from(worldgen.hash))

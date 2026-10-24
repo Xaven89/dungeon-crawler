@@ -11,6 +11,10 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
 os.chdir(ROOT)
 from voxelith_client import Voxelith
+import glob as _g, shutil as _sh
+def _fresh_scratch():
+    for p in _g.glob('/tmp/descent_scratch.vxs*'): (_sh.rmtree if os.path.isdir(p) else os.remove)(p)
+_fresh_scratch()   # (the engine of 2026-10-24 needs --save for a project with save=: a scratch file keeps the game's own world.vxs untouched)
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 seed = int(args[0]) if args else 4242
 cls = args[1] if len(args) > 1 else "janitor"
@@ -111,7 +115,7 @@ def borough_run(v):
 
 def main():
     maxagents = 0
-    with Voxelith(["--project", project, "--threads", "3", "--seed", str(seed), "--record", log]) as v:
+    with Voxelith(["--project", project, "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed), "--record", log]) as v:
         v.step(400)
         L(v, "Game.screen = 'run'; Game.run.start(0, true)", 2)
         L(v, "Game.player.pick_class('%s')" % cls, 2)
@@ -157,6 +161,6 @@ end""", 5)
         print("state hash:", v.state_hash())
     if "--no-replay" not in sys.argv:
         print("replaying the recording ...")
-        r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3"], capture_output=True, text=True, cwd=ROOT)
+        r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3", "--save", "/tmp/descent_scratch.vxs"], capture_output=True, text=True, cwd=ROOT)
         print([l for l in (r.stdout + r.stderr).splitlines() if "hash" in l.lower() or "replay" in l.lower()][-4:])
 main()

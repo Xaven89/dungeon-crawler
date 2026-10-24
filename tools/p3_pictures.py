@@ -7,10 +7,14 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
 os.chdir(ROOT)
 from voxelith_client import Voxelith
+import glob as _g, shutil as _sh
+def _fresh_scratch():
+    for p in _g.glob('/tmp/descent_scratch.vxs*'): (_sh.rmtree if os.path.isdir(p) else os.remove)(p)
+_fresh_scratch()   # (the engine of 2026-10-24 needs --save for a project with save=: a scratch file keeps the game's own world.vxs untouched)
 seed = int(sys.argv[1]) if len(sys.argv) > 1 else 4242
 SH = os.path.expanduser("~/share/big_floors_p3"); os.makedirs(SH, exist_ok=True)
 def L(v, code, ticks=1): return v.lua(code, ticks=ticks).get("output", [])
-with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--seed", str(seed)]) as v:
+with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)]) as v:
     v.step(300)
     L(v, "Game.screen = 'run'; Game.run.start(0, true)", 2); L(v, "Game.player.pick_class('janitor')", 2); v.step(300)
     L(v, "Game.contracts.sign(nil)", 2); v.step(60)

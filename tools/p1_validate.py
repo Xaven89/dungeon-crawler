@@ -8,6 +8,10 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
 os.chdir(ROOT)
 from voxelith_client import Voxelith
+import glob as _g, shutil as _sh
+def _fresh_scratch():
+    for p in _g.glob('/tmp/descent_scratch.vxs*'): (_sh.rmtree if os.path.isdir(p) else os.remove)(p)
+_fresh_scratch()   # (the engine of 2026-10-24 needs --save for a project with save=: a scratch file keeps the game's own world.vxs untouched)
 import argparse
 ap = argparse.ArgumentParser(); ap.add_argument("seeds", nargs="*", type=int); ap.add_argument("--floor", type=int, default=1)
 ns = ap.parse_args()
@@ -46,7 +50,7 @@ def shrunk(lo, hi, W, H, keep=""):
 bad_total = 0
 for seed in seeds:
     t0 = time.time()
-    with Voxelith(["--project", "projects/dc_p1", "--threads", "3", "--seed", str(seed)]) as v:
+    with Voxelith(["--project", "projects/dc_p1", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)]) as v:
         v.step(10)
         out = v.lua(PLAN, ticks=0)["output"]
         W, H = [int(x) for x in out[0].split("\t")[1:3]]

@@ -8,6 +8,10 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
 os.chdir(ROOT)
 from voxelith_client import Voxelith
+import glob as _g, shutil as _sh
+def _fresh_scratch():
+    for p in _g.glob('/tmp/descent_scratch.vxs*'): (_sh.rmtree if os.path.isdir(p) else os.remove)(p)
+_fresh_scratch()   # (the engine of 2026-10-24 needs --save for a project with save=: a scratch file keeps the game's own world.vxs untouched)
 ap = argparse.ArgumentParser(); ap.add_argument("seed", nargs="?", type=int, default=1); ap.add_argument("--floor", type=int, default=1); ap.add_argument("--shots", action="store_true")
 ns = ap.parse_args()
 fl, seed = ns.floor, ns.seed
@@ -44,7 +48,7 @@ for _, id in ipairs(chain) do
   if x then print('W', id, x, z) end
 end
 """ % (fl, fl)
-with Voxelith(["--project", "projects/dc_p1", "--threads", "3", "--seed", str(seed)]) as v:
+with Voxelith(["--project", "projects/dc_p1", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)]) as v:
     v.step(20)
     out = v.lua(PATH, ticks=0)["output"]
     wps = [(l.split("\t")[1], float(l.split("\t")[2]), float(l.split("\t")[3])) for l in out if l.startswith("W")]
