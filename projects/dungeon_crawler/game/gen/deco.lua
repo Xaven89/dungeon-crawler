@@ -482,11 +482,11 @@ function deco_house(bb, b)
     local o = (d.side == "E") and 1 or -1
     local function xs(a, c) return math.min(fx + o * a, fx + o * c), math.max(fx + o * a, fx + o * c) end
     do
-        local a, c = xs(-0.6, 0.02); bb(a, 0, d.pos - 1.25, c, 3.0, d.pos + 1.25, nil)
+        local a, c = xs(-0.6, V + 0.02); bb(a, 0, d.pos - 1.25, c, 3.0, d.pos + 1.25, nil)      -- (V + 0.02: the plinth stands one voxel proud and crossed the doorway; the p1 flood found it)
         a, c = xs(-0.5, V)
         bb(a, 0, d.pos - 1.25 - 3 * V, c, 3.0, d.pos - 1.25, "dark_wood"); bb(a, 0, d.pos + 1.25, c, 3.0, d.pos + 1.25 + 3 * V, "dark_wood")
         a, c = xs(-0.5, 2 * V); bb(a, 3.0, d.pos - 1.25 - 5 * V, c, 3.0 + 4 * V, d.pos + 1.25 + 5 * V, "plinth_stone")
-        a, c = xs(0, 8 * V); bb(a, 0, d.pos - 1.25 - 2 * V, c, 2 * V, d.pos + 1.25 + 2 * V, "plinth_stone")
+        a, c = xs(0, 8 * V); bb(a, 0, d.pos - 1.25 - 2 * V, c, 1 * V, d.pos + 1.25 + 2 * V, "plinth_stone")
     end
 
     -- 6. windows: 14 x 20 voxels (0.875 x 1.25 m) from 1.125 m, glass in the middle of the wall, a sill 2 voxels proud, a stone lintel, shutters on half the houses;
