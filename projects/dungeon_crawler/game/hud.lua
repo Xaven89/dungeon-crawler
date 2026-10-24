@@ -383,7 +383,29 @@ local function hud_toasts(w, h)
 end
 
 -- the boss bar
+-- the versus card: the contestant against the boss, sliding in for 3 seconds as the fight is announced
+local function hud_versus(w, h)
+    local V = G.hud.versus
+    if not V then return end
+    local age = time.tick() - V.t0
+    if age > 200 then G.hud.versus = nil; return end
+    local slide = min(1, age / 18)
+    local fade = age > 160 and (1 - (age - 160) / 40) or 1
+    local al = string.format("%02x", floor(255 * fade))
+    local y = h * 0.30
+    local lx = -420 + (w / 2 - 460 + 420) * slide
+    local rx = w + 20 - (w / 2 + 40 + 20) * slide - 420 + 420
+    ui.rect(lx, y, 420, 90, "#0b0d14" .. string.format("%02x", floor(230 * fade)), { radius = 10 })
+    ui.rect(lx, y, 420, 90, "#7fd0ff" .. al, { radius = 10, outline = true, thickness = 3 })
+    ui.text(lx + 210, y + 28, (G.state.class and G.player.classes[G.state.class] and G.player.classes[G.state.class].name or "CONTESTANT"):upper(), { size = 30, color = "#7fd0ff" .. al, align = "center" })
+    ui.rect(w - 420 - lx + 0, y, 420, 90, "#0b0d14" .. string.format("%02x", floor(230 * fade)), { radius = 10 })
+    ui.rect(w - 420 - lx + 0, y, 420, 90, "#ff7a7a" .. al, { radius = 10, outline = true, thickness = 3 })
+    ui.text(w - 210 - lx, y + 28, V.name, { size = (#V.name > 16) and 24 or 30, color = "#ff7a7a" .. al, align = "center" })
+    ui.text(w / 2, y + 22, tr("boss.versus"), { size = 46 * (1 + 0.15 * (1 - slide)), color = "#ffd24a" .. al, align = "center" })
+end
+
 local function hud_boss(w, h)
+    hud_versus(w, h)
     local B = G.boss
     if not B or not B.active or not B.inst or B.inst.dead then return end
     local bw = 900

@@ -384,6 +384,7 @@ end
 -- ---------------------------------------------------------------------------------------------- the way in and out
 function F.teardown_all()
     local P = F.layout
+    F.bars = {}
     if P then
         for i = #F.made_list, 1, -1 do F.drop_cell(F.made_list[i]) end
         G.gen.track.teardown("floor" .. P.floor)
@@ -595,7 +596,55 @@ function F.lair_of(P, id)
     local tier = room.ring and "borough" or "quarter"
     local S = F.STAGING[tier]
     return { room = id, x = room.x + room.w / 2, z = room.z + room.d / 2 + (room.ring and 2 or 0), kind = F.boss_kind(P, id), hp_mult = S.hp * (1 + (P.floor - 1) * 0.18),
-             flag = "boss_dead_" .. id, tier = tier, on_dead = function() F.lair_cleared(P, id, tier) end }
+             flag = "boss_dead_" .. id, tier = tier, on_fight = function() F.lair_close(P, id) end,
+             on_end = function() F.lair_open(id) end, on_dead = function() F.lair_cleared(P, id, tier) end }
+end
+
+-- the bars of a lair: they close across the door when the fight starts (one rod every 3 ticks) and open when the boss falls or the player dies
+function F.lair_rect(P, id)
+    local room = P.rooms[id]
+    if room.ring then
+        local g, ring = room.ring.g, room.ring
+        return { x0 = ring.ox + g.cx - g.gap, z0 = ring.oz + g.cz + g.arena, x1 = ring.ox + g.cx + g.gap, z1 = ring.oz + g.cz + g.arena + g.wall, along = "x" }
+    end
+    local d = (P.doors[id] or {})[1]
+    if not d then return nil end
+    if d.side == "E" then return { x0 = room.x + room.w, z0 = d.pos - 3, x1 = room.x + room.w + 0.5, z1 = d.pos + 3, along = "z" }
+    elseif d.side == "W" then return { x0 = room.x - 0.5, z0 = d.pos - 3, x1 = room.x, z1 = d.pos + 3, along = "z" }
+    elseif d.side == "S" then return { x0 = d.pos - 3, z0 = room.z + room.d, x1 = d.pos + 3, z1 = room.z + room.d + 0.5, along = "x" }
+    else return { x0 = d.pos - 3, z0 = room.z - 0.5, x1 = d.pos + 3, z1 = room.z, along = "x" } end
+end
+
+F.bars = {}
+function F.lair_close(P, id)
+    local r = F.lair_rect(P, id)
+    if not r or F.bars[id] then return end
+    F.bars[id] = r
+    local h = 4.9
+    local n = 0
+    if r.along == "z" then
+        local z = r.z0 + 0.2
+        while z < r.z1 do n = n + 1; local zz = z; after(n * 3, function() if F.bars[id] then G.fill(r.x0, 0, zz, r.x1, h, zz + 0.14, "metal") end end); z = z + 0.5 end
+        after(n * 3 + 3, function() if F.bars[id] then G.fill(r.x0, 0, r.z0, r.x1, 0.12, r.z1, "metal"); G.fill(r.x0, h - 0.12, r.z0, r.x1, h, r.z1, "metal") end end)
+    else
+        local x = r.x0 + 0.2
+        while x < r.x1 do n = n + 1; local xx = x; after(n * 3, function() if F.bars[id] then G.fill(xx, 0, r.z0, xx + 0.14, h, r.z1, "metal") end end); x = x + 0.5 end
+        after(n * 3 + 3, function() if F.bars[id] then G.fill(r.x0, 0, r.z0, r.x1, 0.12, r.z1, "metal"); G.fill(r.x0, h - 0.12, r.z0, r.x1, h, r.z1, "metal") end end)
+    end
+    G.sfx.play("lever", (r.x0 + r.x1) / 2, 1.5, (r.z0 + r.z1) / 2, 0.9, 0.7)
+end
+function F.lair_open(id)
+    local r = F.bars[id]
+    if not r then return end
+    F.bars[id] = nil
+    G.clear(r.x0, 0, r.z0, r.x1, 5.0, r.z1)
+    G.sfx.play("lever", (r.x0 + r.x1) / 2, 1.5, (r.z0 + r.z1) / 2, 0.8, 1.0)
+end
+function F.lair_open_all()
+    local ids = {}
+    for id in pairs(F.bars) do ids[#ids + 1] = id end
+    table.sort(ids)
+    for _, id in ipairs(ids) do F.lair_open(id) end
 end
 
 function F.ff_clear(ring)

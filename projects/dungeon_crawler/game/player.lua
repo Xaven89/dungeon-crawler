@@ -212,6 +212,7 @@ function P.die(src)
     if s.deaths >= 3 then A.award("serial_victim") end
     if G.companion and G.companion.on_player_death then G.companion.on_player_death() end
     if G.enemies and G.enemies.on_player_death then G.enemies.on_player_death() end
+    if G.floorgen and G.floorgen.lair_open_all then G.floorgen.lair_open_all() end
     if G.contracts.hardcore() then after(240, function() G.run.end_run(src) end); return end
     after(300, function() P.respawn() end)
     G.save()

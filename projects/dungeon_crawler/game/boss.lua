@@ -41,6 +41,7 @@ function B.begin(lair)
     A.say_key(ik, { prio = 2 })
     A.say_key(ik, { prio = 0 })
     G.sfx.play("boss_stinger")
+    G.hud.versus = { t0 = time.tick(), name = (inst.name or ""):upper() }
     -- the cutscene: the editor camera (a free camera that leaves the player parked) in three STATIC shots with cuts (a camera that is moved every tick jittered: the editor camera re-finds
     -- the floor under its focus all the time), then the view goes back to the player's eyes. The player is held in place meanwhile (game/world.lua).
     camera.mode("editor"); G.cutscene = true
@@ -115,6 +116,7 @@ function B.ai(inst, t, d, dy, info)
         if t >= inst.intro_until then
             inst.state = "fight"
             agent.follow(inst.id, 2.6)
+            if B.lair.on_fight then B.lair.on_fight() end
         end
         return
     end
@@ -191,6 +193,7 @@ function B.on_room_despawn(room)
 end
 
 function B.on_dead(inst)
+    if B.lair.on_end then B.lair.on_end() end
     G.state.flags[B.lair.flag or "boss_dead"] = true
     B.started = false
     B.active = false

@@ -499,3 +499,8 @@ oc.loc_safe,"A safe room is about %d cells away."
 oc.loc_rest,"A rest stop is about %d cells away."
 oc.note,"A note pinned to the board: 'The stairs are in column %d, row %d of the ruin. They were not always there. Neither were we.'"
 run.world,WORLD
+boss.name.manager,THE FLOOR MANAGER
+boss.name.golem,THE GOLDEN PARACHUTE
+boss.name.auditor,THE CHIEF AUDITOR
+boss.versus,VERSUS
+boss.winner,WINNER
