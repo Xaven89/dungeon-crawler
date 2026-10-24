@@ -782,8 +782,10 @@ function F.make_ring(P, ring)
     local dk = G.gen.rules.dark()
     local room = P.rooms[ring.id]
     local _, H = F.cg()
-    for k, d in ipairs({ { g.c1, 0 }, { -g.c1, 0 }, { 0, g.c1 }, { 0, -g.c1 }, { g.c2, 0 }, { -g.c2, 0 }, { 0, g.c2 }, { 0, -g.c2 } }) do
-        G.torch(ox + g.cx + d[1], 3.4, oz + g.cz + d[2], { preset = "torch", reach = 12, far = 24, intensity = 15 * dk, name = ring.id .. "_t" .. k })
+    -- (polish: G.torch halves every light; the ring corridors got the corners as well, so they are not left dark between the four lamps of a ring)
+    for k, d in ipairs({ { g.c1, 0 }, { -g.c1, 0 }, { 0, g.c1 }, { 0, -g.c1 }, { g.c2, 0 }, { -g.c2, 0 }, { 0, g.c2 }, { 0, -g.c2 },
+                         { g.c1, g.c1 }, { -g.c1, g.c1 }, { g.c1, -g.c1 }, { -g.c1, -g.c1 }, { g.c2, g.c2 }, { -g.c2, g.c2 }, { g.c2, -g.c2 }, { -g.c2, -g.c2 } }) do
+        G.torch(ox + g.cx + d[1], 3.4, oz + g.cz + d[2], { preset = "torch", reach = 11, far = 22, intensity = 10 * dk, raw = true, name = ring.id .. "_t" .. k })
     end
     for k, d in ipairs({ { g.brazier, g.brazier }, { -g.brazier, g.brazier }, { g.brazier, -g.brazier }, { -g.brazier, -g.brazier } }) do G.brazier(ox + g.cx + d[1], oz + g.cz + d[2], { reach = 14, far = 24 }) end
     local p = ring.pit

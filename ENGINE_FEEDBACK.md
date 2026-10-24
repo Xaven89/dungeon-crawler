@@ -417,3 +417,13 @@ workaround: the game must never spawn an agent into rock (the Blue station crowd
 
 ## Replay guard (2026-10-24, binary 168a8d7)
 Eight recordings of the floor-4 flows (`tools/replay_guard.py`: `--first-floor 4` on seeds 7, 99, 12345 twice each, and the bot from floor 1 through floor 4 on seeds 4242 and 99) all replay to their hash with hash probes on. Earlier the same day a first soak and several `--first-floor 4` runs between 18:15 and 18:31 UTC replayed to other hashes: the cause that could be shown was the bot's own replay using the live run's `--save` world (fixed: the scratch file is deleted before the replay); ONE run at 18:31 after that fix still differed and could not be reproduced with a changed `.events` state, 4 busy cores, older commits or 8 repeats. Noted, not explained.
+
+## Phase 26: foliage.csv `density` is not a cover fraction (binary 168a8d7, floor 3 / floor 1 flagstone)
+kind: unclear docs        severity: hurts (a test value of 0.04 looked like a thin scatter in a corridor and like a dense field in a village square)
+what I tried: a ground-cover row `crack` (surfaces flagstone;cobble;ruin_stone) at density 0.04, then 0.02, then 0.006, and a plain row `grass` at 0.61 / 0.45.
+expected: `density` as a share of the surface (0.02 = 2 % of the voxels carry a tuft), so 0.02 is a few tufts.
+happened: 0.02 on a village square (paved flagstone, 20 x 30 m in view) shows hundreds of tufts; with the row at 0 the paving is clean; only about 0.006 gives "a few tufts in the joints". The number scales some per-column blade count, not a cover fraction, and the same value looks different on a bright open floor (auto exposure) than in a dark corridor.
+repro: projects/dungeon_crawler/foliage.csv row `crack` density 0.02, `tools/polish_pictures.py X --only square_f3_day --time 0.12` (floor 3, village square), then the same with 0.0 and 0.006: ~/share/polish/D_probe/ and D_house/.
+workaround: tuned by picture (0.006 for the dark cracks); tools/precommit.sh keeps every non-meadow row at or below 0.3.
+ask: docs/FOLIAGE.md should say what `density` is (blades per what area, at which `spread`, how `share` and `patch_density` combine) so a developer can pick a value without a picture loop.
+

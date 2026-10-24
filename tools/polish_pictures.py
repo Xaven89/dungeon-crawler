@@ -51,8 +51,10 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         print("borough", pk)
         if pk[0] != "none":
             px, pz = float(pk[0]), float(pk[1])
-            tp(px + 20, pz + 56.5, wait=500); v.step(60)
-            if "borough_f2" in only: shot("borough_f2", 2 * 1024 + 64, 8, px + 20, 1.7, pz + 56.5, px + 32, 1.5, pz + 40, settle=200)
+            L(v, "Game.gen.rules.cur.night = false", 0)          # (the rule of the floor may be NIGHT SHIFT: this view judges the palette, not the rule)
+            if "borough_f2" in only:                # inside the outer ring corridor (south side), looking along it at the lamp (g.c1 = 17.1 from the middle)
+                tp(px + 22, pz + 49.1, wait=500); v.step(60)
+                shot("borough_f2", 2 * 1024 + 64, 8, px + 22, 1.7, pz + 49.1, px + 40, 1.8, pz + 49.1, settle=200)
             if "rotunda_f2" in only:
                 tp(px + 32, pz + 44, wait=500); v.step(60)
                 shot("rotunda_f2", 2 * 1024 + 64, 8, px + 32, 1.7, pz + 44, px + 32, 1.5, pz + 32, settle=200)

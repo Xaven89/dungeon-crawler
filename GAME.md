@@ -238,3 +238,10 @@ Mean per region: floor 1 1.38 ms, floor 3 1.28 ms, floor 4 (7 x 7, 49 cells, 6 l
 ## The polish pass (art, 2026-10-24): what is where
 Views for every bucket: `tools/polish_pictures.py NAME [--only a,b] [--time 0.12]` -> `~/share/polish/NAME/` (before, B_light, A_palette, C_detail ...). Light: `G.torch` scales every light (G.LIGHT 0.55 / 0.67 / 0.8, `raw = true` bypasses), `G.WARM` / `G.COOL`, `F.fog(fl)` colours the far end (sky horizon) per floor. Palette: materials 79-120 are the artist's rows (voxel-art, `palette/`), ceilings are 2-voxel skins inserted right after the mass (shell.lua `carves`, transit_shell.lua), wall / floor tables per theme in shell.lua. Over-city: red sky dome by day (OC.sky_colours), white sun; the exposure of a bright open floor cannot be lowered from Lua (auto exposure clamp: E19b asked). Houses: eaves, cornice band, windows with glass, door frames (deco.lua, bucket C). Ground cover: meadow colours 124-126 (green), density 0.45; crack tufts darker and 0.02.
 
+## Working rules (inherit them)
+- **A commit follows a READ result, never a chained one**: run `tools/precommit.sh --quick` (or the check that fits), read its last line, and only then commit; a FAILED line means fix first (the house kit was once committed on a failing run: the plinth blocked every doorway). Never `cmd && git commit` on a check whose output you have not looked at.
+- Commit on main, small, one topic, explicit paths (`git add projects tools GAME.md docs ENGINE_FEEDBACK.md`: `-A` hits gitignored files); never generated files (`*.vxs`, recordings, caches).
+- Every visible change gets a picture (`tools/polish_pictures.py NAME`, or the tool of the floor) and a look at it; the log is read after every run; a plan check asserts on what the hook BUILDS (item 17), not on what the plan says.
+- A new model or material: bot recorded and replayed (live = replay), `furnish_check`, one lineup / hall picture.
+- Material ids: the artist owns 111-123 and 130-199, the game 124-129 and 200-254.
+
