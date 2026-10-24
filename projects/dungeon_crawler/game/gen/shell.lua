@@ -33,7 +33,12 @@ function shell_region(rx, rz, wh, run)
         ops[#ops + 1] = { kind = mat and "box" or "clear", lo = { X0 + R(x0), y0, Z0 + R(z0) }, hi = { X0 + R(x1) - 1, y1, Z0 + R(z1) - 1 }, material = mat }
     end
     local carves = {}
-    local CEIL_MAT = "ceiling_dark"
+    -- floors 5-8 (the shrinking grid): wall, floor, ceiling, ceiling-light cube (voxel-art bucket E, palette/themes_E.md)
+    local DEEP = { [5] = { "wet_stone", "mud_slab", "ceiling_dark", "lichen_green" }, [6] = { "soot_brick", "iron_plate", "basalt", "lantern" },
+                   [7] = { "ash_stone", "ash_floor", "ceiling_dark", "lamp_cool" }, [8] = { "scorched_stone", "obsidian", "basalt", "ember" } }
+    local CEIL_DEF = DEEP[fl] and DEEP[fl][3] or "ceiling_dark"
+    local FLOOR_DEF = (fl == 2) and "tar_slab" or (DEEP[fl] and DEEP[fl][2]) or "flagstone"
+    local CEIL_MAT = CEIL_DEF
     local function carve(x0, x1, z0, z1, hvox) box(x0, x1, z0, z1, YF, YF + hvox - 1); carves[#carves + 1] = { x0, x1, z0, z1, hvox, CEIL_MAT } end
     local DX = { E = 1, W = -1, S = 0, N = 0 }
     local DZ = { E = 0, W = 0, S = 1, N = -1 }
@@ -44,7 +49,7 @@ function shell_region(rx, rz, wh, run)
     local WALL = { flooded = "mossy", grotto = "cavestone", library = "dark_wood", safe = "dark_wood", rest = "dark_wood", ballroom = "plaster", crypt = "crypt_stone", captive = "crypt_stone",
                    arena = "ruin_stone", ante = "ruin_stone", guild = "ruin_stone", prize = "ruin_stone", depot = "cinderblock" }
     -- the mass: the cell's whole volume in the wall material of its theme (everything below is carved out of it)
-    local base_wall = OPEN and "ruin_stone" or ((fl == 2) and "cinderblock" or "dungeon_brick")          -- floor 2: the orange city is cinderblock, floor 3 weathered stone
+    local base_wall = OPEN and "ruin_stone" or ((fl == 2) and "cinderblock" or (DEEP[fl] and DEEP[fl][1]) or "dungeon_brick")          -- floor 2: the orange city is cinderblock, floor 3 weathered stone
     local mass_mat = base_wall
     if in_cell then local th = CG.cell(ctx, ci, cj).theme; mass_mat = WALL[th] or base_wall end
     box(0, 32, 0, 32, YB, YT, mass_mat)
@@ -59,7 +64,7 @@ function shell_region(rx, rz, wh, run)
     end
     local lights = {}
     local function light(x, z, y, mat) if not OPEN then lights[#lights + 1] = { x, z, y, mat } end end
-    local LM = (fl == 2) and "lichen_orange" or "lantern"                 -- the ceiling lights: yellow lanterns, on floor 2 orange lichen (the side halls are lichen-lit on both: green, orange)
+    local LM = (fl == 2) and "lichen_orange" or (DEEP[fl] and DEEP[fl][4]) or "lantern"                 -- the ceiling lights: yellow lanterns, on floor 2 orange lichen (the side halls are lichen-lit on both: green, orange)
     local floors = {}                              -- floor material boxes, placed after the carving
     local function floor_mat(x0, x1, z0, z1, mat) floors[#floors + 1] = { x0, x1, z0, z1, mat } end
 
@@ -97,10 +102,10 @@ function shell_region(rx, rz, wh, run)
     -- the arteries: 4 m strips along every side that lies on a block border (and the rim ring's half)
     local function artery_side(d)
         local len = (fl == 2) and 3 or 4                           -- (floor 2: narrower arteries, 6 m)
-        if d == "E" then carve(32 - len, 32, 0, 32, 144); floor_mat(32 - len, 32, 0, 32, (fl == 2) and "tar_slab" or "flagstone")
-        elseif d == "W" then carve(0, len, 0, 32, 144); floor_mat(0, len, 0, 32, (fl == 2) and "tar_slab" or "flagstone")
-        elseif d == "S" then carve(0, 32, 32 - len, 32, 144); floor_mat(0, 32, 32 - len, 32, (fl == 2) and "tar_slab" or "flagstone")
-        else carve(0, 32, 0, len, 144); floor_mat(0, 32, 0, len, (fl == 2) and "tar_slab" or "flagstone") end
+        if d == "E" then carve(32 - len, 32, 0, 32, 144); floor_mat(32 - len, 32, 0, 32, FLOOR_DEF)
+        elseif d == "W" then carve(0, len, 0, 32, 144); floor_mat(0, len, 0, 32, FLOOR_DEF)
+        elseif d == "S" then carve(0, 32, 32 - len, 32, 144); floor_mat(0, 32, 32 - len, 32, FLOOR_DEF)
+        else carve(0, 32, 0, len, 144); floor_mat(0, 32, 0, len, FLOOR_DEF) end
         for t = 4, 28, 8 do
             if d == "E" then light(32 - 2, t, YF + 143) elseif d == "W" then light(2, t, YF + 143)
             elseif d == "S" then light(t, 32 - 2, YF + 143) else light(t, 2, YF + 143) end
@@ -143,12 +148,12 @@ function shell_region(rx, rz, wh, run)
             local hv = (r.h + ((theme == "ballroom") and 2 or 0)) * V
             if OPEN then hv = SKY end
             local CEIL = { library = "plaster", safe = "plaster", rest = "plaster" }
-            CEIL_MAT = CEIL[theme] or "ceiling_dark"
+            CEIL_MAT = CEIL[theme] or CEIL_DEF
             carve(r.x, r.x + r.w, r.z, r.z + r.d, hv)
-            CEIL_MAT = "ceiling_dark"
+            CEIL_MAT = CEIL_DEF
             local FLOOR = { warlord = "obsidian", ballroom = "marble", grotto = "cave_floor", library = "oak_floor", safe = "oak_floor", rest = "oak_floor", prize = "marble", arena = "marble",
                             stairs_free = "marble" }
-            floor_mat(r.x, r.x + r.w, r.z, r.z + r.d, FLOOR[theme] or ((fl == 2) and "tar_slab" or "flagstone"))
+            floor_mat(r.x, r.x + r.w, r.z, r.z + r.d, FLOOR[theme] or (FLOOR_DEF))
             -- ceiling lights: a grid of 8 m
             for x = r.x + 4, r.x + r.w - 2, 8 do for z = r.z + 4, r.z + r.d - 2, 8 do light(x, z, YF + hv - 1) end end
             deco = { theme = theme, room = r }

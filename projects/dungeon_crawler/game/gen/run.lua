@@ -124,6 +124,7 @@ function R.floor_ready(n)
     G.frozen_at = nil
     G.screen = nil
     G.announcer.say_key("floor.arrive", { prio = 2 }, n)
+    if n >= 5 and n <= 8 then G.announcer.say_key("floor.id." .. n, { prio = 1 }) end            -- (the identity of the floor, one line: 5 damp, 6 iron, 7 bone, 8 near-black)
     for _, id in ipairs(p.rules or {}) do G.announcer.say_key("rule." .. id, { prio = 0 }) end
     if G.companion and G.companion.id then G.companion.respawn() end
     if G.state.ally then G.ally.respawn() end

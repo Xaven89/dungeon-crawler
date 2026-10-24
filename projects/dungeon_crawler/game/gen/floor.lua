@@ -128,10 +128,18 @@ function F.local_room(room) return room.info.room end
 
 -- the tables of the game's world follow the plan
 -- the colour the far end of a hall or a corridor fades to (the horizon of the sky is the fog): one per floor instead of the night's dark blue (polish pass, bucket B)
-local FOG = { [1] = { 0.12, 0.105, 0.10 }, [2] = { 0.22, 0.10, 0.04 }, [4] = { 0.07, 0.10, 0.15 } }
+local FOG = { [1] = { 0.12, 0.105, 0.10 }, [2] = { 0.22, 0.10, 0.04 }, [4] = { 0.07, 0.10, 0.15 },
+              [5] = { 0.05, 0.07, 0.065 }, [6] = { 0.10, 0.06, 0.035 }, [7] = { 0.11, 0.11, 0.115 }, [8] = { 0.04, 0.015, 0.01 } }
+-- the ceiling lamps per floor (voxel-art bucket E): 5 cold green, 6 furnace orange, 7 cold white, 8 a dim red; the default is G.LAMP
+local LAMP = { [5] = { 0.75, 1.0, 0.85 }, [6] = { 1.0, 0.62, 0.32 }, [7] = { 0.85, 0.9, 1.0 }, [8] = { 1.0, 0.3, 0.12 } }
+local TORCH = { [5] = { 0.75, 1.0, 0.8 }, [6] = { 1.0, 0.6, 0.3 }, [7] = { 0.9, 0.92, 1.0 }, [8] = { 1.0, 0.3, 0.12 } }
 function F.fog(fl)
     local c = FOG[fl] or { 0.09, 0.09, 0.11 }
     sky.set{ horizon = c, fog = 1.4, blend = 0 }
+    G.LAMP = LAMP[fl] or { 1.0, 0.93, 0.84 }
+    G.LIGHT.intensity = (fl == 8 or fl == 5) and 0.45 or 0.55                    -- 5 and 8 a little darker (6 is already muted by its rules)
+    G.WARM = TORCH[fl] or { 1.0, 0.8, 0.55 }                                      -- the sconces and torches take the floor colour
+    G.LAMP_MAT = ({ [5] = "lichen_green", [7] = "lamp_cool", [8] = "ember" })[fl]   -- the hanging lamps' cube (nil: lantern)
 end
 function F.apply_tables(P)
     local W = G.world

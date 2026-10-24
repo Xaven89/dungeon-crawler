@@ -203,7 +203,7 @@ function G.lamp(xm, zm, y_ceil, drop, opts)
     opts = opts or {}
     if G.should_build() then
         G.fill(xm - 0.04, y_ceil - drop, zm - 0.04, xm + 0.04, y_ceil, zm + 0.04, "metal")
-        G.fill(xm - 0.15, y_ceil - drop - 0.3, zm - 0.15, xm + 0.15, y_ceil - drop, zm + 0.15, opts.mat or "lantern")
+        G.fill(xm - 0.15, y_ceil - drop - 0.3, zm - 0.15, xm + 0.15, y_ceil - drop, zm + 0.15, opts.mat or G.LAMP_MAT or "lantern")
         G.fill(xm - 0.25, y_ceil - drop - 0.05, zm - 0.25, xm + 0.25, y_ceil - drop, zm + 0.25, "metal")
     end
     return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or G.LAMP, reach = opts.reach or 15, far = opts.far, intensity = opts.intensity, flicker = true })

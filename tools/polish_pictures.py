@@ -25,6 +25,37 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
     def tp(x, z, y=0.1, wait=300): L(v, "local G=Game; player.hand_model(nil); player.model(nil); player.teleport(G.mx(%f), G.my(%f), G.mz(%f), { wait = true })" % (x, y, z), wait)
     def shot(name, bz, y0, ex, ey, ez, tx, ty, tz, fov=85, settle=300):
         v.screenshot(os.path.join(SH, name + ".png"), hud=False, settle=settle, eye=[ex, y0 + ey, bz + ez], target=[tx, y0 + ty, bz + tz], fov=fov)
+    def hall_view(fl, name):                    # the first hall of the floor, from its north-west corner toward the middle
+        r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == 'hall' and r.w >= 14 and r.d >= 14 then print(id, r.x, r.z, r.w, r.d); break end end", 0)[0].split("\t")
+        rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]
+        L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
+        shot(name, fl * 1024 + 64, 8, x + 2.2, 3.0, z + 2.2, x + w / 2, 0.9, z + d / 2, fov=90)
+    def corridor_view(fl, name):                # an artery: the 6 m strip between blocks, looking along it
+        a = L(v, """local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]
+  for _, d in ipairs(P.doors[id] or {}) do if d.kind == 'artery' then print(id, r.ci, r.cj, d.side, d.pos); return end end end""", 0)[0].split("\t")
+        rid, ci, cj, side, pos = a[0], int(a[1]), int(a[2]), a[3], float(a[4])
+        if side in ("E", "W"):
+            xb = (ci + (1 if side == "E" else 0)) * 32; ex, ez, tx, tz = xb, cj * 32 + pos - 12, xb, cj * 32 + pos + 30
+        else:
+            zb = (cj + (1 if side == "S" else 0)) * 32; ex, ez, tx, tz = ci * 32 + pos - 12, zb, ci * 32 + pos + 30, zb
+        tp(ex, ez, wait=400)
+        shot(name, fl * 1024 + 64, 8, ex, 1.7, ez, tx, 1.5, tz)
+    for fl in (5, 6, 7, 8):
+        if ("hall_f%d" % fl) in only or ("corridor_f%d" % fl) in only:
+            new_floor(v, fl)
+            if ("hall_f%d" % fl) in only: hall_view(fl, "hall_f%d" % fl)
+            if ("corridor_f%d" % fl) in only: corridor_view(fl, "corridor_f%d" % fl)
+    if "borough_f2" in only or "rotunda_f2" in only:     # the borough fortress of floor 2: the rings seen from the entrance, the rotunda in the middle
+        new_floor(v, 2)
+        pk = L(v, "local P = Game.floorgen.layout; local r = P.ring_list and P.ring_list[1]; if r then print(r.ox, r.oz) else print('none') end", 0)[0].split("\t")
+        print("borough", pk)
+        if pk[0] != "none":
+            px, pz = float(pk[0]), float(pk[1])
+            tp(px + 20, pz + 56.5, wait=500); v.step(60)
+            if "borough_f2" in only: shot("borough_f2", 2 * 1024 + 64, 8, px + 20, 1.7, pz + 56.5, px + 32, 1.5, pz + 40, settle=200)
+            if "rotunda_f2" in only:
+                tp(px + 32, pz + 44, wait=500); v.step(60)
+                shot("rotunda_f2", 2 * 1024 + 64, 8, px + 32, 1.7, pz + 44, px + 32, 1.5, pz + 32, settle=200)
     if "hall_f1" in only:                       # floor 1: the first hall, from its north-west corner toward the middle
         r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == 'hall' and r.w >= 14 and r.d >= 14 then print(id, r.x, r.z, r.w, r.d); break end end", 0)[0].split("\t")
         rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]
@@ -42,7 +73,7 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         print("artery", rid, side, ex, ez)
         tp(ex, ez, wait=400)
         shot("corridor_f2", 2 * 1024 + 64, 8, ex, 1.7, ez, tx, 1.5, tz)
-    if "square_f3_day" in only or "pub_f3_inside" in only or "meadow_f3" in only or "street_f3_day" in only:
+    if "square_f3_day" in only or "pub_f3_inside" in only or "meadow_f3" in only or "street_f3_day" in only or "square_f3_night" in only:
         new_floor(v, 3); BZ = 3 * 1024 + 64
         vil = L(v, "local CG, H = Game.floorgen.cg(); local P = Game.floorgen.layout\nfor _, id in ipairs(P.order) do local r = P.rooms[id]\n  if r.theme == 'village' then local sup = CG.super_of(P.ctx, r.ci, r.cj); print(sup.ci, sup.cj); return end end", 0)
         oci, ocj = [int(x) for x in vil[0].split("\t")]; ox, oz = oci * 32, ocj * 32
@@ -51,6 +82,8 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         if "square_f3_day" in only: shot("square_f3_day", BZ, 25.06, ox + 28.5, 1.8, oz + 27.5, ox + 33, 1.2, oz + 34)
         if "meadow_f3" in only:                 # outside the village: the plain's grass (not one of the five fixed views)
             tp(8, 176, wait=400); v.step(60); shot("meadow_f3", BZ, 25.06, 3, 14.0, 176, -70, 1.0, 176, settle=200)       # over the west wall of the ruin onto the plain outside
+        if "square_f3_night" in only:
+            L(v, "Game.gen.overcity.fixed = 0.80", 0); v.step(200); shot("square_f3_night", BZ, 25.06, ox + 28.5, 1.8, oz + 27.5, ox + 33, 1.2, oz + 34); L(v, "Game.gen.overcity.fixed = %s" % opt("--time", "0.25"), 0); v.step(130)
         if "street_f3_day" in only: shot("street_f3_day", BZ, 25.06, ox + 32, 1.7, oz + 7, ox + 32, 1.6, oz + 30)       # the lane between two slots, looking at the square (voxel-art bucket D)
         if "pub_f3_inside" in only:
             plan = L(v, "local H = select(2, Game.floorgen.cg()); local pl = deco_village_plan(function(salt) return deco_rng(H, 3, %d, %d, salt or 1) end); for _, b in ipairs(pl.buildings) do print(b.kind, b.x0, b.z0, b.x1, b.z1, b.door.side, b.door.pos) end" % (oci, ocj), 0)

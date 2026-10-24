@@ -608,7 +608,7 @@ function deco_item_draw(B, it, fl)
     elseif id == "barrels" then
         for _, q in ipairs(deco_item_parts(it)) do deco_barrel(B, q[2], 0, q[3]) end
     elseif id == "pillar" then
-        B.pillar((x0 + x1) / 2, (z0 + z1) / 2, 0.7, 0, it.h, "marble")
+        B.pillar((x0 + x1) / 2, (z0 + z1) / 2, 0.7, 0, it.h, deco_floor_accent(fl).pillar)
     elseif id == "banner" then
         box(0, 2.6, 0, W, 2.7, D, "metal"); box(0.1, 1.2, 0, W - 0.1, 2.6, D, "carpet"); box(0.3, 1.0, 0, W - 0.3, 1.2, D, "carpet")
     elseif id == "dais" then
@@ -628,7 +628,14 @@ function deco_item_draw(B, it, fl)
         for k = 0, 3 do
             local y = 0.5 + k * 0.5
             box(0, y, 0, W, y + 0.05, D, "dark_wood")
-            for b = 0, 4 do box(0.2 + b * 0.55, y + 0.05, 0.1, 0.4 + b * 0.55, y + 0.05 + 0.25 + ((b + k) % 2) * 0.1, D - 0.1, ((b * 2 + k) % 3 == 0) and "lantern" or (((b + k) % 2 == 0) and "rune" or "chest_wood")) end
+            for b = 0, 4 do                                           -- bottles (voxel-art bucket F): glass tints, body + neck + cork
+                local bx, bh = 0.2 + b * 0.55, 0.25 + ((b + k) % 2) * 0.1
+                local glass = ({ "bottle_green", "bottle_brown", "bottle_clear" })[(b * 2 + k) % 3 + 1]
+                local zc = D / 2
+                box(bx, y + 0.05, zc - 0.09375, bx + 0.1875, y + 0.05 + bh, zc + 0.09375, glass)
+                box(bx + 0.03125, y + 0.05 + bh, zc - 0.0625, bx + 0.15625, y + 0.05 + bh + 0.125, zc + 0.0625, glass)
+                box(bx + 0.03125, y + 0.05 + bh + 0.125, zc - 0.0625, bx + 0.15625, y + 0.05 + bh + 0.1875, zc + 0.0625, "dark_wood")
+            end
         end
     elseif id == "sofa" then
         box(0, 0, 0, W, 0.45, D, "carpet"); box(0, 0.45, 0, W, 0.9, 0.25, "carpet"); box(0, 0.45, 0, 0.25, 0.7, D, "carpet"); box(W - 0.25, 0.45, 0, W, 0.7, D, "carpet")

@@ -296,7 +296,7 @@ function deco_borough(B, cu, cv, fl)
         strip(cx - h, cz - i, cx - i, cz + i, "W"); strip(cx + i, cz - i, cx + h, cz + i, "E")
     end
     -- floor 3 (the park of the over-city): a wall of bone and rock, open to the sky
-    local pal = (fl == 3) and { "cavestone", "bone", "ruin_stone" } or ((fl == 2) and { "cinderblock", "cinderblock", "marble" } or { "dungeon_brick", "mossy", "marble" })
+    local pal = (fl == 3) and { "cavestone", "bone", "ruin_stone" } or ((fl == 2) and { "cinderblock", "rust_iron", "marble" } or { "fortress_stone", "mossy", "marble" })
     wall(g.w1, g.gaps.w1, pal[1]); wall(g.w2, g.gaps.w2, pal[2]); wall(g.w3, g.gaps.w3, pal[3])
     -- the roof over the ring corridors and the walls (the arena keeps the courtyard's ceiling)
     local function roof(h0, h1)
@@ -307,7 +307,7 @@ function deco_borough(B, cu, cv, fl)
     -- the drawbridge: two posts and a lintel of gold in front of the outer gap, a rug to the door
     bb(cx - hw - 0.4, 0, cz + g.w1, cx - hw, 5.4, cz + g.w1 + 0.4, "gold"); bb(cx + hw, 0, cz + g.w1, cx + hw + 0.4, 5.4, cz + g.w1 + 0.4, "gold")
     bb(cx - hw, 5.0, cz + g.w1, cx + hw, 5.4, cz + g.w1 + 0.4, "gold")
-    bb(cx - hw, 0, cz + g.w1 + 0.4, cx + hw, 0.05, cz + g.w1 + 4, "neon_red")
+    bb(cx - hw, 0, cz + g.w1 + 0.4, cx + hw, 0.05, cz + g.w1 + 4, "carpet")
     -- the moving walls (floors 2+): the slab in its trench, a lintel over the corridor with a hazard band
     for _, w in ipairs(deco_wall_plan(fl)) do
         bb(w.x0, -w.h, w.z0, w.x1, 0, w.z1, "obsidian")                  -- (built OPEN: the slab lies in its trench, flush with the floor; the floor clock shuts it, and the plan's flood sees open corridors)
@@ -637,9 +637,20 @@ function deco_sconce(B, sc)
     bx(0, 1, 1, -2, 2, "metal"); bx(2, 3, 0, -2, 1, "dark_wood"); bx(2, 3, 1, 2, 2, "metal")
 end
 
-function deco_lamp(B, lm, hh, drop)
+-- the shared fixtures per floor (voxel-art): the hall runner, its pillars and beams, the hanging lamp's cube; floors 1-4 as before
+function deco_floor_accent(fl)
+    local A = {
+        [5] = { carpet = "mossy", pillar = "wet_stone", beam = "dark_wood", lamp = "lichen_green", warlord_pillar = "wet_stone" },
+        [6] = { carpet = "grating", pillar = "metal", beam = "metal", lamp = "lantern", warlord_pillar = "soot_brick" },
+        [7] = { carpet = "ash_cloth", pillar = "ash_stone", beam = "bone", lamp = "lamp_cool", warlord_pillar = "ash_stone" },
+        [8] = { carpet = "carpet", pillar = "scorched_stone", beam = "basalt", lamp = "ember", warlord_pillar = "scorched_stone" },
+    }
+    return A[fl] or { carpet = "carpet", pillar = "marble", beam = "dark_wood", lamp = "lantern", warlord_pillar = "dungeon_brick" }
+end
+
+function deco_lamp(B, lm, hh, drop, fl)
     B.fill(lm.x - 0.04, hh - drop, lm.z - 0.04, lm.x + 0.04, hh, lm.z + 0.04, "metal")
-    B.fill(lm.x - 0.2, hh - drop - 0.4, lm.z - 0.2, lm.x + 0.2, hh - drop, lm.z + 0.2, "lantern")
+    B.fill(lm.x - 0.2, hh - drop - 0.4, lm.z - 0.2, lm.x + 0.2, hh - drop, lm.z + 0.2, deco_floor_accent(fl).lamp)
     B.fill(lm.x - 0.25, hh - drop - 0.05, lm.z - 0.25, lm.x + 0.25, hh - drop, lm.z + 0.25, "metal")
 end
 
@@ -732,22 +743,23 @@ function deco_room(B, theme, room, doors, mk, fl)
     local open = ((fl or 1) == 3)                                  -- floor 3 has no ceiling: nothing hangs from it
     local lay = deco_layout(theme, room, doors, mk, fl)           -- the layout grammar (gen/furnish.lua): the themes it has a row for are furnished by it
     if lay then for _, it in ipairs(lay.items) do deco_item_draw(B, it, fl) end end
+    local ACC = deco_floor_accent(fl)
     if theme == "hall" or theme == "ante" or theme == "guild" then
-        if room.w >= room.d then B.fill(room.x + 1, 0, room.z + room.d / 2 - 2, room.x + room.w - 1, 0.05, room.z + room.d / 2 + 2, "carpet")
-        else B.fill(room.x + room.w / 2 - 2, 0, room.z + 1, room.x + room.w / 2 + 2, 0.05, room.z + room.d - 1, "carpet") end
+        if room.w >= room.d then B.fill(room.x + 1, 0, room.z + room.d / 2 - 2, room.x + room.w - 1, 0.05, room.z + room.d / 2 + 2, ACC.carpet)
+        else B.fill(room.x + room.w / 2 - 2, 0, room.z + 1, room.x + room.w / 2 + 2, 0.05, room.z + room.d - 1, ACC.carpet) end
         if not lay then
             for _, p in ipairs(deco_hall_plan(room, mk)) do
-                if not deco_near_door(room, doors, p[1], p[2], 3) then B.pillar(p[1], p[2], 0.7, 0, h, "marble") end
+                if not deco_near_door(room, doors, p[1], p[2], 3) then B.pillar(p[1], p[2], 0.7, 0, h, ACC.pillar) end
             end
         end
-        if not open then for x = room.x + 3, room.x + room.w - 3, 6 do B.fill(x, h - 0.8, room.z, x + 0.5, h, room.z + room.d, "dark_wood") end end
+        if not open then for x = room.x + 3, room.x + room.w - 3, 6 do B.fill(x, h - 0.8, room.z, x + 0.5, h, room.z + room.d, ACC.beam) end end
     elseif theme == "warlord" then
         local cx = room.x + room.w / 2
         local door_s = false
         for _, d in ipairs(doors or {}) do if d.side == "S" and math.abs(d.pos - cx) < 5.5 then door_s = true end end
-        if not door_s then B.fill(cx - 3, 0, room.z + room.d - 6, cx + 3, 0.4, room.z + room.d - 1, "dark_wood"); B.fill(cx - 3, 0.4, room.z + room.d - 6, cx + 3, 0.45, room.z + room.d - 1, "carpet") end
-        for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do if not deco_near_door(room, doors, cx + dx, room.z + room.d * k / 3, 3.2) then B.pillar(cx + dx, room.z + room.d * k / 3, 0.8, 0, h, "dungeon_brick") end end end
-        for i = 1, 3 do B.fill(room.x + room.w * i / 4 - 0.6, 3.2, room.z + 0.05, room.x + room.w * i / 4 + 0.6, 6, room.z + 0.2, "carpet") end
+        if not door_s then B.fill(cx - 3, 0, room.z + room.d - 6, cx + 3, 0.4, room.z + room.d - 1, "dark_wood"); B.fill(cx - 3, 0.4, room.z + room.d - 6, cx + 3, 0.45, room.z + room.d - 1, ACC.carpet) end
+        for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do if not deco_near_door(room, doors, cx + dx, room.z + room.d * k / 3, 3.2) then B.pillar(cx + dx, room.z + room.d * k / 3, 0.8, 0, h, ACC.warlord_pillar) end end end
+        for i = 1, 3 do B.fill(room.x + room.w * i / 4 - 0.6, 3.2, room.z + 0.05, room.x + room.w * i / 4 + 0.6, 6, room.z + 0.2, ACC.carpet) end
     elseif theme == "furnace" then
         pool("lava", 3, -0.45)
         if not open then
@@ -919,7 +931,7 @@ function deco_room(B, theme, room, doors, mk, fl)
         B.pillar(cx, cz, 0.45, 0, 2.2, "marble"); B.pillar(cx, cz, 0.3, 2.2, 2.6, "lantern")
     end
     for _, sc in ipairs(deco_sconce_plan(theme, room, doors)) do deco_sconce(B, sc) end
-    if not open then for _, lm in ipairs(deco_lamp_plan(theme, room)) do deco_lamp(B, lm, h, 1.2) end end
+    if not open then for _, lm in ipairs(deco_lamp_plan(theme, room)) do deco_lamp(B, lm, h, 1.2, fl) end end
     -- graffiti on a wall without a door of about one room in five (not in the special rooms)
     local PLAIN = { hall = true, crypt = true, library = true, depot = true, grotto = true, flooded = true, furnace = true, ballroom = true, warlord = true, captive = true, prize = true }
     if PLAIN[theme] and mk(4).next() < 0.22 then

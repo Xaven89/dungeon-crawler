@@ -510,3 +510,11 @@ boss.winner,WINNER
 transit.abyss_prompt,Look into the Abyss
 transit.abyss.1,"You look into the Abyss. The Abyss looks into you. It is a very long way down and the brochure says the pit is 'decorative'. There is a gift shop at the bottom. It is closed."
 transit.abyss.2,"The Abyss: station 436 on the old maps. Today it is a hole with a rail around it. Do not drop anything. The lost-property office is also at the bottom."
+floor.id.5.1,"Floor 5 is damp, dark and cold. The water is not a feature. It is a rumour that got out."
+floor.id.5.2,"Wet stone, mud underfoot, a green light that is not for you. Floor 5 asks that you wipe your feet on the way out."
+floor.id.6.1,"Floor 6: iron plates, soot and the smell of a furnace that is always about to be on. The glow is orange. The glow is not friendly."
+floor.id.6.2,"Welcome to the foundry level. Everything here was made to take a hit. You were not."
+floor.id.7.1,"Floor 7 is bone and ash. The light is the cold white of a hospital that gave up. Do not touch the walls. They are not walls."
+floor.id.7.2,"Pale stone, white light, a great deal of bone. Floor 7 is tidy in the way that a ledger is tidy."
+floor.id.8.1,"Floor 8 is almost black. The only things lit are the things that want to be seen, and they are red hot."
+floor.id.8.2,"Dark floors, black glass, one hot ember in the corner of your eye. Floor 8 has never had visitors. It is not used to being looked at."
