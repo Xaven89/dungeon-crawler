@@ -65,17 +65,12 @@ function F.populate(room, ctx, rng, n, opts)
     return #placed
 end
 
--- wall sconces along the four walls, none within 3 m of a door (the flame only: the plate on the wall is not built on a big floor)
+-- wall sconces: the plan is deco.lua's (the plates are voxels of the hook), the flames are made here; no flame within 3 m of a door
 function F.sconces(room, ctx, step, y)
-    step = (step or 8) * 1.5; y = y or 3.3
     local dk = G.gen.rules.dark()
-    for x = room.x + 4, room.x + room.w - 3, step do
-        if not ctx.near_door(room, x, room.z, 3) then G.sconce(x, y, room.z, "+z", { intensity = 11 * dk, far = 24 }) end
-        if not ctx.near_door(room, x, room.z + room.d, 3) then G.sconce(x, y, room.z + room.d, "-z", { intensity = 11 * dk, far = 24 }) end
-    end
-    for z = room.z + 4, room.z + room.d - 3, step do
-        if not ctx.near_door(room, room.x, z, 3) then G.sconce(room.x, y, z, "+x", { intensity = 11 * dk, far = 24 }) end
-        if not ctx.near_door(room, room.x + room.w, z, 3) then G.sconce(room.x + room.w, y, z, "-x", { intensity = 11 * dk, far = 24 }) end
+    local ox, oz = F.off(room)
+    for _, sc in ipairs(deco_sconce_plan(room.theme, F.lroom(room), F.local_doors(room))) do
+        G.sconce(sc.x + ox, sc.y, sc.z + oz, sc.face, { intensity = 11 * dk, far = 24 })
     end
 end
 

@@ -367,6 +367,62 @@ function deco_village(B, cu, cv, room, doors, mk)
     for _, d in ipairs(doors or {}) do deco_door_frame(B, room, d.side, d.pos, "gold", 3.4, 5.2) end
 end
 
+-- ---------------------------------------------------------------------------------------------- wall sconces and hanging lamps (plates and chains are the hook's, the flames are the game's)
+-- per theme: the step along the walls and the height of the sconces (x1.5 in the game's 15-lights-a-room budget), the themes that hang lamps
+function deco_sconce_plan(theme, room, doors)
+    local T = { hall = { 8, 3.3 }, warlord = { 8, 3.3 }, furnace = { 8, 3.4 }, flooded = { 9, 3.2 }, ballroom = { 9, 3.4 }, grotto = { 12, 3 }, crypt = { 8, 3.2 }, library = { 8, 3.2 },
+                depot = { 9, 3.3 }, safe = { 8, 3.3 }, prize = { 8, 3.3 }, captive = { 8, 3.3 }, ante = { 8, 3.3 }, guild = { 8, 3.3 }, stairs_free = { 8, 3.2 } }
+    local c = T[theme]
+    local out = {}
+    if not c then return out end
+    local step, y = c[1] * 1.5, c[2]
+    local x = room.x + 4
+    while x <= room.x + room.w - 3 do
+        if not deco_near_door(room, doors, x, room.z, 3) then out[#out + 1] = { x = x, y = y, z = room.z, face = "+z" } end
+        if not deco_near_door(room, doors, x, room.z + room.d, 3) then out[#out + 1] = { x = x, y = y, z = room.z + room.d, face = "-z" } end
+        x = x + step
+    end
+    local z = room.z + 4
+    while z <= room.z + room.d - 3 do
+        if not deco_near_door(room, doors, room.x, z, 3) then out[#out + 1] = { x = room.x, y = y, z = z, face = "+x" } end
+        if not deco_near_door(room, doors, room.x + room.w, z, 3) then out[#out + 1] = { x = room.x + room.w, y = y, z = z, face = "-x" } end
+        z = z + step
+    end
+    return out
+end
+
+-- the hanging lamps of a room (a grid of about one per 60 m2) for the themes that have them
+function deco_lamp_plan(theme, room)
+    local LAMPS = { hall = true, warlord = true, library = true, depot = true, prize = true, captive = true, guild = true, ante = true }
+    local out = {}
+    if not LAMPS[theme] then return out end
+    local nx, nz = math.max(1, math.floor(room.w / 8)), math.max(1, math.floor(room.d / 8))
+    for i = 1, nx do for j = 1, nz do out[#out + 1] = { x = room.x + room.w * (i - 0.5) / nx, z = room.z + room.d * (j - 0.5) / nz } end end
+    return out
+end
+
+-- the plate of a sconce on the wall (the voxels G.sconce draws on a hand-built floor): x, y, z the point on the wall's inner face, face the way the wall looks into the room
+function deco_sconce(B, sc)
+    local function R(v) return math.floor(v * 16 + 0.5) end
+    local cx, cy, cz = R(sc.x), R(sc.y), R(sc.z)
+    local fx = (sc.face == "+x") and 1 or ((sc.face == "-x") and -1 or 0)
+    local fz = (sc.face == "+z") and 1 or ((sc.face == "-z") and -1 or 0)
+    local function cell(d, k) return (d > 0) and k or (-1 - k) end
+    local function bx(k0, k1, hw, y0, y1, mat)
+        local xa, xb, za, zb
+        if fx ~= 0 then xa, xb = cx + cell(fx, k0), cx + cell(fx, k1); za, zb = cz - hw, cz + hw
+        else za, zb = cz + cell(fz, k0), cz + cell(fz, k1); xa, xb = cx - hw, cx + hw end
+        B.vbox(math.min(xa, xb), cy + y0, math.min(za, zb), math.max(xa, xb), cy + y1, math.max(za, zb), mat)
+    end
+    bx(0, 1, 1, -2, 2, "metal"); bx(2, 3, 0, -2, 1, "dark_wood"); bx(2, 3, 1, 2, 2, "metal")
+end
+
+function deco_lamp(B, lm, hh, drop)
+    B.fill(lm.x - 0.04, hh - drop, lm.z - 0.04, lm.x + 0.04, hh, lm.z + 0.04, "metal")
+    B.fill(lm.x - 0.2, hh - drop - 0.4, lm.z - 0.2, lm.x + 0.2, hh - drop, lm.z + 0.2, "lantern")
+    B.fill(lm.x - 0.25, hh - drop - 0.05, lm.z - 0.25, lm.x + 0.25, hh - drop, lm.z + 0.25, "metal")
+end
+
 -- ---------------------------------------------------------------------------------------------- voxel text for the hook (the engine's edit.text is a world edit: edits made when a cell comes alive made a replay differ)
 -- a 5 x 7 font, one voxel a pixel; `facing` is the way the text looks (the way a reader stands), the line starts at (x, z) and its bottom is at y (cell metres); B.vbox takes voxels
 function deco_text(B, x, y, z, text, facing, mat)
@@ -636,6 +692,8 @@ function deco_room(B, theme, room, doors, mk, fl)
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2              -- a locator stone at the junction
         B.pillar(cx, cz, 0.45, 0, 2.2, "marble"); B.pillar(cx, cz, 0.3, 2.2, 2.6, "lantern")
     end
+    for _, sc in ipairs(deco_sconce_plan(theme, room, doors)) do deco_sconce(B, sc) end
+    if not open then for _, lm in ipairs(deco_lamp_plan(theme, room)) do deco_lamp(B, lm, h, 1.2) end end
     -- graffiti on a wall without a door of about one room in five (not in the special rooms)
     local PLAIN = { hall = true, crypt = true, library = true, depot = true, grotto = true, flooded = true, furnace = true, ballroom = true, warlord = true, captive = true, prize = true }
     if PLAIN[theme] and mk(4).next() < 0.22 then

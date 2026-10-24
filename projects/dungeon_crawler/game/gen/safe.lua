@@ -19,8 +19,7 @@ function S.things(r, ctx, opts)
     local T = G.traps
     local dk = G.gen.rules.dark()
     G.torch(P.X(8), 0.7, P.Z(0.8), { preset = "campfire", color = { 1, 0.55, 0.2 }, reach = 14, far = 26, name = id .. "_fire" })
-    G.sconce(P.X(0) + (plan.mx and 0 or 0), 3.3, P.Z(2), P.face("+x"), { intensity = 11 * dk, far = 24 }); G.sconce(P.X(16), 3.3, P.Z(12), P.face("-x"), { intensity = 11 * dk, far = 24 })
-    G.sconce(P.X(3), 3.3, P.Z(16), P.face("-z"), { intensity = 11 * dk, far = 24 }); G.sconce(P.X(13), 3.3, P.Z(16), P.face("-z"), { intensity = 11 * dk, far = 24 })
+    F.sconces(r, ctx)                                       -- (the wall lights of the room: the plan of deco.lua, plates in the hook)
     G.torch(P.X(13.1), 2.6, P.Z(1.7), { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 10, name = id .. "_crystal" })
     G.dust(id .. "_dust", "dust_motes", { G.mx(r.x + r.w / 2), G.my(2.5), G.mz(r.z + r.d / 2) }, { 6, 2, 6 })
     local function wbox(u0, y0, v0, u1, y1, v1)        -- an event box (voxels) from canonical metres
