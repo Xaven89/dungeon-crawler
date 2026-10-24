@@ -65,6 +65,40 @@ function K.check_transit(plan, CG)
         end
         for _, b in ipairs(transit_sweep(line)) do bad(17, b) end
     end
+    -- the floor under every stop: what the hook really builds (transit_region's ops, replayed in order) must be solid in the voxel under the bed of the car at the level of the line. A deck that was
+    -- built at the wrong level is "carved air" to the checks above (the 5 x 5 X hall had none: the Blue car crossed an open hall); this one sees it.
+    local wh = worldgen and worldgen.hash
+    S.floor_checked = 0
+    if wh and ctx.floor == 4 then
+        local made = {}
+        local function ops_of(ci, cj)
+            local key = ci * 16 + cj
+            if not made[key] then made[key] = transit_region(ci, 4 * 32 + 2 + cj, wh, 0) end
+            return made[key]
+        end
+        local seen = {}
+        for _, line in ipairs(lines) do
+            for _, t in ipairs(line.stops) do
+                local p = line.points[t[1]]
+                if p then
+                    local ci, cj = floor(p[1] / 32), floor(p[2] / 32)
+                    local tag = line.name .. ":" .. t[1]
+                    if not seen[tag] then
+                        seen[tag] = true
+                        local ops = ops_of(ci, cj)
+                        local px, pz = ci * 512 + floor((p[1] - ci * 32) * 16 + 0.5), (4 * 32 + 2 + cj) * 512 + floor((p[2] - cj * 32) * 16 + 0.5)
+                        local py = 128 + line.level * transit_const().level_m * 16 - 5
+                        local solid = false
+                        for _, o in ipairs(ops) do
+                            if o.lo and px >= o.lo[1] and px <= o.hi[1] and py >= o.lo[2] and py <= o.hi[2] and pz >= o.lo[3] and pz <= o.hi[3] then solid = (o.kind == "box") end
+                        end
+                        S.floor_checked = S.floor_checked + 1
+                        if not solid then bad(17, line.name .. ": no floor under stop " .. t[1] .. " at (" .. string.format("%.1f, %.1f", p[1], p[2]) .. ") on level " .. line.level) end
+                    end
+                end
+            end
+        end
+    end
     -- lines of one level never come closer than 12 m to each other (the cars meet only in the X halls, which are two storeys: the verticals run at level 1, the rows at level 0)
     for i = 1, #lines do
         for j = i + 1, #lines do
