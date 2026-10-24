@@ -26,7 +26,7 @@ local function wrap(tbl, fname, kind, key_of)
     end
 end
 
-for _, f in ipairs({ "button", "lever", "volume", "lamp", "door", "timer", "logic", "gravity_target", "spawner", "effect" }) do wrap(events, f, "event") end
+for _, f in ipairs({ "button", "lever", "volume", "lamp", "door", "timer", "logic", "gravity_target", "spawner", "effect", "train" }) do wrap(events, f, "event") end
 wrap(gravity, "add", "gravity")
 wrap(emitter, "create", "emitter", function(_, def) return type(def) == "table" and def.name or nil end)
 wrap(body, "box", "body"); wrap(body, "ball", "body")

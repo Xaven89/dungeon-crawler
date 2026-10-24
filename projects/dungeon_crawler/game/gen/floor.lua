@@ -376,7 +376,8 @@ function F.tick(t)
         -- the arrival room must be generated: the floor under the player is not "unloaded"
         local r = F.layout.rooms[j.room or F.layout.start]
         local ax, az = r.x + r.w / 2, r.z + r.d / 2
-        if j.at then ax, az = j.at[1], j.at[2] end
+        if j.at then ax, az = j.at[1], j.at[2]
+        elseif F.layout.plan.P.kind == "transit" then local c = G.world.checkpoints[F.layout.start]; if c then ax, az = c.x, c.z end end      -- (the middle of the arrival hall is the track bed: a trench, air)
         local m = world.material_at(G.wx(ax), G.wy(-0.1), G.wz(az))
         local ready = (m ~= "unloaded" and m ~= "air") and j.i >= 8
         if ready or j.i > 1800 then
@@ -398,6 +399,7 @@ function F.tick(t)
     local run = G.run.cur()
     if run and G.state.class and not G.screen and not G.player.dead then run.fclock = (run.fclock or 0) + 1 end
     if run and t % 5 == 0 then F.walls_tick(F.layout, run.fclock or 0) end
+    if F.layout.floor == 4 then G.gen.trains.tick(t) end
     if t % 60 == 0 then F.timer_step() end
     G.gen.overcity.tick(t)
     if t % 15 == 0 and G.state.class and not G.player.dead then
@@ -444,6 +446,7 @@ function F.enter(fl, on_done)
     G.gen.track.scope = "floor" .. fl
     F.apply_tables(P)
     if fl == 3 then G.gen.overcity.enter(P) else G.gen.overcity.leave() end
+    if fl == 4 then G.gen.trains.enter(P) end
     local r = P.rooms[P.start]
     local x, y, z = G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2)
     player.teleport(x, y, z, { wait = true })              -- (holds the player until the chunk under it is resident; the veil below also waits for the room to exist)
@@ -464,6 +467,7 @@ function F.load(fl)
     G.gen.track.scope = "floor" .. fl
     F.apply_tables(P)
     if fl == 3 then G.gen.overcity.enter(P) else G.gen.overcity.leave() end
+    if fl == 4 then G.gen.trains.enter(P) end
     G.show.redeclare()
     -- the veil until the floor around the checkpoint exists (the hook makes it when the player is there), then the player wakes up at the checkpoint
     local cpid = G.state.checkpoint

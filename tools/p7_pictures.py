@@ -17,15 +17,15 @@ BZ = 4 * 1024 + 64
 SH = os.path.expanduser("~/share/big_floors_p7"); os.makedirs(SH, exist_ok=True)
 def L(v, code, ticks=1): return v.lua(code, ticks=ticks).get("output", [])
 VIEWS = [
-    ("hub_s_arrival", (80, 1.7, 138), (80, 1.2, 100), (80, 144)),
-    ("hub_s_platform_side", (60, 2.2, 150), (84, 1.0, 140), (80, 144)),
-    ("tunnel_west", (60, 1.7, 144), (20, 1.2, 144), (48, 144)),
-    ("corner_sw", (36, 2.2, 150), (16, 1.0, 120), (16, 144)),
-    ("hub_w", (14, 1.7, 100), (14, 1.2, 60), (16, 80)),
-    ("yellow_y1", (38, 2.0, 83), (60, 1.0, 80), (48, 80)),
-    ("centre_lower", (70, 2.0, 84), (96, 1.2, 80), (80, 80)),
-    ("centre_upper", (80, 10, 100), (80, 9.5, 60), (80, 80)),
-    ("blue_b1_stair", (80, 1.7, 36), (80, 8, 56), (80, 40)),
+    ("hub_s_arrival", (80, 1.7, 138), (80, 1.2, 100), (80, 138)),
+    ("hub_s_platform_side", (68, 1.7, 137), (92, 1.2, 145), (68, 137)),
+    ("tunnel_west", (60, 1.7, 143), (20, 1.2, 144), (60, 143)),
+    ("corner_sw", (28, 2.0, 138), (10, 1.0, 152), (28, 138)),
+    ("hub_w", (10, 1.7, 70), (16, 1.2, 100), (10, 70)),
+    ("yellow_y1", (36, 1.7, 73), (62, 1.0, 80), (36, 73)),
+    ("centre_lower", (72, 1.7, 72), (90, 1.0, 86), (72, 72)),
+    ("centre_upper", (74, 9.7, 90), (84, 9.5, 68), (74, 90)),
+    ("blue_b1_stair", (80, 1.7, 34), (80, 6, 46), (80, 34)),
 ]
 with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)]) as v:
     v.step(300)

@@ -12,17 +12,18 @@ local function strip_lights(room, ctx, step, intensity, reach)
     local dk = G.gen.rules.dark()
     local ox, oz = F.off(room)
     local ir = room.info.room
-    local y = yl(room) + ir.h - 0.6
+    local y = yl(room) + 3.6
     local n = 0
     for t = 4, 28, step do
         n = n + 1
         local x, z
-        if room.info.axis == "x" then x, z = ox + t, oz + 16 else x, z = ox + 16, oz + t end
+        local o = (n % 2 == 0) and 2.5 or -2.5                         -- alternate beside the track (on the platform / the ledge), never over the bed
+        if room.info.axis == "x" then x, z = ox + t, oz + 16 + o else x, z = ox + 16 + o, oz + t end
         G.torch(x, y, z, { preset = "torch", reach = reach or 12, far = 26, intensity = (intensity or 10) * dk, name = room.id .. "_t" .. n })
     end
 end
 
-F.register("tunnel", { names = { "A Tunnel", "Service Tunnel", "Track Segment" }, things = function(room, ctx) strip_lights(room, ctx, 8, 10, 11) end })
+F.register("tunnel", { names = { "A Tunnel", "Service Tunnel", "Track Segment" }, things = function(room, ctx) strip_lights(room, ctx, 6, 15, 13) end })
 F.register("corner", {
     names = { "The Bend", "Curve Cavern", "Switching Yard" },
     things = function(room, ctx)
@@ -31,14 +32,14 @@ F.register("corner", {
         local n = 0
         for _, p in ipairs({ { 8, 8 }, { 24, 8 }, { 8, 24 }, { 24, 24 }, { 16, 16 } }) do
             n = n + 1
-            G.torch(ox + p[1], 6.5, oz + p[2], { preset = "torch", reach = 13, far = 28, intensity = 11 * dk, name = room.id .. "_c" .. n })
+            G.torch(ox + p[1], 4.5, oz + p[2], { preset = "torch", reach = 14, far = 30, intensity = 15 * dk, name = room.id .. "_c" .. n })
         end
     end,
 })
 F.register("station", {
     names = { "Platform", "The Concourse", "Transfer Platform" },
     things = function(room, ctx)
-        strip_lights(room, ctx, 8, 12, 12)
+        strip_lights(room, ctx, 6, 16, 14)
         if room.info.code == "X" then
             local dk = G.gen.rules.dark()
             local ox, oz = F.off(room)
@@ -53,7 +54,7 @@ F.register("station", {
 F.register("hub", {
     names = { "Transfer Station", "Hub", "The Interchange" },
     things = function(room, ctx)
-        strip_lights(room, ctx, 8, 13, 13)
+        strip_lights(room, ctx, 6, 17, 14)
         local dk = G.gen.rules.dark()
         local ox, oz = F.off(room)
         local f = transit_hub_fixtures(room.info)
