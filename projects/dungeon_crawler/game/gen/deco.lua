@@ -399,12 +399,19 @@ function deco_village(B, cu, cv, room, doors, mk)
         if d.side == "E" then bb(b.x1 - 0.6, 0, d.pos - 1.25, b.x1 + 0.02, 3.0, d.pos + 1.25, nil) else bb(b.x0 - 0.02, 0, d.pos - 1.25, b.x0 + 0.6, 3.0, d.pos + 1.25, nil) end
         bb(b.x0 + 0.5, -0.125, b.z0 + 0.5, b.x1 - 0.5, 0, b.z1 - 0.5, "dark_wood")   -- the floor
         if b.kind == "pub" then
-            bb(b.x0 + 3.0, 0, b.z1 - 3.2, b.x1 - 3.0, 1.1, b.z1 - 2.2, "dark_wood")             -- the bar along the back wall
             bb(b.crystal.x - 1, 0, b.crystal.z - 0.8, b.crystal.x + 1, 0.9, b.crystal.z + 0.8, "marble")
             if cu * 32 <= b.crystal.x and b.crystal.x < cu * 32 + 32 and cv * 32 <= b.crystal.z and b.crystal.z < cv * 32 + 32 then B.sphere(b.crystal.x - ox, 1.55, b.crystal.z - oz, 0.55, "rune") end
             bb(b.fire.x - 1.2, 0, b.fire.z - 0.4, b.fire.x + 1.2, 2.4, b.fire.z + 0.4, "brick"); bb(b.fire.x - 0.7, 0, b.fire.z - 0.4, b.fire.x + 0.7, 1.4, b.fire.z + 0.4, nil)
             bb(b.note.x - 0.6, 1.3, b.note.z - 0.1, b.note.x + 0.6, 2.1, b.note.z + 0.15, "lantern")   -- the notice board with the note
-            for k = 0, 1 do bb(b.x0 + 2 + k * 4, 0, b.cz - 1, b.x0 + 3.2 + k * 4, 0.9, b.cz + 0.2, "dark_wood") end
+            -- the furniture: the layout grammar's pub (a bar with its shelves and stools, tables and chairs, benches) around the fixtures above and the checkpoint in the middle
+            local inner = { x = b.x0 + 0.5, z = b.z0 + 0.5, w = b.x1 - b.x0 - 1, d = b.z1 - b.z0 - 1, h = b.h - 0.4 }
+            local lay = deco_layout("pub", inner, { { side = d.side, pos = d.pos } }, mk, 3, { door_half = 1.9, door_depth = 2.6, reserve = {
+                { b.crystal.x - 1.6, b.crystal.z - 1.4, b.crystal.x + 1.6, b.crystal.z + 1.4 }, { b.fire.x - 1.8, b.fire.z - 0.9, b.fire.x + 1.8, b.fire.z + 1.2 },
+                { b.note.x - 1.2, b.note.z - 0.6, b.note.x + 1.2, b.note.z + 1.0 }, { b.cx - 1.0, b.cz + 0.5, b.cx + 1.0, b.cz + 2.5 } } })
+            if lay then
+                local Bc = { fill = function(x0, y0, z0, x1, y1, z1, mat) bb(x0, y0, z0, x1, y1, z1, mat) end }
+                for _, it in ipairs(lay.items) do deco_item_draw(Bc, it, 3) end
+            end
         elseif b.kind == "store" then
             bb(b.vend.x - 1.2, 0, b.vend.z - 0.5, b.vend.x + 1.2, 2.8, b.vend.z + 0.5, "metal"); bb(b.vend.x - 1.0, 0.8, b.vend.z + 0.5, b.vend.x + 1.0, 2.4, b.vend.z + 0.6, "lantern")
             bb(b.x0 + 3, 0, b.cz, b.x1 - 3, 1.0, b.cz + 0.9, "dark_wood")
@@ -685,7 +692,9 @@ function deco_room(B, theme, room, doors, mk, fl)
         for i = 0, 7 do
             local a = i * math.pi / 4 + math.pi / 8
             local px, pz = cx + math.cos(a) * 9.5, cz + math.sin(a) * 8
-            if not deco_near_door(room, doors, px, pz, 3.5) then B.pillar(px, pz, 0.7, 0, h, "marble") end
+            local on_dais = false
+            if lay then for _, q in ipairs(lay.items) do if q.cat == "dais" and px > q.x0 - 1.2 and px < q.x1 + 1.2 and pz > q.z0 - 1.2 and pz < q.z1 + 1.2 then on_dais = true end end end
+            if not deco_near_door(room, doors, px, pz, 3.5) and not on_dais then B.pillar(px, pz, 0.7, 0, h, "marble") end
         end
     elseif theme == "safe" then
         local plan = deco_safe_plan(room, doors, false)

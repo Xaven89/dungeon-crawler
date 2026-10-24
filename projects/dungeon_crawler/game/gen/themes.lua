@@ -46,7 +46,9 @@ function F.populate(room, ctx, rng, n, opts)
         for _, k in ipairs(order) do
             local sp = opts.spots[k]
             if #placed >= n then break end
-            if (not opts.allow or opts.allow(sp.x, sp.z)) and not ctx.near_door(room, sp.x, sp.z, 3.5) then placed[#placed + 1] = { sp.x, sp.z } end
+            local kind_ok = opts.spot_kinds == nil and sp.kind ~= "boss"
+            if opts.spot_kinds then for _, kk in ipairs(opts.spot_kinds) do if kk == sp.kind then kind_ok = true end end end
+            if kind_ok and (not opts.allow or opts.allow(sp.x, sp.z)) and not ctx.near_door(room, sp.x, sp.z, 3.5) then placed[#placed + 1] = { sp.x, sp.z } end
         end
     end
     while #placed < n and tries < n * 40 do
@@ -94,6 +96,14 @@ function F.furnished(room, ctx)
     for _, it in ipairs(lay.items) do if it.blocks then rects[#rects + 1] = { it.x0 + ox, it.z0 + oz, it.x1 + ox, it.z1 + oz } end end
     for _, sp in ipairs(lay.spots) do spots[#spots + 1] = { x = sp.x + ox, z = sp.z + oz, kind = sp.kind } end
     return lay, rects, spots
+end
+
+-- where the boss of an arena stands: the dais of its layout (the middle of the room without one), in the floor's coordinates
+function F.boss_spot(room, ctx)
+    local lay = deco_layout(room.theme, F.lroom(room), F.local_doors(room), ctx.mk(room), ctx.floor)
+    local ox, oz = F.off(room)
+    if lay then for _, sp in ipairs(lay.spots) do if sp.kind == "boss" then return sp.x + ox, sp.z + oz end end end
+    return room.x + room.w / 2, room.z + room.d / 2
 end
 
 -- wall sconces: the plan is deco.lua's (the plates are voxels of the hook), the flames are made here; no flame within 3 m of a door
@@ -183,7 +193,10 @@ F.register("arena", {
         end
         G.lamp(cx, cz, room.h, 2.0, { reach = 18, far = 26, intensity = 16 * G.gen.rules.dark() })
         -- the boss himself is made by G.boss.begin when the player steps in (F.lair_of): here only his guards
-        F.populate(room, ctx, r, F.STAGING.quarter.guards, { own = true, kinds = { { "orc", 4 }, { "bandit", 3 }, { "goblin", 3 } }, allow = function(x, z) return G.dist2(x, z, cx, cz) > 5 end })
+        local lay, rects, spots = F.furnished(room, ctx)
+        local bx, bz = F.boss_spot(room, ctx)
+        F.populate(room, ctx, r, F.STAGING.quarter.guards, { own = true, kinds = { { "orc", 4 }, { "bandit", 3 }, { "goblin", 3 } }, spots = spots, spot_kinds = { "guard" },
+                   allow = function(x, z) return G.dist2(x, z, cx, cz) > 5 and G.dist2(x, z, bx, bz) > 3 and F.clear_of(rects, 0.45)(x, z) end })
     end,
 })
 F.register("ante", {
@@ -191,10 +204,8 @@ F.register("ante", {
     things = function(room, ctx)
         local r = ctx.rng(room)
         F.sconces(room, ctx, 8, 3.3); F.lamps(room, 14, 12)
-        local pil = {}
-        local ox, oz = F.off(room)
-        for _, p in ipairs(deco_hall_plan(F.lroom(room), ctx.mk(room))) do pil[#pil + 1] = { p[1] + ox, p[2] + oz } end
-        F.populate(room, ctx, L.make_rng(ctx.seed, ctx.floor, 2000 + room.index), 3, { allow = function(x, z) for _, p in ipairs(pil) do if G.dist2(x, z, p[1], p[2]) < 1.6 then return false end end return true end })
+        local lay, rects, spots = F.furnished(room, ctx)
+        F.populate(room, ctx, L.make_rng(ctx.seed, ctx.floor, 2000 + room.index), 3, { allow = F.clear_of(rects, 0.45), spots = spots, spot_kinds = { "guard", "idle" } })
     end,
 })
 

@@ -33,6 +33,12 @@ function deco_catalogue()
         -- stores
         crates     = { cat = "crates", w = 1.4, d = 1.4, h = 3.6, anchor = "free", clear = 0.9, spots = { { "idle", 1.5, 0.7 } } },
         barrels    = { cat = "barrels", w = 1.8, d = 1.8, h = 1.1, anchor = "corner", clear = 0.8 },
+        -- lairs, bars
+        dais       = { cat = "dais", w = 7.0, d = 3.0, h = 0.4, anchor = "far_wall", clear = 1.0, blocks = false, spots = { { "boss", 0, 1.9 } } },
+        throne     = { cat = "throne", w = 1.6, d = 1.2, h = 2.6, on = "dais", clear = 0.3 },
+        bar        = { cat = "bar", w = 4.4, d = 0.9, h = 1.1, anchor = "wall_gap", gapw = 1.7, clear = 0.8, spots = { { "idle", 0, -0.85 } } },
+        shelf_wall = { cat = "shelf", w = 3.0, d = 0.4, h = 2.3, behind = "bar", clear = 0.3, offs = { -1.7, 1.7 } },
+        sofa       = { cat = "sofa", w = 2.4, d = 0.9, h = 0.9, anchor = "wall", clear = 0.7 },
         -- the hall
         pillar     = { cat = "pillar", w = 1.4, d = 1.4, h = 0, anchor = "pillars", clear = 0.4 },
         banner     = { cat = "banner", w = 1.2, d = 0.15, h = 2.6, anchor = "wall", clear = 0, blocks = false },
@@ -67,6 +73,29 @@ function deco_layout_themes()
             { id = "urn", base = 2, jit = 2 },
             { id = "bones", area = 1.4, jit = 2 },
         } },
+        arena = { margin = 2.0, door_guards = true, fill = {
+            { id = "dais" }, { id = "throne" },
+            { id = "banner", base = 3, jit = 2 },
+            { id = "urn", base = 1, jit = 1 },
+        } },
+        ante = { margin = 1.5, door_guards = true, fill = {
+            { id = "pillar", p = 0.7 },
+            { id = "rack", wall = 0.1, jit = 1 },
+            { id = "bench", wall = 0.05, jit = 1 },
+            { id = "banner", wall = 0.05, jit = 1 },
+            { id = "urn", base = 1, jit = 1 },
+        } },
+        safe = { margin = 1.0, reserve = "safe", fill = {
+            { id = "bench", base = 2, jit = 2 },
+            { id = "urn", base = 2, jit = 2 },
+            { id = "banner", base = 2, jit = 2 },
+        } },
+        pub = { margin = 0.8, fill = {
+            { id = "bar" }, { id = "shelf_wall" }, { id = "stool" },
+            { id = "table", base = 2, jit = 1 },
+            { id = "chair" },
+            { id = "bench", base = 1, jit = 1 },
+        } },
         depot = { margin = 3.0, fill = {
             { id = "rack", wall = 0.14, jit = 1 },
             { id = "crates", area = 2.2, jit = 2 },
@@ -76,7 +105,7 @@ function deco_layout_themes()
 end
 
 -- ---------------------------------------------------------------------------------------------- the pass
-function deco_layout(theme, room, doors, mk, fl)
+function deco_layout(theme, room, doors, mk, fl, extra)
     local TH = deco_layout_themes()[theme]
     if not TH then return nil end
     local CAT = deco_catalogue()
@@ -88,11 +117,16 @@ function deco_layout(theme, room, doors, mk, fl)
     local function hit(a, b, pad) pad = pad or 0; return a[1] - pad < b[3] and b[1] < a[3] + pad and a[2] - pad < b[4] and b[2] < a[4] + pad end
     -- 1. reserve: the door bands (the doorway, the way in) and the places of the loot crates
     for _, d in ipairs(doors or {}) do
-        local half, depth = 3.6, 4.0
+        local half, depth = (extra and extra.door_half) or 3.6, (extra and extra.door_depth) or 4.0
         if d.side == "E" then bands[#bands + 1] = { X1 - depth, d.pos - half, X1, d.pos + half }
         elseif d.side == "W" then bands[#bands + 1] = { X0, d.pos - half, X0 + depth, d.pos + half }
         elseif d.side == "S" then bands[#bands + 1] = { d.pos - half, Z1 - depth, d.pos + half, Z1 }
         else bands[#bands + 1] = { d.pos - half, Z0, d.pos + half, Z0 + depth } end
+    end
+    for _, q in ipairs((extra and extra.reserve) or {}) do bands[#bands + 1] = q end
+    if TH.reserve == "safe" then
+        local ox, oz = room.x + (room.w - 16) / 2, room.z + (room.d - 16) / 2
+        bands[#bands + 1] = { ox - 0.3, oz - 0.3, ox + 16.3, oz + 16.3 }
     end
     for _, c in ipairs(deco_crates(theme, room, doors, mk, fl or 1)) do
         local alongx = (c.face == "+z" or c.face == "-z")
@@ -107,7 +141,7 @@ function deco_layout(theme, room, doors, mk, fl)
                      x0 = cx - w / 2, z0 = cz - d / 2, x1 = cx + w / 2, z1 = cz + d / 2 }
         local c = def.clear or 0
         it.foot = { it.x0, it.z0, it.x1, it.z1 }
-        if def.anchor == "wall" or def.anchor == "corner" then       -- the free band is in front
+        if def.anchor == "wall" or def.anchor == "corner" or def.anchor == "far_wall" or def.anchor == "wall_gap" then       -- the free band is in front
             if face == "+z" then it.zone = { it.x0, it.z0, it.x1, it.z1 + c } elseif face == "-z" then it.zone = { it.x0, it.z0 - c, it.x1, it.z1 }
             elseif face == "+x" then it.zone = { it.x0, it.z0, it.x1 + c, it.z1 } else it.zone = { it.x0 - c, it.z0, it.x1, it.z1 } end
         else it.zone = { it.x0 - c, it.z0 - c, it.x1 + c, it.z1 + c } end
@@ -172,6 +206,29 @@ function deco_layout(theme, room, doors, mk, fl)
             local cx = (r.next() < 0.5) and X0 + 0.04 + w / 2 or X1 - 0.04 - w / 2
             local cz = (r.next() < 0.5) and Z0 + 0.04 + d / 2 or Z1 - 0.04 - d / 2
             return make(id, def, cx, cz, (cx < (X0 + X1) / 2) and "+x" or "-x")
+        elseif a == "far_wall" or a == "wall_gap" then
+            -- the wall farthest from the doors (far_wall) / any wall that has no door band (wall_gap: a counter with room behind it)
+            local best, bs = nil, -1
+            for side = 1, 4 do
+                local face = ({ "+z", "-z", "+x", "-x" })[side]
+                local w, d = dims(def, face)
+                local gap = (a == "wall_gap") and (def.gapw or 1.4) or 0.04
+                local cx, cz
+                if side == 1 then cx, cz = (X0 + X1) / 2, Z0 + gap + d / 2 elseif side == 2 then cx, cz = (X0 + X1) / 2, Z1 - gap - d / 2
+                elseif side == 3 then cx, cz = X0 + gap + w / 2, (Z0 + Z1) / 2 else cx, cz = X1 - gap - w / 2, (Z0 + Z1) / 2 end
+                local sc = 0
+                for _, dd in ipairs(doors or {}) do
+                    local dx, dz
+                    if dd.side == "E" then dx, dz = X1, dd.pos elseif dd.side == "W" then dx, dz = X0, dd.pos elseif dd.side == "S" then dx, dz = dd.pos, Z1 else dx, dz = dd.pos, Z0 end
+                    sc = sc - 100 / (1 + (cx - dx) ^ 2 + (cz - dz) ^ 2)
+                end
+                sc = sc + r.next() * 0.3
+                if sc > bs then
+                    local it = make(id, def, cx, cz, face)
+                    if fits(it, 0.0) then best, bs = it, sc end
+                end
+            end
+            return best
         elseif a == "centre" then
             local sp = min(room.w, room.d) * 0.3
             local cx = (X0 + X1) / 2 + (r.next() - 0.5) * 2 * sp
@@ -195,6 +252,7 @@ function deco_layout(theme, room, doors, mk, fl)
         end
     end
     local function count_of(row)
+        if not (row.base or row.area or row.wall) then return 1 end        -- a row without a count is one item (the dais, the bar)
         local n = (row.base or 0) + (row.area or 0) * room.w * room.d / 100 + (row.wall or 0) * 2 * (room.w + room.d) + (row.jit or 0) * r.next()
         return floor(n + 0.5)
     end
@@ -240,7 +298,37 @@ function deco_layout(theme, room, doors, mk, fl)
     for _, row in ipairs(TH.fill) do
         local def = CAT[row.id]
         if def then
-            if def.near then dependents(row.id, def, row)
+            if def.on then
+                for _, p in ipairs(items) do
+                    if p.cat == def.on then
+                        local back = 0.3
+                        local cx, cz = (p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2
+                        local dxs = (p.face == "+x") and -1 or ((p.face == "-x") and 1 or 0)
+                        local dzs = (p.face == "+z") and -1 or ((p.face == "-z") and 1 or 0)
+                        local lenv = (p.face == "+z" or p.face == "-z") and (p.z1 - p.z0) or (p.x1 - p.x0)
+                        local it = make(row.id, def, cx + dxs * (lenv / 2 - def.d / 2 - back), cz + dzs * (lenv / 2 - def.d / 2 - back), p.face)
+                        local ok = true
+                        for _, q in ipairs(items) do if q.blocks and q ~= p and hit(it.foot, q.foot, 0.05) then ok = false end end
+                        if ok then it.y0 = p.h; add(it) end
+                    end
+                end
+            elseif def.behind then
+                for _, p in ipairs(items) do
+                    if p.cat == def.behind then
+                        for _, off in ipairs(def.offs or { 0 }) do
+                            local f = p.face
+                            local pcx, pcz = (p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2
+                            local cx, cz
+                            local w, d = dims(def, f)
+                            if f == "+z" then cx, cz = pcx + off, Z0 + 0.04 + d / 2 elseif f == "-z" then cx, cz = pcx - off, Z1 - 0.04 - d / 2
+                            elseif f == "+x" then cx, cz = X0 + 0.04 + w / 2, pcz - off else cx, cz = X1 - 0.04 - w / 2, pcz + off end
+                            local it = make(row.id, def, cx, cz, f)
+                            it.zone = { it.x0, it.z0, it.x1, it.z1 }
+                            if fits(it, 0.0) then add(it) end
+                        end
+                    end
+                end
+            elseif def.near then dependents(row.id, def, row)
             elseif def.anchor == "pillars" then
                 local nx, nz = floor(room.w / 8), floor(room.d / 8)
                 for i = 1, nx do for j = 1, nz do
@@ -261,7 +349,7 @@ function deco_layout(theme, room, doors, mk, fl)
                         local tries = (def.anchor == "centre") and 8 or 1
                         for _ = 1, tries do
                             local it = cand(row.id, def)
-                            if it and fits(it, (def.anchor == "wall" or def.anchor == "corner") and 0.0 or M * 0.5) then
+                            if it and fits(it, (def.anchor == "wall" or def.anchor == "corner" or def.anchor == "far_wall" or def.anchor == "wall_gap") and 0.0 or M * 0.5) then
                                 if not best then best = it
                                 elseif def.anchor == "centre" then
                                     local function dc(q) return abs((q.x0 + q.x1) / 2 - (X0 + X1) / 2) + abs((q.z0 + q.z1) / 2 - (Z0 + Z1) / 2) end
@@ -404,9 +492,10 @@ function deco_item_draw(B, it, fl)
         if face == "+z" then return x0 + u, z0 + v elseif face == "-z" then return x1 - u, z1 - v
         elseif face == "+x" then return x0 + v, z0 + u else return x1 - v, z1 - u end
     end
+    local oy = it.y0 or 0
     local function box(u0, y0, v0, u1, y1, v1, mat)
         local ax, az = P(u0, v0); local bx, bz = P(u1, v1)
-        B.fill(math.min(ax, bx), y0, math.min(az, bz), math.max(ax, bx), y1, math.max(az, bz), mat)
+        B.fill(math.min(ax, bx), y0 + oy, math.min(az, bz), math.max(ax, bx), y1 + oy, math.max(az, bz), mat)
     end
     local id = it.id
     if id == "table" or id == "table_long" then
@@ -477,6 +566,27 @@ function deco_item_draw(B, it, fl)
         B.pillar((x0 + x1) / 2, (z0 + z1) / 2, 0.7, 0, it.h, "marble")
     elseif id == "banner" then
         box(0, 2.6, 0, W, 2.7, D, "metal"); box(0.1, 1.2, 0, W - 0.1, 2.6, D, "neon_red"); box(0.3, 1.0, 0, W - 0.3, 1.2, D, "neon_red")
+    elseif id == "dais" then
+        box(0, 0, 0, W, 0.3, D, "dark_wood"); box(0.1, 0.3, 0.1, W - 0.1, 0.4, D - 0.1, "carpet"); box(0, 0.3, 0, W, 0.4, 0.1, "gold"); box(0, 0.3, D - 0.1, W, 0.4, D, "gold")
+        box(0, 0.3, 0, 0.1, 0.4, D, "gold"); box(W - 0.1, 0.3, 0, W, 0.4, D, "gold")
+    elseif id == "throne" then
+        box(0.1, 0, 0.1, W - 0.1, 0.5, D - 0.1, "dark_wood"); box(0.2, 0.5, 0.3, W - 0.2, 0.62, D - 0.1, "neon_red")
+        box(0.1, 0.5, 0, W - 0.1, 2.4, 0.22, "dark_wood"); box(0.3, 1.0, 0.04, W - 0.3, 2.2, 0.26, "neon_red")
+        box(0.1, 2.4, 0, W - 0.1, 2.6, 0.3, "gold"); box(0, 0.5, 0.1, 0.18, 1.0, D - 0.1, "gold"); box(W - 0.18, 0.5, 0.1, W, 1.0, D - 0.1, "gold")
+        box(0.05, 2.0, 0, 0.25, 2.5, 0.3, "gold"); box(W - 0.25, 2.0, 0, W - 0.05, 2.5, 0.3, "gold")
+    elseif id == "bar" then
+        box(0, 0, 0, W, 1.0, D, "dark_wood"); box(-0.05, 1.0, -0.05, W + 0.05, 1.1, D + 0.12, "marble")
+        for k = 0, 3 do box(0.3 + k * 1.05, 0.15, D, 1.0 + k * 1.05, 0.9, D + 0.04, "chest_wood") end
+        box(0, 0, D - 0.06, W, 0.12, D + 0.1, "metal")
+    elseif id == "shelf_wall" then
+        box(0, 0, 0, W, it.h, 0.06, "dark_wood"); box(0, 0, 0, 0.06, it.h, D, "dark_wood"); box(W - 0.06, 0, 0, W, it.h, D, "dark_wood")
+        for k = 0, 3 do
+            local y = 0.5 + k * 0.5
+            box(0, y, 0, W, y + 0.05, D, "dark_wood")
+            for b = 0, 4 do box(0.2 + b * 0.55, y + 0.05, 0.1, 0.4 + b * 0.55, y + 0.05 + 0.25 + ((b + k) % 2) * 0.1, D - 0.1, ((b * 2 + k) % 3 == 0) and "lantern" or (((b + k) % 2 == 0) and "rune" or "chest_wood")) end
+        end
+    elseif id == "sofa" then
+        box(0, 0, 0, W, 0.45, D, "carpet"); box(0, 0.45, 0, W, 0.9, 0.25, "carpet"); box(0, 0.45, 0, 0.25, 0.7, D, "carpet"); box(W - 0.25, 0.45, 0, W, 0.7, D, "carpet")
     elseif id == "bones" then
         box(0, 0, 0, 0.5, 0.15, 0.3, "bone"); box(0.1, 0.15, 0.05, 0.25, 0.3, 0.2, "bone")
     end

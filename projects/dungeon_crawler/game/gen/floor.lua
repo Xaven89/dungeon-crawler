@@ -630,7 +630,13 @@ function F.lair_of(P, id)
     local room = P.rooms[id]
     local tier = room.ring and "borough" or "quarter"
     local S = F.STAGING[tier]
-    return { room = id, x = room.x + room.w / 2, z = room.z + room.d / 2 + (room.ring and 2 or 0), kind = F.boss_kind(P, id), hp_mult = S.hp * (1 + (P.floor - 1) * 0.18),
+    local bx, bz = room.x + room.w / 2, room.z + room.d / 2 + (room.ring and 2 or 0)
+    if room.theme == "arena" then                       -- the boss stands on the dais of his room's layout
+        local _, H = F.cg()
+        local lay = deco_layout(room.theme, room.info.room, F.local_doors(room), function(salt) return deco_rng(H, P.floor, room.ci, room.cj, salt or 1) end, P.floor)
+        if lay then for _, sp in ipairs(lay.spots) do if sp.kind == "boss" then bx, bz = sp.x + room.ci * 32, sp.z + room.cj * 32 end end end
+    end
+    return { room = id, x = bx, z = bz, kind = F.boss_kind(P, id), hp_mult = S.hp * (1 + (P.floor - 1) * 0.18),
              flag = "boss_dead_" .. id, tier = tier, on_fight = function() F.lair_close(P, id) end,
              on_end = function() F.lair_open(id) end, on_dead = function() F.lair_cleared(P, id, tier) end }
 end
