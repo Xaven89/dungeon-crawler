@@ -37,7 +37,7 @@ function F.world_seed() return floor(worldgen.seed or 0) end
 F.ORIENT = { 1072, 128, 848 }
 function F.frame(fl)
     if not fl or fl == 0 then G.OX, G.OY, G.OZ = F.ORIENT[1], F.ORIENT[2], F.ORIENT[3]
-    else G.OX, G.OY, G.OZ = 0, 128, (fl * 32 + 2) * 512 end
+    else G.OX, G.OY, G.OZ = 0, (fl == 3) and 401 or 128, (fl * 32 + 2) * 512 end         -- (floor 3 is on the plain: its floor is the grass, the first free voxel above it is 401)
 end
 
 local function cid(ci, cj) return "c" .. ci .. "_" .. cj end
@@ -90,9 +90,24 @@ function F.build_plan(fl)
             end
         end
     end
+    -- floor 3: the park (a 2 x 2 super-cell in the middle quadrant) is a fortress too: its boss and its stairwell behind the forcefield
+    if fl == 3 then
+        local sp = CG.super_of(plan.ctx, 5, 5)
+        if sp and sp.kind == "park" then
+            local id = "park"
+            local ox, oz = sp.ci * 32, sp.cj * 32
+            local ar = { x = ox + g.cx - g.arena, z = oz + g.cz - g.arena, w = 2 * g.arena, d = 2 * g.arena }
+            local ring = { id = id, origin = cid(sp.ci, sp.cj), ox = ox, oz = oz, g = g, arena = ar, ff_flag = "ff_" .. id,
+                           pit = { x0 = ox + g.pit.x0, z0 = oz + g.pit.z0, x1 = ox + g.pit.x1, z1 = oz + g.pit.z1 } }
+            P.rings[id] = ring
+            P.ring_list[#P.ring_list + 1] = ring
+            P.rooms[id] = { id = id, index = 9100, ci = sp.ci, cj = sp.cj, x = ar.x, z = ar.z, w = ar.w, d = ar.d, h = 12, theme = "borough_arena", cellrole = "ring", role = "boss",
+                            kind = "borough_arena", name = "The Park Rotunda", ring = ring }
+        end
+    end
     -- the free stairwells: the first opens at 30 % of the floor's time, on floors 5+ the second is a SERVICE stairwell (80 %, no price for going early)
     P.free = {}
-    for i, sc in ipairs(CG.free_stairs(plan.ctx)) do P.free[cid(sc[1], sc[2])] = { index = i, service = (fl >= 5 and i == 2) }; P.free_list = P.free_list or {}; P.free_list[#P.free_list + 1] = cid(sc[1], sc[2]) end
+    for i, sc in ipairs(CG.free_stairs(plan.ctx)) do P.free[cid(sc[1], sc[2])] = { index = i, service = (fl >= 5 and i == 2), quest = (fl == 3 and i == 2) }; P.free_list = P.free_list or {}; P.free_list[#P.free_list + 1] = cid(sc[1], sc[2]) end
     P.first_of = {}
     for _, id in ipairs(P.order) do local th = P.rooms[id].theme; if not P.first_of[th] then P.first_of[th] = id end end
     return P
@@ -238,6 +253,7 @@ function F.make_cell(id)
         cell_lights(P, room)
         if P.rings then for _, ring in ipairs(P.ring_list) do if ring.origin == id then F.make_ring(P, ring) end end end
         if room.theme == 'stairs_free' then F.pit_cover(room, F.stairs_open(id)) end
+        G.gen.overcity.cell_made(P, room)
     end)
     if not ok then print("floor: cell " .. id .. " failed: " .. tostring(err)) end
     G.traps.cell = nil
@@ -253,6 +269,7 @@ function F.drop_cell(id)
     G.traps.drop_cell(id)
     G.enemies.despawn_room(id)
     G.world.populate_list[id] = nil
+    G.gen.overcity.drop_cell(id)
 end
 
 -- ---------------------------------------------------------------------------------------------- the cells around the player
@@ -342,6 +359,18 @@ function F.tick(t)
     local run = G.run.cur()
     if run and G.state.class and not G.screen and not G.player.dead then run.fclock = (run.fclock or 0) + 1 end
     if t % 60 == 0 then F.timer_step() end
+    G.gen.overcity.tick(t)
+    if t % 15 == 0 and G.state.class and not G.player.dead then
+        local pub = G.gen.overcity.in_pub()
+        if pub then
+            G.safe = true
+            if not F.in_pub then G.player.set_checkpoint(pub.id) end
+        elseif F.in_pub then
+            local r = G.current_room and F.layout.rooms[G.current_room]
+            G.safe = (r ~= nil) and F.is_safe(r) or false
+        end
+        F.in_pub = pub
+    end
 end
 
 function F.progress()
@@ -371,6 +400,7 @@ function F.enter(fl, on_done)
     F.layout, F.active = P, true
     G.gen.track.scope = "floor" .. fl
     F.apply_tables(P)
+    if fl == 3 then G.gen.overcity.enter(P) else G.gen.overcity.leave() end
     local r = P.rooms[P.start]
     local x, y, z = G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2)
     player.teleport(x, y, z, { wait = true })              -- (holds the player until the chunk under it is resident; the veil below also waits for the room to exist)
@@ -389,6 +419,7 @@ function F.load(fl)
     F.layout, F.active = P, true
     G.gen.track.scope = "floor" .. fl
     F.apply_tables(P)
+    if fl == 3 then G.gen.overcity.enter(P) else G.gen.overcity.leave() end
     G.show.redeclare()
     -- the veil until the floor around the checkpoint exists (the hook makes it when the player is there), then the player wakes up at the checkpoint
     local cpid = G.state.checkpoint
@@ -409,6 +440,7 @@ function F.restore_authored(on_done)
     local a = F.authored
     if a then W.rooms, W.zones, W.checkpoints, W.room_order, W.neighbors, W.populate_list = a.rooms, a.zones, a.checkpoints, a.room_order, a.neighbors, a.populate_list end
     F.active, F.layout, G.bigfloor = false, nil, false
+    G.gen.overcity.leave()
     F.frame(0)
     G.gen.track.scope = "orientation"
     G.world.build()                                          -- (the things; the voxels are in the world)
@@ -446,6 +478,7 @@ function F.stairs_open(id)
     local P = F.layout
     local f = P and P.free and P.free[id]
     if not f then return true end
+    if f.quest then return G.state.flags.quest_why == true end           -- floor 3: the second stairwell is the quest's reward
     return F.frac() >= (f.service and F.AT_LATE or F.AT_OPEN)
 end
 
@@ -462,6 +495,11 @@ function F.pit_cover(room, open)
     local flags = G.state.flags
     if open and flags[key] then G.cyl_clear(cx, cz, 3.2, -0.3, 0); flags[key] = nil
     elseif not open and not flags[key] then G.pillar(cx, cz, 3.2, -0.3, 0, "neon_red"); flags[key] = true end
+end
+
+function F.refresh_pits()
+    local P = F.layout
+    for _, id in ipairs(F.made_list) do local r = P.rooms[id]; if r.theme == "stairs_free" then F.pit_cover(r, F.stairs_open(id)) end end
 end
 
 function F.timer_step()
@@ -637,6 +675,7 @@ function F.safe_rules()
         local r = P.rooms[id]
         if SAFE[r.theme] or r.cellrole == "arrival" then rects[#rects + 1] = r end
     end
+    for _, p in ipairs(G.gen.overcity.pubs) do rects[#rects + 1] = { x = p.x0, z = p.z0, w = p.x1 - p.x0, d = p.z1 - p.z0 } end
     if #rects == 0 then return end
     local ids = {}
     for id in pairs(E.list) do ids[#ids + 1] = id end
@@ -668,7 +707,7 @@ function F.enter_room(id, old)
     if G.gen.rules.muted_rooms[id] then A.say_key("rule.muted.enter", { prio = 1, key = "muted_" .. id, cooldown = 99999 }) end
     A.say_key("room." .. room.theme, { prio = 0, key = "room_" .. id, cooldown = 99999 }, room.name)
     if G.music and G.music.on_room then G.music.on_room(id) end
-    G.safe = F.is_safe(room) or (room.cellrole == "arrival" and not F.safe_closed())
+    G.safe = F.is_safe(room) or (room.cellrole == "arrival" and not F.safe_closed()) or (G.gen.overcity.in_pub() ~= nil)
     if G.safe then
         G.player.set_checkpoint(id)
         if room.theme == "safe" or room.cellrole == "arrival" then G.show.deliver(room) end        -- (the sponsors' boxes only in the safe rooms, not in the rest stops)

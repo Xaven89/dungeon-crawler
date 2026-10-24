@@ -282,6 +282,7 @@ function G.minimap_cells(w, h)
             local seen = s.flags["visited_" .. id]
             local near = math.abs(r.ci - pci) <= 2 and math.abs(r.cj - pcj) <= 2
             local special = (r.theme == "safe" or r.theme == "rest" or r.theme == "stairs_free" or r.theme == "guild")
+            if r.theme == "stairs_free" and P.floor == 3 and not s.flags["known_" .. id] then special = false end      -- (the over-city: the stairs are found by the note in a pub)
             if seen or (special and near) then
                 local cur = (G.current_room == id)
                 local col = seen and (cur and "#5a86c4" or (MM_COL[r.theme] and MM_COL[r.theme] or "#4a5878")) or (MM_COL[r.theme] or "#2a3347") .. "a0"
@@ -306,6 +307,10 @@ function G.minimap_cells(w, h)
     elseif f >= F.AT_LATE then state, col = "stairs free, service open", "#7fe08a"
     elseif f >= F.AT_OPEN then state, col = "stairs open (leaving now costs viewers)", "#ffd24a" end
     ui.text(mx, my + size + 14, string.format("%d:%02d  %s", floor(left / 60), left % 60, state), { size = 18, color = col })
+    if P.floor == 3 then
+        local OC = G.gen.overcity
+        ui.text(mx, my + size + 38, (OC.is_night() and "NIGHT" or "DAY") .. "   " .. (s.flags.quest_why and "quest done: the service stairs are open" or string.format("quest: find out why (%d / 3)", OC.clue_count())), { size = 18, color = OC.is_night() and "#8fa0ff" or "#ffd9a0" })
+    end
 end
 
 function G.minimap(w, h)

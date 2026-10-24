@@ -4,7 +4,7 @@ A project's state lives in four places, all next to each other and all versioned
 
 | file | what | format |
 |---|---|---|
-| the `--save` file (`world.vxs`) | the edited chunks | an append-only log; version 2 starts with a header record `VXSH` + the version (20 bytes); a file without one is version 1 (chunk records did not change, so it reads and appends as before) |
+| the `--save` file (`world.vxs`) | the edited chunks | an append-only log; version 2 starts with a header record `VXSH` + the version (20 bytes); a file without one is version 1 (chunk records did not change, so it reads and appends as before). **Version 3** (`kStoreVersion`, the world save's own number) adds the **tombstone** record `VXTB` + chunk coordinates (20 bytes): that chunk goes back to what the generator makes (`world.reset_region`). The newest record of a chunk wins, a tombstone removes it; a file of an older format is rewritten in version 3 before its first tombstone, so an older engine refuses it instead of reading it wrongly. A save that finds more than half of the records dead (and over 256 of them) **rewrites the file** with one record per chunk and no tombstones |
 | `.prefabs/tracked.txt` | the placed prefabs | text, first line `#version 2` |
 | `.events/state.txt` | the event nodes' levels and doors | text, first line `#version 2` |
 | `.state/store.json` | the script's `project.store` values | JSON `{ "version": 2, "values": { ... } }` |

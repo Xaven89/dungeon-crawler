@@ -121,6 +121,15 @@ F.register("borough", {
         F.populate(room, ctx, r, 4, { own = true, kinds = { { "orc", 3 }, { "bandit", 3 }, { "goblin", 3 } } })
     end,
 })
+-- floor 3: the village (the quarter rooms of its 2 x 2: lights come with the village's own things (gen/overcity.lua)), the park (the fortress of the park boss: guards in the quarters like the borough's)
+F.register("village", { names = { "Village Green", "The Hamlet", "Market Row", "Old Town" }, things = function(room, ctx) end })
+F.register("park", {
+    names = { "The Park", "Bone Gardens", "The Fairground" },
+    things = function(room, ctx)
+        local r = ctx.rng(room)
+        F.populate(room, ctx, r, 4, { own = true, kinds = { { "orc", 3 }, { "bandit", 3 }, { "goblin", 3 } } })
+    end,
+})
 F.register("stairs_free", {
     names = { "Stairwell", "Service Stairs", "The Way Down" },
     things = function(room, ctx)

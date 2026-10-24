@@ -475,3 +475,26 @@ lair.quarter_down,"The neighbourhood boss has been let go. Severance pay: a crat
 lair.borough_down,"The BOROUGH BOSS has been fired. The forcefield around the stairwell is down. Please mind the hole."
 lair.forcefield,"The red glow over the stairwell goes out. It was never a real forcefield. It was a very convincing carpet."
 room.borough_arena.1,"{1}. The centre of the borough. There is a hole in the floor and a very large person standing in front of it."
+oc.dusk,"The fake sun has set. The over-city goes dark: the shops are shut, the guards have gone home, and the alleys have stopped pretending."
+oc.dawn,"A new morning on the over-city. The guards are back. Please do not ask where the ones from last night went."
+oc.guard,"Move along, contestant. No fighting inside the walls. No fighting outside the walls either, but nobody enforces that."
+oc.villager_again,"I told you everything I know. It was not much. Please do not make me say it twice."
+oc.villager_done,"Thank you for finding out why. The service stairs are open. We always knew it was the secretary."
+oc.clue1,"Villager: I heard the park boss was not hired, he was promoted by a clerical error."
+oc.clue2,"Villager: the ticket seller says the whole show runs on a spreadsheet nobody has opened since the first season."
+oc.clue3,"Villager: the one who signs the contracts is the secretary. The secretary has never been seen. The secretary is very thorough."
+oc.quest_done,"QUEST DONE: you found out why. It was the secretary. The service stairwell is open. The secretary sends their regards."
+oc.pub_save,Touch the crystal (save)
+oc.pub_note,Read the note
+oc.store,Use the vending machine
+oc.store_closed,"The store is shut for the night. A sign says: back at dawn. Another sign says: or not."
+oc.board,Read the notice board
+oc.board_text,"NOTICE: help wanted, find out why (%d of 3 clues). Reward: stairs."
+oc.board_done,"NOTICE: thank you for finding out why. The notice board is now retired."
+oc.stone,Read the locator stone
+oc.talk,Talk
+oc.locator,"The locator stone hums and says:"
+oc.loc_pub,"A pub is about %d cells away."
+oc.loc_safe,"A safe room is about %d cells away."
+oc.loc_rest,"A rest stop is about %d cells away."
+oc.note,"A note pinned to the board: 'The stairs are in column %d, row %d of the ruin. They were not always there. Neither were we.'"

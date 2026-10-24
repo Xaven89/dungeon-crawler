@@ -1,6 +1,6 @@
 -- THE DESCENT: Season 7, Floor 1. The entry point: includes the modules and wires the engine callbacks. See GAME.md.
 hook_globals = { "cellgen_make", "cellgen_hash_from", "shell_region", "deco_rng", "deco_near_door", "deco_inner", "deco_hall_plan", "deco_grotto_plan", "deco_crypt_plan",
-                 "deco_library_plan", "deco_depot_plan", "deco_safe_plan", "deco_crates", "deco_chest", "deco_barrel", "deco_text", "deco_text_len", "deco_borough_geom", "deco_borough", "deco_room" }   -- the big floors: the hook runs the same pure plan as the game (game/gen/cell.lua, shell.lua)
+                 "deco_library_plan", "deco_depot_plan", "deco_safe_plan", "deco_crates", "deco_chest", "deco_barrel", "deco_text", "deco_text_len", "deco_borough_geom", "deco_borough", "deco_door_frame", "deco_village_plan", "deco_village", "deco_room" }   -- the big floors: the hook runs the same pure plan as the game (game/gen/cell.lua, shell.lua)
 include("game/core.lua")
 include("game/gen/layout.lua")
 include("game/gen/cell.lua")
@@ -36,6 +36,7 @@ include("game/music.lua")
 include("game/gen/safe.lua")
 include("game/gen/rules.lua")
 include("game/gen/floor.lua")
+include("game/gen/overcity.lua")
 include("game/gen/contracts.lua")
 include("game/gen/run.lua")
 include("game/gen/themes.lua")
@@ -144,7 +145,9 @@ function on_action(name, down, pl)
         -- E: a chest anywhere on it (the engine's own use handles the levers and buttons it is aimed at)
         if not G.screen and not G.player.dead then
             local c = G.traps.crate_in_front(3.0, 0.2)
+            local npc = (not c) and G.gen.overcity.npc_in_front()
             if c then G.traps.open_crate(c.id)
+            elseif npc then G.gen.overcity.talk(npc)
             else G.traps.use_door() end
         end
     elseif name == "ability" then G.player.ability()

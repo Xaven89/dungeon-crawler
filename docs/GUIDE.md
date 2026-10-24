@@ -184,6 +184,7 @@ steam parcels, drops in flight and edits waiting for unloaded chunks. What it ca
 effects are in the hash) and the undo journal.
 
 A recording remembers what it needs to be replayed: the level script (a copy as it was at the start, `session.log.clip/script_0.lua`, and a hash of it and of everything it
+**`--record LOG` starts the folder `LOG.clip` anew**: what an earlier recording to the same name left in it is removed first (a left-over `store_0.json` was once read by the replay as the state the new session started from, which made a replay differ or fail at tick 0). The clip also keeps `loads.txt`, the names of the files the session read in order (models, scripts: the n-th copy `prefab_N` stands for the n-th name); a replay that reads another file as number N says so with both names, instead of failing far from the cause.
 `include`s: a replay with another script given by `--lua` is refused with a message), the world save it started from (`--project` / `--save`: a copy up to 256 MB is kept as `session.log.clip/store_0.vxs` and the replay works on a temporary copy of it, so the exit save of the session does not matter), and every hot reload of the script during the session
 (the new text is kept next to the log in `session.log.clip/script_N.lua`). Clips copied with O / `copy:` are kept there too. Replays need the same build
 format (`# voxelith replay 2`); logs of older builds are refused. While recording, T (the orbit autopilot) does nothing: it would fire charges outside the log.

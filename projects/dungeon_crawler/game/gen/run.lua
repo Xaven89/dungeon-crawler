@@ -36,8 +36,8 @@ local function reset_state()
     G.player.dead = false
 end
 
--- the floors of a run, in order: the Orientation counts as floor 1 (band 0); 3 (the open-air city, P4) and 4 (the transit floor, its own plan) are skipped until they exist; the run ends after 8
-R.FLOORS = { 1, 2, 5, 6, 7, 8 }
+-- the floors of a run, in order: the Orientation counts as floor 1 (band 0); 4 (the transit floor) is skipped until its own plan exists; the run ends after 8
+R.FLOORS = { 1, 2, 3, 5, 6, 7, 8 }
 function R.next_floor(n)
     for _, f in ipairs(R.FLOORS) do if f > n then return f end end
     return nil

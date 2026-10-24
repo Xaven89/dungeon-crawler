@@ -2,8 +2,9 @@
 """A bot that plays a run on the BIG floors through the MCP server (P2): starts a generated run (skipping the Orientation), and on every floor follows the plan's path from the arrival to the
 nearest free stairwell (teleporting from room to room: the walking is tools/p1_walk.py's), fights the rooms on the way with the game's own functions (Game.autoaim, heal items), opens their crates,
 equips better gear, takes the stairs. It records the session (--record) and replays it at the end to check the hash; it prints the agent and light counts of every floor.
-usage: tools/p2_playthrough.py [SEED] [class] [floors] [--no-replay] [--project P] [--borough]
+usage: tools/p2_playthrough.py [SEED] [class] [floors] [--no-replay] [--project P] [--borough] [--park] [--first-floor N]
   --borough: on floor 1 the bot goes to the nearest borough, kills its boss in the rotunda and takes ITS stairwell (the forcefield falls with the boss); the other floors use the free stairwells.
+  --park: the same on floor 3 (the park boss and the stairwell behind its forcefield). --first-floor N: the run starts on floor N (2, 3, 5 ...).
   The floor clock of the bot is 24000 ticks (400 s) so that every threshold (30 / 80 / 95 / 100 %) can be reached; the stairs are waited for if the clock has not opened them."""
 import os, subprocess, sys, time, json, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -109,7 +110,7 @@ def borough_run(v):
     L(v, "local G=Game; local r = G.floorgen.layout.rings['%s']; local p = r.pit; player.teleport(G.mx((p.x0 + p.x1) / 2), G.my(-1.1), G.mz((p.z0 + p.z1) / 2))" % rid, 60)
     print("   screen after the pit:", L(v, "print(Game.screen)", 0))
     L(v, "Game.run.descend(true)", 2)
-    print("floor %d built in" % 2, wait_floor(v), "s")
+    print("next floor built in", wait_floor(v), "s")
     v.step(200)
     L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
     return True
@@ -142,11 +143,17 @@ def main():
         L(v, "Game.screen = 'run'; Game.run.start(0, true)", 2)
         L(v, "Game.player.pick_class('%s')" % cls, 2)
         print("floor 1 built in", wait_floor(v), "s")
+        if "--first-floor" in sys.argv:
+            first = int(sys.argv[sys.argv.index("--first-floor") + 1])
+            v.step(200); L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
+            L(v, "Game.run.begin_floor(%d)" % first, 2)
+            print("floor %d built in" % first, wait_floor(v), "s")
         v.step(200)
         L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
         for fl in range(1, floors + 1):
             L(v, "Game.run.cur().floor_ticks = 24000", 0)
-            if "--borough" in sys.argv and fl == 1 and borough_run(v): continue
+            cur = int(L(v, "print(Game.run.cur().floor)", 0)[0])
+            if (("--borough" in sys.argv and cur == 1) or ("--park" in sys.argv and cur == 3)) and borough_run(v): continue
             info = L(v, PATH, 0)[0].split("\t")
             print("FLOOR", info[0], "cells", info[1], "path", info[2])
             rooms = [x.split(":") for x in info[2].split(",")]

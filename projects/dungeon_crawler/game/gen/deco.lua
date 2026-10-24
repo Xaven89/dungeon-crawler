@@ -165,6 +165,17 @@ function deco_crates(theme, room, doors, mk, fl)
         local mimic = mk(3).int(1, 3)
         for i = 1, 3 do add(i == 2 and "gold" or "silver", cx - 4.025 + (i - 1) * 3.4, cz - 0.4, "+z", 0.45, i == mimic) end
     end
+    -- a chest never stands at a door: the first mirror image of its place (and way it faces) that is free
+    for _, c in ipairs(out) do
+        local function bad(x, z) return deco_near_door(room, doors, x + 0.6, z + 0.4, 3.0) end
+        if bad(c.x, c.z) then
+            local mx, mz = room.x + room.w - (c.x - room.x) - 1.25, room.z + room.d - (c.z - room.z) - 0.75
+            local FLIP = { ["+x"] = "-x", ["-x"] = "+x", ["+z"] = "-z", ["-z"] = "+z" }
+            if not bad(mx, c.z) then c.x = mx; c.face = (c.face == "+x" or c.face == "-x") and FLIP[c.face] or c.face
+            elseif not bad(c.x, mz) then c.z = mz; c.face = (c.face == "+z" or c.face == "-z") and FLIP[c.face] or c.face
+            elseif not bad(mx, mz) then c.x, c.z = mx, mz; c.face = FLIP[c.face] end
+        end
+    end
     return out
 end
 
@@ -239,13 +250,15 @@ function deco_borough(B, cu, cv, fl)
         strip(cx - h, cz - h, cx + h, cz - i, "N"); strip(cx - h, cz + i, cx + h, cz + h, "S")
         strip(cx - h, cz - i, cx - i, cz + i, "W"); strip(cx + i, cz - i, cx + h, cz + i, "E")
     end
-    wall(g.w1, g.gaps.w1, "dungeon_brick"); wall(g.w2, g.gaps.w2, "mossy"); wall(g.w3, g.gaps.w3, "marble")
+    -- floor 3 (the park of the over-city): a wall of bone and rock, open to the sky
+    local pal = (fl == 3) and { "ruin_stone", "bone", "marble" } or { "dungeon_brick", "mossy", "marble" }
+    wall(g.w1, g.gaps.w1, pal[1]); wall(g.w2, g.gaps.w2, pal[2]); wall(g.w3, g.gaps.w3, pal[3])
     -- the roof over the ring corridors and the walls (the arena keeps the courtyard's ceiling)
     local function roof(h0, h1)
         bb(cx - h1, H, cz - h1, cx + h1, H + 0.5, cz - h0, "dungeon_brick"); bb(cx - h1, H, cz + h0, cx + h1, H + 0.5, cz + h1, "dungeon_brick")
         bb(cx - h1, H, cz - h0, cx - h0, H + 0.5, cz + h0, "dungeon_brick"); bb(cx + h0, H, cz - h0, cx + h1, H + 0.5, cz + h0, "dungeon_brick")
     end
-    roof(g.arena, g.w1)
+    if fl ~= 3 then roof(g.arena, g.w1) end
     -- the drawbridge: two posts and a lintel of gold in front of the outer gap, a rug to the door
     bb(cx - hw - 0.4, 0, cz + g.w1, cx - hw, 5.4, cz + g.w1 + 0.4, "gold"); bb(cx + hw, 0, cz + g.w1, cx + hw + 0.4, 5.4, cz + g.w1 + 0.4, "gold")
     bb(cx - hw, 5.0, cz + g.w1, cx + hw, 5.4, cz + g.w1 + 0.4, "gold")
@@ -260,6 +273,98 @@ function deco_borough(B, cu, cv, fl)
     bb(p.x0, 0, p.z0, p.x1, 0.5, p.z1, "neon_red")                                   -- the forcefield: a glowing slab that fills the pit up to the rim
     -- a ring of gold in the arena floor
     B.ring(cx - ox, cz - oz, g.arena - 3.3, g.arena - 2.6, 0, 0.1, "gold")
+end
+
+-- a gold frame around a door of a room (the arena's themed door, the gates of a village): side, pos (the door's coordinate along the wall), half-width of the opening
+function deco_door_frame(B, room, side, pos, mat, hw, hh)
+    hw = hw or 3.4; hh = hh or 5.2; mat = mat or "gold"
+    if side == "E" or side == "W" then
+        local x = (side == "E") and room.x + room.w - 0.5 or room.x
+        B.fill(x, 0, pos - hw, x + 0.5, hh, pos - hw + 0.4, mat); B.fill(x, 0, pos + hw - 0.4, x + 0.5, hh, pos + hw, mat); B.fill(x, hh - 0.6, pos - hw, x + 0.5, hh, pos + hw, mat)
+    else
+        local z = (side == "S") and room.z + room.d - 0.5 or room.z
+        B.fill(pos - hw, 0, z, pos - hw + 0.4, hh, z + 0.5, mat); B.fill(pos + hw - 0.4, 0, z, pos + hw, hh, z + 0.5, mat); B.fill(pos - hw, hh - 0.6, z, pos + hw, hh, z + 0.5, mat)
+    end
+end
+
+-- ---------------------------------------------------------------------------------------------- floor 3: a village (a 2 x 2 super-cell of 64 x 64 m, super-cell metres, the courtyard 6 .. 58)
+-- four blocks of 14 x 14 m around a square of 14 x 14 m: the pub, a store, the town hall and houses in a hashed order; every building faces the square and has a door; the plan is shared with the game
+-- (guards at the gates, the crystal of the pub, the vending machine of the store, the notice board of the hall). mk(salt) is the stream of the ORIGIN cell of the super-cell.
+function deco_village_plan(mk)
+    local r = mk(1)
+    local roles = { "pub", "store", "hall", "houses" }
+    for i = 4, 2, -1 do local j = r.int(1, i); roles[i], roles[j] = roles[j], roles[i] end
+    local slots = { { 11, 11 }, { 39, 11 }, { 11, 39 }, { 39, 39 } }
+    local out = { square = { x0 = 25, z0 = 25, x1 = 39, z1 = 39 }, buildings = {}, locators = {} }
+    for i, sl in ipairs(slots) do
+        local sx, sz = sl[1], sl[2]
+        local east = (sx < 32)                                       -- the doors face the square
+        local function add(kind, x0, z0, w, d, h)
+            local b = { kind = kind, x0 = x0, z0 = z0, x1 = x0 + w, z1 = z0 + d, h = h }
+            b.door = { side = east and "E" or "W", pos = z0 + d / 2 }
+            b.cx, b.cz = x0 + w / 2, z0 + d / 2
+            out.buildings[#out.buildings + 1] = b
+            return b
+        end
+        local role = roles[i]
+        if role == "pub" then
+            local b = add("pub", sx + 1, sz + 2, 12, 10, 4.4)
+            b.crystal = { x = b.cx, z = b.z0 + 1.6 }; b.note = { x = b.x0 + 3.2, z = b.z0 + 0.7 }; b.fire = { x = b.cx + 3.5, z = b.z0 + 0.7 }
+        elseif role == "store" then
+            local b = add("store", sx + 2, sz + 3, 10, 8, 3.8)
+            b.vend = { x = b.cx, z = b.z0 + 1.2 }
+        elseif role == "hall" then
+            local b = add("hall", sx + 1, sz + 2, 12, 10, 4.8)
+            b.board = { x = b.cx, z = b.z0 + 0.7 }
+        else
+            add("house", sx + 1, sz + 0.5, 7, 6, 3.4); add("house", sx + 3, sz + 8, 8, 5.5, 3.4)
+        end
+    end
+    -- the locator stones: one at every corner of the square
+    out.locators = { { 25.8, 25.8 }, { 38.2, 25.8 }, { 25.8, 38.2 }, { 38.2, 38.2 } }
+    return out
+end
+
+-- cu, cv: which cell of the 2 x 2; doors: the cell's own doors (cell metres) get a gold gate; the builder clips to the cell
+function deco_village(B, cu, cv, room, doors, mk)
+    local plan = deco_village_plan(mk)
+    local ox, oz = cu * 32, cv * 32
+    local function bb(x0, y0, z0, x1, y1, z1, mat)
+        x0, x1, z0, z1 = x0 - ox, x1 - ox, z0 - oz, z1 - oz
+        if x1 <= 0 or z1 <= 0 or x0 >= 32 or z0 >= 32 then return end
+        B.fill(math.max(0, x0), y0, math.max(0, z0), math.min(32, x1), y1, math.min(32, z1), mat)
+    end
+    bb(6, -0.125, 6, 58, 0, 58, "cobble")                                           -- the paving of the village
+    local q = plan.square
+    bb(q.x0, -0.125, q.z0, q.x1, 0, q.z1, "marble")
+    -- the well in the middle of the square
+    B.ring(32 - ox, 32 - oz, 1.0, 1.6, 0, 0.9, "marble")
+    B.pillar(32 - ox, 32 - oz, 1.0, -0.6, 0.05, "gutter_water")
+    for _, b in ipairs(plan.buildings) do
+        local wall = (b.kind == "hall") and "marble" or ((b.kind == "pub") and "dark_wood" or "dungeon_brick")
+        bb(b.x0, 0, b.z0, b.x1, b.h, b.z1, wall)                                      -- the solid block with its roof (the top 0.4 m)
+        bb(b.x0 + 0.5, 0, b.z0 + 0.5, b.x1 - 0.5, b.h - 0.4, b.z1 - 0.5, nil)        -- the inside
+        local d = b.door
+        if d.side == "E" then bb(b.x1 - 0.6, 0, d.pos - 1.25, b.x1 + 0.02, 3.0, d.pos + 1.25, nil) else bb(b.x0 - 0.02, 0, d.pos - 1.25, b.x0 + 0.6, 3.0, d.pos + 1.25, nil) end
+        bb(b.x0 + 0.5, -0.125, b.z0 + 0.5, b.x1 - 0.5, 0, b.z1 - 0.5, "dark_wood")   -- the floor
+        if b.kind == "pub" then
+            bb(b.x0 + 3.0, 0, b.z1 - 3.2, b.x1 - 3.0, 1.1, b.z1 - 2.2, "dark_wood")             -- the bar along the back wall
+            bb(b.crystal.x - 1, 0, b.crystal.z - 0.8, b.crystal.x + 1, 0.9, b.crystal.z + 0.8, "marble")
+            if cu * 32 <= b.crystal.x and b.crystal.x < cu * 32 + 32 and cv * 32 <= b.crystal.z and b.crystal.z < cv * 32 + 32 then B.sphere(b.crystal.x - ox, 1.55, b.crystal.z - oz, 0.55, "rune") end
+            bb(b.fire.x - 1.2, 0, b.fire.z - 0.4, b.fire.x + 1.2, 2.4, b.fire.z + 0.4, "brick"); bb(b.fire.x - 0.7, 0, b.fire.z - 0.4, b.fire.x + 0.7, 1.4, b.fire.z + 0.4, nil)
+            bb(b.note.x - 0.6, 1.3, b.note.z - 0.1, b.note.x + 0.6, 2.1, b.note.z + 0.15, "lantern")   -- the notice board with the note
+            for k = 0, 1 do bb(b.x0 + 2 + k * 4, 0, b.cz - 1, b.x0 + 3.2 + k * 4, 0.9, b.cz + 0.2, "dark_wood") end
+        elseif b.kind == "store" then
+            bb(b.vend.x - 1.2, 0, b.vend.z - 0.5, b.vend.x + 1.2, 2.8, b.vend.z + 0.5, "metal"); bb(b.vend.x - 1.0, 0.8, b.vend.z + 0.5, b.vend.x + 1.0, 2.4, b.vend.z + 0.6, "lantern")
+            bb(b.x0 + 3, 0, b.cz, b.x1 - 3, 1.0, b.cz + 0.9, "dark_wood")
+        elseif b.kind == "hall" then
+            bb(b.cx - 3, 0, b.z0 + 0.5, b.cx + 3, 0.5, b.z0 + 2.5, "dark_wood"); bb(b.board.x - 1.5, 1.2, b.board.z - 0.1, b.board.x + 1.5, 2.6, b.board.z + 0.15, "neon_red")
+        end
+    end
+    -- the locator stones
+    for _, l in ipairs(plan.locators) do bb(l[1] - 0.4, 0, l[2] - 0.4, l[1] + 0.4, 2.2, l[2] + 0.4, "marble"); bb(l[1] - 0.25, 2.2, l[2] - 0.25, l[1] + 0.25, 2.6, l[2] + 0.25, "lantern") end
+    -- the gates: a frame at every hall that leaves this cell's quarter of the courtyard
+    for _, d in ipairs(doors or {}) do deco_door_frame(B, room, d.side, d.pos, "gold", 3.4, 5.2) end
 end
 
 -- ---------------------------------------------------------------------------------------------- voxel text for the hook (the engine's edit.text is a world edit: edits made when a cell comes alive made a replay differ)
@@ -348,31 +453,34 @@ function deco_room(B, theme, room, doors, mk, fl)
         end
     end
     local h = room.h
+    local open = ((fl or 1) == 3)                                  -- floor 3 has no ceiling: nothing hangs from it
     if theme == "hall" or theme == "ante" or theme == "guild" then
         if room.w >= room.d then B.fill(room.x + 1, 0, room.z + room.d / 2 - 2, room.x + room.w - 1, 0.05, room.z + room.d / 2 + 2, "carpet")
         else B.fill(room.x + room.w / 2 - 2, 0, room.z + 1, room.x + room.w / 2 + 2, 0.05, room.z + room.d - 1, "carpet") end
         for _, p in ipairs(deco_hall_plan(room, mk)) do
             if not deco_near_door(room, doors, p[1], p[2], 3) then B.pillar(p[1], p[2], 0.7, 0, h, "marble") end
         end
-        for x = room.x + 3, room.x + room.w - 3, 6 do B.fill(x, h - 0.8, room.z, x + 0.5, h, room.z + room.d, "dark_wood") end
+        if not open then for x = room.x + 3, room.x + room.w - 3, 6 do B.fill(x, h - 0.8, room.z, x + 0.5, h, room.z + room.d, "dark_wood") end end
     elseif theme == "warlord" then
         local cx = room.x + room.w / 2
         local door_s = false
         for _, d in ipairs(doors or {}) do if d.side == "S" and math.abs(d.pos - cx) < 5.5 then door_s = true end end
         if not door_s then B.fill(cx - 3, 0, room.z + room.d - 6, cx + 3, 0.4, room.z + room.d - 1, "dark_wood"); B.fill(cx - 3, 0.4, room.z + room.d - 6, cx + 3, 0.45, room.z + room.d - 1, "carpet") end
-        for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do B.pillar(cx + dx, room.z + room.d * k / 3, 0.8, 0, h, "dungeon_brick") end end
+        for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do if not deco_near_door(room, doors, cx + dx, room.z + room.d * k / 3, 3.2) then B.pillar(cx + dx, room.z + room.d * k / 3, 0.8, 0, h, "dungeon_brick") end end end
         for i = 1, 3 do B.fill(room.x + room.w * i / 4 - 0.6, 3.2, room.z + 0.05, room.x + room.w * i / 4 + 0.6, 6, room.z + 0.2, "neon_red") end
     elseif theme == "furnace" then
         pool("lava", 3, -0.45)
-        for x = room.x + 3, room.x + room.w - 3, 4 do B.fill(x, h - 0.9, room.z, x + 0.5, h, room.z + room.d, "dark_wood") end
-        B.fill(room.x, h - 1.8, room.z + 1.2, room.x + room.w, h - 1.1, room.z + 1.9, "metal")
+        if not open then
+            for x = room.x + 3, room.x + room.w - 3, 4 do B.fill(x, h - 0.9, room.z, x + 0.5, h, room.z + room.d, "dark_wood") end
+            B.fill(room.x, h - 1.8, room.z + 1.2, room.x + room.w, h - 1.1, room.z + 1.9, "metal")
+        end
         for _, c in ipairs({ { room.x + 2, room.z + 2 }, { room.x + room.w - 2, room.z + 2 }, { room.x + 2, room.z + room.d - 2 }, { room.x + room.w - 2, room.z + room.d - 2 } }) do
             if not deco_near_door(room, doors, c[1], c[2], 4.5) then B.pillar(c[1], c[2], 1.1, 0, h - 1, "metal"); B.fill(c[1] - 0.3, 1.5, c[2] - 0.3, c[1] + 0.3, 2.1, c[2] + 0.3, "lantern") end
         end
     elseif theme == "flooded" then
         pool("gutter_water", 1.0, -0.2)
-        for z = room.z + 3, room.z + room.d - 2, 7 do B.fill(room.x, h - 1.4, z, room.x + room.w, h - 0.8, z + 0.6, "metal") end
-        for _, p in ipairs({ { 0.3, 0.3 }, { 0.7, 0.7 } }) do
+        if not open then for z = room.z + 3, room.z + room.d - 2, 7 do B.fill(room.x, h - 1.4, z, room.x + room.w, h - 0.8, z + 0.6, "metal") end end
+        for _, p in ipairs(open and {} or { { 0.3, 0.3 }, { 0.7, 0.7 } }) do
             local x, z = room.x + room.w * p[1], room.z + room.d * p[2]
             B.fill(x, -0.2, z, x + 0.25, h - 1.4, z + 0.25, "toxic"); B.fill(x - 0.2, h - 2.0, z - 0.2, x + 0.45, h - 1.2, z + 0.45, "metal")
         end
@@ -386,7 +494,7 @@ function deco_room(B, theme, room, doors, mk, fl)
             B.fill(room.x + 3, 0, room.z, room.x + room.w - 3, 1.0, room.z + 3, "dark_wood"); B.fill(room.x + 3, 1.0, room.z, room.x + room.w - 3, 1.08, room.z + 3, "carpet")
         end
         local H = h + 2
-        for i = 1, floor(room.w / 9) do
+        for i = 1, (open and 0 or floor(room.w / 9)) do
             local x, z = room.x + room.w * (i - 0.5) / floor(room.w / 9), room.z + room.d / 2
             B.fill(x - 0.08, H - 3, z - 0.08, x + 0.08, H, z + 0.08, "metal"); B.fill(x - 0.7, H - 3.2, z - 0.7, x + 0.7, H - 3.0, z + 0.7, "gold")
             for _, d in ipairs({ { -0.7, -0.7 }, { 0.7, -0.7 }, { -0.7, 0.7 }, { 0.7, 0.7 } }) do B.fill(x + d[1] - 0.1, H - 3.0, z + d[2] - 0.1, x + d[1] + 0.1, H - 2.55, z + d[2] + 0.1, "lantern") end
@@ -403,7 +511,7 @@ function deco_room(B, theme, room, doors, mk, fl)
                 B.fill(x - 0.12, 0, z - 0.12, x + 0.12, hh, z + 0.12, "bone")
                 B.sphere(x, hh, z, rr, (it.i % 2 == 0) and "glowcap" or "rune")
             end
-            if it.c < 0.45 then
+            if it.c < 0.45 and not open then
                 local hh = 0.8 + it.b * 1.6
                 for k = 0, 5 do local hw = 0.45 - k * 0.07; B.fill(x + 1.3 - hw, ytop - (k + 1) * hh / 6, z - hw, x + 1.3 + hw, ytop - k * hh / 6, z + hw, "cavestone") end
             end
@@ -520,8 +628,13 @@ function deco_room(B, theme, room, doors, mk, fl)
         for k = 1, 5 do B.fill(cx - 3.3 + (k - 1) * 0.9, -2.3, cz - 1.6, cx - 3.3 + k * 0.9, -0.45 * k, cz + 1.6, "marble") end
         B.pillar(cx, cz, 3.3, -2.35, -2.3, "gold")
         for i = 0, 7 do local a = i * math.pi / 4 + math.pi / 8; local px, pz = cx + math.cos(a) * 3.55, cz + math.sin(a) * 3.55; B.fill(px - 0.12, 0.45, pz - 0.12, px + 0.12, 0.85, pz + 0.12, "lantern") end
-    elseif theme == "borough" then
+    elseif theme == "borough" or theme == "park" then
         deco_borough(B, (room.x == 0) and 1 or 0, (room.z == 0) and 1 or 0, fl)
+    elseif theme == "village" then
+        deco_village(B, (room.x == 0) and 1 or 0, (room.z == 0) and 1 or 0, room, doors, mk)
+    elseif theme == "connector" and (fl or 1) == 3 then
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2              -- a locator stone at the junction
+        B.pillar(cx, cz, 0.45, 0, 2.2, "marble"); B.pillar(cx, cz, 0.3, 2.2, 2.6, "lantern")
     end
     -- graffiti on a wall without a door of about one room in five (not in the special rooms)
     local PLAIN = { hall = true, crypt = true, library = true, depot = true, grotto = true, flooded = true, furnace = true, ballroom = true, warlord = true, captive = true, prize = true }

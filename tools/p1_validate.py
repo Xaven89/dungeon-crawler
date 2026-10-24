@@ -52,6 +52,7 @@ def shrunk(lo, hi, W, H, keep=""):
 bad_total = 0
 for seed in seeds:
     t0 = time.time()
+    _fresh_scratch()      # (a scratch save has a sidecar that keeps the seed of the first world: a fresh file per seed)
     with Voxelith(["--project", "projects/dc_p1", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)]) as v:
         v.step(10)
         out = v.lua(PLAN, ticks=0)["output"]
