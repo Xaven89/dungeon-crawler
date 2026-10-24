@@ -96,8 +96,14 @@ function E.spawn(kind, lx, ly, lz, opts)
     if not T then error("unknown enemy " .. tostring(kind)) end
     opts = opts or {}
     local speed = T.speed * ((opts.affix == "swift") and 1.45 or 1)
-    local id = agent.spawn{ x = G.mx(lx), y = G.my(ly) + 0.05, z = G.mz(lz), speed = speed, model = "models/" .. T.model .. ".vxm", creature = T.creature or kind,
-                            animation = T.anim or "auto", turn_smoothing = 6 }
+    -- (the engine refuses an agent that would stand inside solid voxels: a game bug at the spawn height, logged and counted, never a crash)
+    local ok, id = pcall(agent.spawn, { x = G.mx(lx), y = G.my(ly) + 0.05, z = G.mz(lz), speed = speed, model = "models/" .. T.model .. ".vxm", creature = T.creature or kind,
+                                        animation = T.anim or "auto", turn_smoothing = 6 })
+    if not ok then
+        E.refused = (E.refused or 0) + 1
+        if E.refused <= 5 then print("enemies: spawn of " .. kind .. " refused at (" .. string.format("%.1f %.1f %.1f", lx, ly, lz) .. ") room " .. tostring(opts.room) .. ": " .. tostring(id)) end
+        return nil
+    end
     if not id then return nil end
     local name = opts.name or T.name
     if opts.affix then name = ({ swift = "Swift ", armored = "Armored ", explosive = "Volatile " })[opts.affix] .. name end

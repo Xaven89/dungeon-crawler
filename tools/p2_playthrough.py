@@ -237,6 +237,7 @@ end""", 5)
         print("render:", json.dumps(st.get("render")))
         print("sim:", json.dumps({k: st["sim"].get(k) for k in ("bodies", "awake_bodies", "gravity_fields")}), "agents", L(v, "print(Game.enemies.alive_count(), #Game.floorgen.made_list)", 0)[0].replace("\t", " cells "))
         body_table(v, "the end")
+        print("agent spawns refused by the engine (inside solid voxels):", L(v, "print(Game.enemies.refused or 0)", 0))
         print("state hash:", v.state_hash())
         if os.environ.get("DUMP_BODIES"):
             b = v.tool("bodies")

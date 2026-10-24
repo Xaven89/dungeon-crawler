@@ -17,7 +17,11 @@ C.bites = 0
 function C.spawn()
     if C.id then return end
     local px, py, pz = player.pos()
-    local id = agent.spawn{ x = px - 1.2, y = py + 0.1, z = pz - 1.2, speed = 4.2, model = "models/honk.vxm", creature = "honk", animation = "auto", turn_smoothing = 8 }
+    local id
+    for _, o in ipairs({ { -1.2, -1.2 }, { 1.2, 1.2 }, { 0, -1.6 }, { 0, 0 } }) do        -- (the engine refuses a spot inside solid voxels: the next one beside the player)
+        local ok, r = pcall(agent.spawn, { x = px + o[1], y = py + 0.1, z = pz + o[2], speed = 4.2, model = "models/honk.vxm", creature = "honk", animation = "auto", turn_smoothing = 8 })
+        if ok and r then id = r; break end
+    end
     if not id then return end
     C.id, C.mdl = id, id - 0x40000000
     C.state = "follow"

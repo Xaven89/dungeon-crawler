@@ -151,12 +151,24 @@ F.register("connector", {
         G.torch(room.x + room.w / 2, 2.8, room.z + room.d / 2, { preset = "torch", reach = 9, far = 22, intensity = 9 * G.gen.rules.dark(), name = room.id .. "_c" })
     end,
 })
+-- allow(x, z): outside the fortress of the super-cell (the borough / the park): the quarter rooms hold the courtyard around it, the fortress walls stand inside the 2 x 2 (a guard spawned in a wall is
+-- refused by the engine and, before, fell through the world)
+function F.outside_fortress(room, ctx)
+    local CG = F.cg()
+    local sup = CG.super_of(ctx.plan.plan.ctx, room.ci, room.cj)
+    if not sup then return nil end
+    local g = deco_borough_geom(ctx.floor)
+    local cx, cz = sup.ci * 32 + g.cx, sup.cj * 32 + g.cz
+    local m = g.w1 + 1.5
+    return function(x, z) return math.abs(x - cx) > m or math.abs(z - cz) > m end
+end
+
 F.register("borough", {
     names = { "The Courtyard", "Borough Square", "The Rotunda" },
     things = function(room, ctx)
         local r = ctx.rng(room)
         F.sconces(room, ctx, 8, 3.4); F.lamps(room, 13, 12)
-        F.populate(room, ctx, r, 4, { own = true, kinds = { { "orc", 3 }, { "bandit", 3 }, { "goblin", 3 } } })
+        F.populate(room, ctx, r, 4, { own = true, margin = 0.9, allow = F.outside_fortress(room, ctx), kinds = { { "orc", 3 }, { "bandit", 3 }, { "goblin", 3 } } })
     end,
 })
 -- floor 3: the village (the quarter rooms of its 2 x 2: lights come with the village's own things (gen/overcity.lua)), the park (the fortress of the park boss: guards in the quarters like the borough's)
@@ -165,7 +177,7 @@ F.register("park", {
     names = { "The Park", "Bone Gardens", "The Fairground" },
     things = function(room, ctx)
         local r = ctx.rng(room)
-        F.populate(room, ctx, r, 4, { own = true, kinds = { { "orc", 3 }, { "bandit", 3 }, { "goblin", 3 } } })
+        F.populate(room, ctx, r, 4, { own = true, margin = 0.9, allow = F.outside_fortress(room, ctx), kinds = { { "orc", 3 }, { "bandit", 3 }, { "goblin", 3 } } })
     end,
 })
 F.register("stairs_free", {

@@ -52,7 +52,8 @@ end
 -- ---------------------------------------------------------------------------------------------- NPCs
 local NPC_MODEL = { guard = "models/figures/human_man_warrior.vxm", villager = "models/figures/human_woman_adventurer.vxm", elder = "models/figures/human_man_adventurer.vxm" }
 local function spawn_npc(cell, kind, x, z, village, extra)
-    local id = agent.spawn{ x = G.mx(x), y = G.my(0.05), z = G.mz(z), speed = 1.2, model = NPC_MODEL[kind], animation = "auto", turn_smoothing = 6 }
+    local ok, id = pcall(agent.spawn, { x = G.mx(x), y = G.my(0.05), z = G.mz(z), speed = 1.2, model = NPC_MODEL[kind], animation = "auto", turn_smoothing = 6 })
+    if not ok then print("overcity: a " .. kind .. " was refused at (" .. string.format("%.1f %.1f", x, z) .. "): " .. tostring(id)); return nil end
     if not id then return nil end
     if kind == "guard" then pcall(model.attach, id, "iron_sword.vxm", "grip_r", { mode = "attach", name = "main_hand" }) end
     local l = OC.npcs[cell]
