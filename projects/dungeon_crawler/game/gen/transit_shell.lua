@@ -147,7 +147,7 @@ function transit_region(rx, rz, wh, run)
 
     -- ------------------------------------------------------------------------------------------ light, pillars, edges
     local function lamp(x, z, y)
-        F(x - 0.15, y, z - 0.15, x + 0.15, y + 0.12, z + 0.15, "lantern")
+        F(x - 0.15, y, z - 0.15, x + 0.15, y + 0.12, z + 0.15, "lamp_cool")
     end
     if code == "-" or code == "|" or code == "T" or code == "m" then
         for t = 4, 28, 8 do
@@ -192,7 +192,7 @@ function transit_region(rx, rz, wh, run)
         fx(-1.2, 0, 0, 1.2, 2.3, 0.9, "metal"); fx(-1.0, 0.8, 0.9, 1.0, 2.0, 0.96, "obsidian"); fx(-0.8, 1.55, 0.96, 0.0, 1.9, 1.0, "lantern"); fx(0.3, 0.9, 0.96, 0.9, 1.4, 1.0, "lantern_off"); fx(-0.7, 0.9, 0.96, -0.3, 1.2, 1.0, "neon_red")     -- (a dark front with a small lit display: the whole face was a blown-out lantern)
         local c = f.crystal
         if ax then F(c.x - 0.6, 0, c.z - 0.45, c.x + 0.6, 0.9, c.z + 0.45, "terrazzo") else F(c.x - 0.45, 0, c.z - 0.6, c.x + 0.45, 0.9, c.z + 0.6, "terrazzo") end
-        B.sphere(c.x, 1.55, c.z, 0.5, "rune")
+        B.sphere(c.x, 1.55, c.z, 0.5, "crystal")
     end
 
     -- the layout grammar's items: benches, kiosks, banners, crates ... (hubs, Yellow stations, dens)

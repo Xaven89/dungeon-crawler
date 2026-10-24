@@ -610,13 +610,13 @@ function deco_item_draw(B, it, fl)
     elseif id == "pillar" then
         B.pillar((x0 + x1) / 2, (z0 + z1) / 2, 0.7, 0, it.h, "marble")
     elseif id == "banner" then
-        box(0, 2.6, 0, W, 2.7, D, "metal"); box(0.1, 1.2, 0, W - 0.1, 2.6, D, "neon_red"); box(0.3, 1.0, 0, W - 0.3, 1.2, D, "neon_red")
+        box(0, 2.6, 0, W, 2.7, D, "metal"); box(0.1, 1.2, 0, W - 0.1, 2.6, D, "carpet"); box(0.3, 1.0, 0, W - 0.3, 1.2, D, "carpet")
     elseif id == "dais" then
         box(0, 0, 0, W, 0.3, D, "dark_wood"); box(0.1, 0.3, 0.1, W - 0.1, 0.4, D - 0.1, "carpet"); box(0, 0.3, 0, W, 0.4, 0.1, "gold"); box(0, 0.3, D - 0.1, W, 0.4, D, "gold")
         box(0, 0.3, 0, 0.1, 0.4, D, "gold"); box(W - 0.1, 0.3, 0, W, 0.4, D, "gold")
     elseif id == "throne" then
-        box(0.1, 0, 0.1, W - 0.1, 0.5, D - 0.1, "dark_wood"); box(0.2, 0.5, 0.3, W - 0.2, 0.62, D - 0.1, "neon_red")
-        box(0.1, 0.5, 0, W - 0.1, 2.4, 0.22, "dark_wood"); box(0.3, 1.0, 0.04, W - 0.3, 2.2, 0.26, "neon_red")
+        box(0.1, 0, 0.1, W - 0.1, 0.5, D - 0.1, "dark_wood"); box(0.2, 0.5, 0.3, W - 0.2, 0.62, D - 0.1, "carpet")
+        box(0.1, 0.5, 0, W - 0.1, 2.4, 0.22, "dark_wood"); box(0.3, 1.0, 0.04, W - 0.3, 2.2, 0.26, "carpet")
         box(0.1, 2.4, 0, W - 0.1, 2.6, 0.3, "gold"); box(0, 0.5, 0.1, 0.18, 1.0, D - 0.1, "gold"); box(W - 0.18, 0.5, 0.1, W, 1.0, D - 0.1, "gold")
         box(0.05, 2.0, 0, 0.25, 2.5, 0.3, "gold"); box(W - 0.25, 2.0, 0, W - 0.05, 2.5, 0.3, "gold")
     elseif id == "bar" then
@@ -720,12 +720,12 @@ function deco_hall(B, seg, mk, fl)
             if k % 2 == 1 and kind ~= "side" then                                              -- a stall: counter, two posts, an awning
                 box(u, 0, v0, u + 2.4, 0.9, v1, "dark_wood"); box(u - 0.05, 0.9, v0, u + 2.45, 0.96, v1 + (sside > 0 and 0.05 or -0.05), "marble")
                 box(u, 0.96, v0, u + 0.1, 2.3, v0 + 0.1, "dark_wood"); box(u + 2.3, 0.96, v0, u + 2.4, 2.3, v0 + 0.1, "dark_wood")
-                box(u - 0.1, 2.3, v0, u + 2.5, 2.4, v1, (k % 4 == 1) and "neon_red" or "gold")
+                box(u - 0.1, 2.3, v0, u + 2.5, 2.4, v1, (k % 4 == 1) and "carpet" or "gold")
                 box(u + 0.3, 0.96, v0 + 0.15, u + 0.9, 1.3, v1 - 0.15, "chest_wood"); box(u + 1.3, 0.96, v0 + 0.15, u + 1.7, 1.4, v1 - 0.2, "bone")
                 note(u - 0.1, u + 2.5, sside, 0.65)
             else                                                                                   -- a banner on the wall
                 local bv0, bv1 = (sside > 0) and (ht - 0.1) or -ht, (sside > 0) and ht or (-ht + 0.1)
-                box(u, 1.4, bv0, u + 1.2, 3.2, bv1, (k % 3 == 0) and "gold" or "neon_red")
+                box(u, 1.4, bv0, u + 1.2, 3.2, bv1, (k % 3 == 0) and "gold" or "carpet")
                 note(u, u + 1.2, sside, 0.1)
             end
             u = u + 5
@@ -835,7 +835,7 @@ function deco_street(B, seg, mk, fl)
                 box(mu - 0.9, 0, 0, mu + 0.9, 0.45, 0.5, "dark_wood"); box(mu - 0.9, 0.45, 0, mu + 0.9, 0.55, 0.12, "dark_wood")        -- a bench against the wall
                 prot[#prot + 1] = { mu - 0.9, mu + 0.9, 0.5 }
             else
-                box(mu - 0.6, 1.4, 0, mu + 0.6, 3.6, 0.1, (k % 2 == 0) and "neon_red" or "gold")                                         -- a banner on the wall
+                box(mu - 0.6, 1.4, 0, mu + 0.6, 3.6, 0.1, (k % 2 == 0) and "carpet" or "gold")                                         -- a banner on the wall
                 box(mu - 0.7, 3.6, 0, mu + 0.7, 3.7, 0.12, "metal")
                 prot[#prot + 1] = { mu - 0.7, mu + 0.7, 0.12 }
             end

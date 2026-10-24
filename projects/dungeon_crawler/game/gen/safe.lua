@@ -31,7 +31,7 @@ function S.things(r, ctx, opts)
     events.on(btn, "pressed", function() if G.shop then G.shop.open() end end)
     T.add_interact(id .. "_vending", P.X(13.6), 1.6, P.Z(4.4), "Use the Vending Machine", 2.8)
     T.add_interact(id .. "_crystal", P.X(13.1), 1.4, P.Z(1.7), "Touch the crystal (save)", 2.4)
-    local crystal = events.button{ name = id .. "_save", box = wbox(12.8, 1.2, 1.4, 13.4, 1.9, 2), prompt = "Touch the crystal", on = "neon", off = "rune", press_ticks = 8 }
+    local crystal = events.button{ name = id .. "_save", box = wbox(12.8, 1.2, 1.4, 13.4, 1.9, 2), prompt = "Touch the crystal", on = "neon", off = "crystal", press_ticks = 8 }
     events.on(crystal, "pressed", function() G.save_now() end)
     -- where the sponsors' boxes go (gen/show.lua): the free strip along the east wall, mirrored with the room
     r.box_spots = {}

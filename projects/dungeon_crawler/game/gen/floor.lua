@@ -128,7 +128,7 @@ function F.local_room(room) return room.info.room end
 
 -- the tables of the game's world follow the plan
 -- the colour the far end of a hall or a corridor fades to (the horizon of the sky is the fog): one per floor instead of the night's dark blue (polish pass, bucket B)
-local FOG = { [1] = { 0.15, 0.11, 0.08 }, [2] = { 0.22, 0.10, 0.04 }, [4] = { 0.07, 0.10, 0.15 } }
+local FOG = { [1] = { 0.12, 0.105, 0.10 }, [2] = { 0.22, 0.10, 0.04 }, [4] = { 0.07, 0.10, 0.15 } }
 function F.fog(fl)
     local c = FOG[fl] or { 0.09, 0.09, 0.11 }
     sky.set{ horizon = c, fog = 1.4, blend = 0 }
@@ -221,7 +221,7 @@ local function cell_lights(P, room)
             n = n + 1
             local x, z
             if side == "E" then x, z = x0 + 30, z0 + t elseif side == "W" then x, z = x0 + 2, z0 + t elseif side == "S" then x, z = x0 + t, z0 + 30 else x, z = x0 + t, z0 + 2 end
-            G.torch(x, 4.5, z, { preset = "torch", reach = 12, far = 28, intensity = 11 * dk, name = room.id .. "_a" .. n })
+            G.torch(x, 4.5, z, { preset = "torch", color = (P.floor == 2) and { 1.0, 0.72, 0.45 } or nil, reach = 12, far = 28, intensity = 11 * dk, name = room.id .. "_a" .. n })
         end
     end
     if ci % 8 == 0 then strip("W") end

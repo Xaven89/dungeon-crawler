@@ -33,7 +33,7 @@ F.register("corner", {
         local n = 0
         for _, p in ipairs({ { 8, 8 }, { 24, 8 }, { 8, 24 }, { 24, 24 }, { 16, 16 } }) do
             n = n + 1
-            G.torch(ox + p[1], 4.5, oz + p[2], { preset = "torch", reach = 14, far = 30, intensity = 15 * dk, name = room.id .. "_c" .. n })
+            G.torch(ox + p[1], 4.5, oz + p[2], { preset = "torch", color = G.COOL, reach = 14, far = 30, intensity = 15 * dk, name = room.id .. "_c" .. n })
         end
     end,
 })
@@ -89,7 +89,7 @@ F.register("hub", {
         T.add_interact(id .. "_vending", ax and vx or vx + 0.9, 1.6, ax and vz + 0.9 or vz, "Use the Vending Machine", 2.8)
         T.add_interact(id .. "_crystal", cx, 1.4, cz, "Touch the crystal (save)", 2.4)
         local cb = ax and wb(cx - 0.3, 1.2, cz - 0.3, cx + 0.3, 1.9, cz + 0.3) or wb(cx - 0.3, 1.2, cz - 0.3, cx + 0.3, 1.9, cz + 0.3)
-        local crystal = events.button{ name = id .. "_save", box = cb, prompt = "Touch the crystal", on = "neon", off = "rune", press_ticks = 8 }
+        local crystal = events.button{ name = id .. "_save", box = cb, prompt = "Touch the crystal", on = "neon", off = "crystal", press_ticks = 8 }
         events.on(crystal, "pressed", function() G.save_now() end)
         -- the sponsors' boxes: along the south platform's wall (axis x) / the east platform's wall (axis z)
         room.box_spots = {}
@@ -107,7 +107,7 @@ F.register("den", {
         local n = 0
         for _, p in ipairs({ { 12, 12 }, { 20, 12 }, { 12, 20 }, { 20, 20 } }) do
             n = n + 1
-            G.torch(ox + p[1], 5.8, oz + p[2], { preset = "torch", reach = 12, far = 26, intensity = 11 * dk, name = room.id .. "_d" .. n })
+            G.torch(ox + p[1], 5.8, oz + p[2], { preset = "torch", color = G.COOL, reach = 12, far = 26, intensity = 11 * dk, name = room.id .. "_d" .. n })
         end
         local lay, rects, spots = F.furnished(room, ctx)
         local r = ctx.rng(room)

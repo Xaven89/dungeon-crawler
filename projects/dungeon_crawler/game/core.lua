@@ -156,7 +156,8 @@ function G.dust(name, preset, pos, size) return emitter.create(G.as_motes({ name
 local torch_n = 0
 G.torches = {}
 G.WARM = { 1.0, 0.8, 0.55 }                      -- the two temperatures of the game's light: fire and lanterns are warm ...
-G.COOL = { 0.7, 0.8, 1.0 }                       -- ... runes, crystals, windows, the night of the over-city and the steel of floor 4 are cool; never both on one wall
+G.COOL = { 0.7, 0.8, 1.0 }
+G.LAMP = { 1.0, 0.93, 0.84 }                     -- (bucket B delta) the ceiling lamps: near white, so the palette keeps its hues; fire and sconces stay WARM                       -- ... runes, crystals, windows, the night of the over-city and the steel of floor 4 are cool; never both on one wall
 G.LIGHT = { intensity = 0.55, reach = 0.67, far = 0.8 }
 function G.torch(xm, ym, zm, opts)
     opts = opts or {}
@@ -205,7 +206,7 @@ function G.lamp(xm, zm, y_ceil, drop, opts)
         G.fill(xm - 0.15, y_ceil - drop - 0.3, zm - 0.15, xm + 0.15, y_ceil - drop, zm + 0.15, opts.mat or "lantern")
         G.fill(xm - 0.25, y_ceil - drop - 0.05, zm - 0.25, xm + 0.25, y_ceil - drop, zm + 0.25, "metal")
     end
-    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color, reach = opts.reach or 15, far = opts.far, intensity = opts.intensity, flicker = true })
+    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or G.LAMP, reach = opts.reach or 15, far = opts.far, intensity = opts.intensity, flicker = true })
 end
 
 -- a lantern on a chain from the ceiling (E13): `hang` metres of chain (links of metal), a glass lantern at the end with a flame light that rides it; the player pushes it and it swings and settles.

@@ -442,7 +442,7 @@ function deco_village(B, cu, cv, room, doors, mk)
         else bb(b.x0 - 0.08, 0, d.pos - 1.5, b.x0 + 0.6, 3.2, d.pos - 1.25, "dark_wood"); bb(b.x0 - 0.08, 0, d.pos + 1.25, b.x0 + 0.6, 3.2, d.pos + 1.5, "dark_wood"); bb(b.x0 - 0.08, 3.0, d.pos - 1.5, b.x0 + 0.6, 3.25, d.pos + 1.5, "dark_wood") end
         if b.kind == "pub" then
             bb(b.crystal.x - 1, 0, b.crystal.z - 0.8, b.crystal.x + 1, 0.9, b.crystal.z + 0.8, "marble")
-            if cu * 32 <= b.crystal.x and b.crystal.x < cu * 32 + 32 and cv * 32 <= b.crystal.z and b.crystal.z < cv * 32 + 32 then B.sphere(b.crystal.x - ox, 1.55, b.crystal.z - oz, 0.55, "rune") end
+            if cu * 32 <= b.crystal.x and b.crystal.x < cu * 32 + 32 and cv * 32 <= b.crystal.z and b.crystal.z < cv * 32 + 32 then B.sphere(b.crystal.x - ox, 1.55, b.crystal.z - oz, 0.55, "crystal") end
             bb(b.fire.x - 1.2, 0, b.fire.z - 0.4, b.fire.x + 1.2, 2.4, b.fire.z + 0.4, "brick"); bb(b.fire.x - 0.7, 0, b.fire.z - 0.4, b.fire.x + 0.7, 1.4, b.fire.z + 0.4, nil)
             bb(b.note.x - 0.6, 1.3, b.note.z - 0.1, b.note.x + 0.6, 2.1, b.note.z + 0.15, "lantern")   -- the notice board with the note
             -- the furniture: the layout grammar's pub (a bar with its shelves and stools, tables and chairs, benches) around the fixtures above and the checkpoint in the middle
@@ -625,7 +625,7 @@ function deco_room(B, theme, room, doors, mk, fl)
         for _, d in ipairs(doors or {}) do if d.side == "S" and math.abs(d.pos - cx) < 5.5 then door_s = true end end
         if not door_s then B.fill(cx - 3, 0, room.z + room.d - 6, cx + 3, 0.4, room.z + room.d - 1, "dark_wood"); B.fill(cx - 3, 0.4, room.z + room.d - 6, cx + 3, 0.45, room.z + room.d - 1, "carpet") end
         for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do if not deco_near_door(room, doors, cx + dx, room.z + room.d * k / 3, 3.2) then B.pillar(cx + dx, room.z + room.d * k / 3, 0.8, 0, h, "dungeon_brick") end end end
-        for i = 1, 3 do B.fill(room.x + room.w * i / 4 - 0.6, 3.2, room.z + 0.05, room.x + room.w * i / 4 + 0.6, 6, room.z + 0.2, "neon_red") end
+        for i = 1, 3 do B.fill(room.x + room.w * i / 4 - 0.6, 3.2, room.z + 0.05, room.x + room.w * i / 4 + 0.6, 6, room.z + 0.2, "carpet") end
     elseif theme == "furnace" then
         pool("lava", 3, -0.45)
         if not open then
@@ -762,7 +762,7 @@ function deco_room(B, theme, room, doors, mk, fl)
         if not plan.dropped.table then F(8, 0, 12.6, 10, 0.6, 14, "dark_wood") end
         F(14, 0, 3, 16, 3.3, 6, "metal"); F(13.6, 0.8, 3.2, 14, 2.6, 5.8, "lantern"); F(13.55, 0.9, 5.1, 13.7, 1.2, 5.6, "gold")
         F(13.55, 2.0, 3.4, 13.7, 2.4, 4.7, "neon_red")
-        F(12, 0, 0.6, 14.2, 0.9, 2.8, "marble"); B.sphere(X(13.1), 1.6, Z(1.7), 0.62, "rune")
+        F(12, 0, 0.6, 14.2, 0.9, 2.8, "marble"); B.sphere(X(13.1), 1.6, Z(1.7), 0.62, "crystal")
         if not plan.dropped.bed then F(2, 0, 7, 4.4, 0.4, 9.2, "dark_wood"); F(2.2, 0.4, 7.2, 4.2, 0.6, 9, "sand") end
     elseif theme == "rest" then
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
