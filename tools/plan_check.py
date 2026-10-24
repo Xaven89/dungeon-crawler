@@ -23,7 +23,7 @@ t0 = time.time()
 with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3"]) as v:
     v.step(5)
     for fl in floors:
-        batch = 3 if setting == "large" else 10
+        batch = 3 if setting == "large" else 1
         for s0 in range(first, first + seeds, batch):
             code = """
 local CG = %s

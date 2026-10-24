@@ -23,7 +23,7 @@ class Voxelith:
         self.p = subprocess.Popen([self.binary, "--mcp"] + list(args), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace", bufsize=1,
                                   env=dict(os.environ, **(env or {})))
         # the engine logs to stderr: it is drained all the time (a full pipe would block the server in the middle of a call); the last lines are kept for error messages
-        self._err = collections.deque(maxlen=(2000000 if os.environ.get("PROBE_OUT") else 200))
+        self._err = collections.deque(maxlen=200)
         # VOXELITH_STDERR=/path: every line the engine logs is also appended to that file (the last 200 are all the deque keeps: a debugging run that needs the whole log, e.g. VX_HASHEVERY traces)
         errfile = open(os.environ["VOXELITH_STDERR"], "a", buffering=1) if os.environ.get("VOXELITH_STDERR") else None
         def drain():

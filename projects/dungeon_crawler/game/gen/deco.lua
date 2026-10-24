@@ -561,11 +561,15 @@ function deco_room(B, theme, room, doors, mk, fl)
     end
     local h = room.h
     local open = ((fl or 1) == 3)                                  -- floor 3 has no ceiling: nothing hangs from it
+    local lay = deco_layout(theme, room, doors, mk, fl)           -- the layout grammar (gen/furnish.lua): the themes it has a row for are furnished by it
+    if lay then for _, it in ipairs(lay.items) do deco_item_draw(B, it, fl) end end
     if theme == "hall" or theme == "ante" or theme == "guild" then
         if room.w >= room.d then B.fill(room.x + 1, 0, room.z + room.d / 2 - 2, room.x + room.w - 1, 0.05, room.z + room.d / 2 + 2, "carpet")
         else B.fill(room.x + room.w / 2 - 2, 0, room.z + 1, room.x + room.w / 2 + 2, 0.05, room.z + room.d - 1, "carpet") end
-        for _, p in ipairs(deco_hall_plan(room, mk)) do
-            if not deco_near_door(room, doors, p[1], p[2], 3) then B.pillar(p[1], p[2], 0.7, 0, h, "marble") end
+        if not lay then
+            for _, p in ipairs(deco_hall_plan(room, mk)) do
+                if not deco_near_door(room, doors, p[1], p[2], 3) then B.pillar(p[1], p[2], 0.7, 0, h, "marble") end
+            end
         end
         if not open then for x = room.x + 3, room.x + room.w - 3, 6 do B.fill(x, h - 0.8, room.z, x + 0.5, h, room.z + room.d, "dark_wood") end end
     elseif theme == "warlord" then
@@ -623,7 +627,7 @@ function deco_room(B, theme, room, doors, mk, fl)
                 for k = 0, 5 do local hw = 0.45 - k * 0.07; B.fill(x + 1.3 - hw, ytop - (k + 1) * hh / 6, z - hw, x + 1.3 + hw, ytop - k * hh / 6, z + hw, "cavestone") end
             end
         end
-    elseif theme == "crypt" then
+    elseif theme == "crypt" and not lay then
         local boxes, bones = deco_crypt_plan(room, mk)
         for _, b in ipairs(boxes) do
             local x, z = b[1], b[2]
@@ -632,7 +636,7 @@ function deco_room(B, theme, room, doors, mk, fl)
             if b[5] then B.fill(x + 0.25, 1.0, z + 0.3, x + 0.95, 1.1, z + 2.1, "bone") end
         end
         for _, b in ipairs(bones) do B.fill(b[1], 0, b[2], b[1] + 0.5, 0.15, b[2] + 0.3, "bone"); B.fill(b[1] + 0.1, 0.15, b[2] + 0.05, b[1] + 0.25, 0.3, b[2] + 0.2, "bone") end
-    elseif theme == "library" then
+    elseif theme == "library" and not lay then
         for _, sh in ipairs(deco_library_plan(room, mk)) do
             local x, z, len = sh[1], sh[2], sh[4] - sh[2]
             B.fill(x, 0, z, x + 0.8, 3.2, z + len, "dark_wood")
@@ -643,7 +647,7 @@ function deco_room(B, theme, room, doors, mk, fl)
                 end
             end
         end
-    elseif theme == "depot" then
+    elseif theme == "depot" and not lay then
         for _, st in ipairs(deco_depot_plan(room, mk)) do
             for k = 0, st[3] - 1 do B.fill(st[1] + k * 0.1, k * 1.2, st[2], st[1] + 1.3 + k * 0.1, (k + 1) * 1.2, st[2] + 1.3, "dark_wood") end
         end
@@ -761,7 +765,7 @@ function deco_room(B, theme, room, doors, mk, fl)
         elseif not used.E then deco_text(B, room.x + room.w, 1.7, cz - len / 2, txt, "-x", "neon_red") end
     end
     for _, c in ipairs(deco_crates(theme, room, doors, mk, fl or 1)) do deco_chest(B, c.tier, c.x, c.y, c.z, c.face) end
-    if theme == "depot" then
+    if theme == "depot" and not lay then
         local _, barrels = deco_depot_plan(room, mk)
         for _, b in ipairs(barrels) do deco_barrel(B, b[1], 0, b[2]) end
     end

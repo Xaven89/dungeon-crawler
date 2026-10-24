@@ -38,6 +38,17 @@ function F.populate(room, ctx, rng, n, opts)
     if plist then n = #plist end
     local placed = {}
     local tries = 0
+    -- the layout's spots first (a guard behind the bar, an ambush between the shelves): in a shuffled order, then the random places for the rest
+    if opts.spots and #opts.spots > 0 then
+        local order = {}
+        for i = 1, #opts.spots do order[i] = i end
+        for i = #order, 2, -1 do local j = rng.int(1, i); order[i], order[j] = order[j], order[i] end
+        for _, k in ipairs(order) do
+            local sp = opts.spots[k]
+            if #placed >= n then break end
+            if (not opts.allow or opts.allow(sp.x, sp.z)) and not ctx.near_door(room, sp.x, sp.z, 3.5) then placed[#placed + 1] = { sp.x, sp.z } end
+        end
+    end
     while #placed < n and tries < n * 40 do
         tries = tries + 1
         local m = opts.margin or 3
@@ -63,6 +74,26 @@ function F.populate(room, ctx, rng, n, opts)
         ctx.add(room, kind or F.pick_kind(rng, ctx.floor), q[1], q[2], opts.y or 0, extra)
     end
     return #placed
+end
+
+-- allow(x, z): not inside any of the rectangles { x0, z0, x1, z1 } padded by `pad`
+function F.clear_of(rects, pad)
+    return function(x, z)
+        for _, q in ipairs(rects or {}) do if x > q[1] - pad and x < q[3] + pad and z > q[2] - pad and z < q[4] + pad then return false end end
+        return true
+    end
+end
+
+-- the layout grammar's view of a room for the game (gen/furnish.lua: the same pure plan as the hook): the layout, the blocking footprints and the spots in the floor's coordinates;
+-- nil for a theme without a row
+function F.furnished(room, ctx)
+    local lay = deco_layout(room.theme, F.lroom(room), F.local_doors(room), ctx.mk(room), ctx.floor)
+    if not lay then return nil end
+    local ox, oz = F.off(room)
+    local rects, spots = {}, {}
+    for _, it in ipairs(lay.items) do if it.blocks then rects[#rects + 1] = { it.x0 + ox, it.z0 + oz, it.x1 + ox, it.z1 + oz } end end
+    for _, sp in ipairs(lay.spots) do spots[#spots + 1] = { x = sp.x + ox, z = sp.z + oz, kind = sp.kind } end
+    return lay, rects, spots
 end
 
 -- wall sconces: the plan is deco.lua's (the plates are voxels of the hook), the flames are made here; no flame within 3 m of a door
@@ -173,11 +204,9 @@ F.register("hall", {
     things = function(room, ctx)
         F.sconces(room, ctx)
         F.lamps(room, 15, 13)
-        local ox, oz = F.off(room)
-        local pil = {}
-        for _, p in ipairs(deco_hall_plan(F.lroom(room), ctx.mk(room))) do pil[#pil + 1] = { p[1] + ox, p[2] + oz } end
+        local lay, rects, spots = F.furnished(room, ctx)
         local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)
-        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = function(x, z) for _, p in ipairs(pil) do if G.dist2(x, z, p[1], p[2]) < 1.6 then return false end end return true end })
+        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = F.clear_of(rects, 0.45), spots = spots })
     end,
 })
 

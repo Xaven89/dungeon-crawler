@@ -245,6 +245,28 @@ function K.check(plan, CG)
         end
     end
 
+    -- 15. the room layout grammar (gen/furnish.lua): no blocking footprint on another or across a door band, no spot inside a footprint or a door band, the doors and the spots one region
+    if CG.H and deco_layout then
+        local themes = deco_layout_themes()
+        local n15 = 0
+        for _, id in ipairs(plan.order) do
+            local info = plan.cells[id]
+            if info.room and themes[info.theme] then
+                local doors = {}
+                for _, d in ipairs({ "E", "S", "W", "N" }) do
+                    local k = info.open[d]
+                    if k and k ~= "internal" and info.door and info.door[d] then doors[#doors + 1] = { side = d, pos = info.door[d] } end
+                end
+                local lay = deco_layout(info.theme, info.room, doors, function(salt) return deco_rng(CG.H, ctx.floor, info.ci, info.cj, salt or 1) end, ctx.floor)
+                if lay then
+                    n15 = n15 + 1
+                    for _, b in ipairs(deco_layout_check(lay, info.room, doors)) do bad(15, id .. " (" .. info.theme .. "): " .. b) end
+                end
+            end
+        end
+        S.furnished = n15
+    end
+
     -- theme sizes: every theme fits its room
     for _, id in ipairs(plan.order) do
         local info = plan.cells[id]

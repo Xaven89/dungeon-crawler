@@ -103,12 +103,9 @@ F.register("crypt", {
         for i = 1, floor(room.w / 7) do
             G.torch(x0 + (i - 0.5) * (x1 - x0) / floor(room.w / 7), 2.0, (z0 + z1) / 2, { color = { 0.45, 0.8, 1.0 }, reach = 11, far = 22, intensity = 9, name = room.id .. "_candle" .. i })
         end
-        local ox, oz = F.off(room)
-        local boxes = deco_crypt_plan(F.lroom(room), ctx.mk(room))
-        local rects = {}
-        for _, b in ipairs(boxes) do rects[#rects + 1] = { b[1] + ox - 0.2, b[2] + oz - 0.2, b[3] + ox + 0.2, b[4] + oz + 0.2 } end
+        local lay, rects, spots = F.furnished(room, ctx)
         local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)
-        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2) + 1, { allow = clear_of(rects, 0.4), kinds = { { "intern", 6 }, { "rat", 2 }, { "spitter", 1 } } })
+        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2) + 1, { allow = clear_of(rects, 0.4), spots = spots, kinds = { { "intern", 6 }, { "rat", 2 }, { "spitter", 1 } } })
     end,
 })
 
@@ -118,11 +115,9 @@ F.register("library", {
     things = function(room, ctx)
         F.sconces(room, ctx, 8, 3.2)
         F.lamps(room, 13, 11)
-        local ox, oz = F.off(room)
-        local rects = {}
-        for _, sh in ipairs(deco_library_plan(F.lroom(room), ctx.mk(room))) do rects[#rects + 1] = { sh[1] + ox - 0.15, sh[2] + oz - 0.15, sh[3] + ox + 0.15, sh[4] + oz + 0.15 } end
+        local lay, rects, spots = F.furnished(room, ctx)
         local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)
-        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = clear_of(rects, 0.5), kinds = { { "goblin", 5 }, { "intern", 3 }, { "rat", 2 } } })
+        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = clear_of(rects, 0.5), spots = spots, kinds = { { "goblin", 5 }, { "intern", 3 }, { "rat", 2 } } })
     end,
 })
 
@@ -133,12 +128,10 @@ F.register("depot", {
         F.sconces(room, ctx, 9, 3.3)
         F.lamps(room, 13, 11)
         local ox, oz = F.off(room)
-        local stacks, barrels = deco_depot_plan(F.lroom(room), ctx.mk(room))
-        local rects = {}
-        for _, b in ipairs(barrels) do T.barrel(b[1] + ox, 0, b[2] + oz); rects[#rects + 1] = { b[1] + ox - 0.6, b[2] + oz - 0.6, b[1] + ox + 0.6, b[2] + oz + 0.6 } end
-        for _, st in ipairs(stacks) do rects[#rects + 1] = { st[1] + ox - 0.2, st[2] + oz - 0.2, st[1] + ox + 1.6, st[2] + oz + 1.6 } end
+        local lay, rects, spots = F.furnished(room, ctx)
+        for _, it in ipairs(lay.items) do for _, q in ipairs(deco_item_parts(it)) do if q[1] == "barrel" then T.barrel(q[2] + ox, 0, q[3] + oz) end end end
         local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)
-        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = clear_of(rects, 0.5), kinds = { { "rat", 5 }, { "goblin", 3 }, { "slime", 1 } } })
+        F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = clear_of(rects, 0.5), spots = spots, kinds = { { "rat", 5 }, { "goblin", 3 }, { "slime", 1 } } })
     end,
 })
 

@@ -49,7 +49,7 @@ function cellgen_make(H)
     local ROSTER = { { "rat", 1 }, { "slime", 1 }, { "intern", 1 }, { "goblin", 1 }, { "slime_toxic", 2 }, { "spitter", 2 }, { "bandit", 2 }, { "orc", 2 }, { "imp", 3 }, { "samurai", 4 }, { "troll", 4 } }
 
     local DIRS = { E = { 1, 0, "W" }, S = { 0, 1, "N" }, W = { -1, 0, "E" }, N = { 0, -1, "S" } }
-    local CG = { CELL = 32, THEMES = THEMES, THREAT = THREAT, RADIUS = RADIUS }
+    local CG = { CELL = 32, THEMES = THEMES, THREAT = THREAT, RADIUS = RADIUS, H = H }
     H = H or default_hash
 
     -- ------------------------------------------------------------------------------------------ floor parameters
