@@ -278,7 +278,7 @@ function F.tick(t)
     if j then
         j.i = j.i + 1
         -- the arrival room must be generated: the floor under the player is not "unloaded"
-        local r = F.layout.rooms[F.layout.start]
+        local r = F.layout.rooms[j.room or F.layout.start]
         local m = world.material_at(G.wx(r.x + r.w / 2), G.wy(-0.1), G.wz(r.z + r.d / 2))
         local ready = (m ~= "unloaded" and m ~= "air") and j.i >= 8
         if ready or j.i > 1800 then
@@ -341,6 +341,15 @@ function F.load(fl)
     G.gen.track.scope = "floor" .. fl
     F.apply_tables(P)
     G.show.redeclare()
+    -- the veil until the floor around the checkpoint exists (the hook makes it when the player is there), then the player wakes up at the checkpoint
+    local cpid = G.state.checkpoint
+    if not P.rooms[cpid] then cpid = P.start end
+    local c = G.world.checkpoints[cpid]
+    local x, y, z = G.mx(c.x), G.my(0.1), G.mz(c.z)
+    player.teleport(x, y, z)
+    G.frozen_at = { x, y, z }
+    G.screen = "loading"
+    F.job = { i = 0, room = cpid, done = function() G.frozen_at = nil; if G.screen == "loading" then G.screen = nil end end }
 end
 
 -- back to the hand built Orientation

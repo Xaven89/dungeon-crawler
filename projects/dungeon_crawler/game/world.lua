@@ -269,7 +269,8 @@ function W.open_lobby_gate()
     W.gate_open(W.GATE, "gate_lobby")
 end
 
-function W.start_position()   -- where a new contestant wakes up: the west side of the lobby looking east at the gate
+function W.start_position()   -- where a new contestant wakes up: the west side of the lobby looking east at the gate (on a big floor: the arrival room)
+    if G.floorgen and G.floorgen.active and G.floorgen.layout then local P = G.floorgen.layout; local r = P.rooms[P.start]; return G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2) end
     return G.mx(3.5), G.my(0.1), G.mz(11)
 end
 -- the Orientation was built again for a new run: the contestant wakes up in the lobby

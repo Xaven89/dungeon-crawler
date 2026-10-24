@@ -250,13 +250,13 @@ end
 
 -- the map (top left, under the place): the rooms the contestant has seen, the corridors between them, an arrow for the player
 local links = { { "lobby", "hall" }, { "hall", "boiler" }, { "boiler", "conveyor" }, { "conveyor", "gutter" }, { "gutter", "ballroom" }, { "ballroom", "grotto" }, { "grotto", "arena" }, { "arena", "stairwell" } }
--- the map of a big floor: a window of 220 x 220 px around the player (0.55 px per metre: 12 cells), the rooms the contestant has seen, the halls between them, the safe rooms and the stairwells
+-- the map of a big floor: a window of 260 x 260 px around the player (0.8 px per metre: 10 cells), the rooms the contestant has seen, the halls between them, the safe rooms and the stairwells
 -- within two cells (even in the fog), the arrow of the player
 local MM_COL = { safe = "#2f6f4f", rest = "#2f6f4f", guild = "#3f6f6f", stairs_free = "#a88a2a", arena = "#8a2f2f", ante = "#5a3f3f", prize = "#7a5fa0", connector = "#2a3347", borough = "#4a3f2f" }
 function G.minimap_cells(w, h)
     local F, s = G.floorgen, G.state
     local P = F.layout
-    local mx, my, size, sc = 26, 92, 220, 0.55
+    local mx, my, size, sc = 26, 92, 260, 0.8
     ui.rect(mx - 8, my - 8, size + 16, size + 16, "#0b0d14a0", { radius = 10 })
     local px, py, pz = player.pos()
     local lx, ly, lz = G.to_local(px, py, pz)
