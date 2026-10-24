@@ -54,18 +54,26 @@ for _, id in ipairs(plan.order) do
         local ops = 0
         local B = { fill = function() ops = ops + 1 end, vbox = function() ops = ops + 1 end, sphere = function() ops = ops + 1 end, pillar = function() ops = ops + 1 end, ring = function() ops = ops + 1 end }
         deco_room(B, info.theme, r, doors, mk, %d)
-        print('R', info.theme, #lay.items, #lay.spots, ops, %d .. ':' .. id, lay.trimmed)
+        local kinds = {}
+        for _, sp in ipairs(lay.spots) do kinds[sp.kind] = (kinds[sp.kind] or 0) + 1 end
+        if info.theme == 'arena' and not kinds.boss then print('V', %d, id, info.theme, 'an arena without a boss spot') end
+        local kt = {}
+        for k, n in pairs(kinds) do kt[#kt + 1] = k .. '=' .. n end
+        table.sort(kt)
+        print('R', info.theme, #lay.items, #lay.spots, ops, %d .. ':' .. id, lay.trimmed, table.concat(kt, ','))
       end
     end
   end
 end
-print('N', ri)""" % (tl, run, fl, i0, i1, fl, ("deco_layout(info.theme, r, doors, mk, %d)" % fl) if layout else "nil", run, run, run, fl, run)
+print('N', ri)""" % (tl, run, fl, i0, i1, fl, ("deco_layout(info.theme, r, doors, mk, %d)" % fl) if layout else "nil", run, run, run, run, fl, run)
 
 bad_by, examples = collections.Counter(), collections.defaultdict(list)
 n_rooms = n_items = n_spots = trimmed = 0
 t_lay = t_plan = 0.0
 biggest = (0, "")
 by_theme = collections.defaultdict(lambda: [0, 0, 0, 0, 0])
+kinds_by = collections.defaultdict(collections.Counter)
+rooms_trimmed = 0
 t0 = time.time()
 with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3"]) as v:
     v.step(5)
@@ -86,12 +94,17 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3"]) as v:
                         n_rooms += 1; n_items += int(p[2]); n_spots += int(p[3])
                         bt = by_theme[p[1]]; bt[0] += 1; bt[1] += int(p[2]); bt[2] += int(p[3]); bt[3] += int(p[4]); bt[4] = max(bt[4], int(p[4]))
                         trimmed += int(p[6]) if len(p) > 6 else 0
+                        if len(p) > 6 and int(p[6]) > 0: rooms_trimmed += 1
+                        if len(p) > 7:
+                            for kv in p[7].split(','):
+                                if kv: k_, n_ = kv.split('='); kinds_by[p[1]][k_] += int(n_)
                         if int(p[2]) > biggest[0]: biggest = (int(p[2]), "floor %d %s" % (fl, p[5]))
                 i0 += CHUNK
                 if i0 >= total: break
 print("floors %s, runs %d..%d, themes %s: %d rooms, %d items, %d spots, layout + checks + flood: %.2f ms per room (plan subtracted), largest %d items (%s), %.0f s" % (floors, first, first + runs - 1, themes, n_rooms, n_items, n_spots,
       (t_lay - t_plan) * 1000 / max(1, n_rooms), biggest[0], biggest[1], time.time() - t0))
 for t, (n, i, s, o, om) in sorted(by_theme.items()): print("  %-8s %4d rooms  %.1f items  %.1f spots per room  %.0f B ops per room (max %d)" % (t, n, i / n, s / n, o / n, om))
-print("items removed by the flood (layouts that needed it):", trimmed)
+print("items removed by the flood: %d in %d rooms" % (trimmed, rooms_trimmed))
+for t in sorted(kinds_by): print("  spots of %-8s %s" % (t, dict(kinds_by[t])))
 print("violations:", sum(bad_by.values()))
 for k, c in sorted(bad_by.items()): print("  %-8s %-50s %4d  e.g. %s" % (k[0], k[1], c, "; ".join(examples[k])))

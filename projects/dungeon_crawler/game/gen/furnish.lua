@@ -35,7 +35,7 @@ function deco_catalogue()
         crates     = { cat = "crates", w = 1.4, d = 1.4, h = 3.6, anchor = "free", clear = 0.9, spots = { { "idle", 1.5, 0.7 } } },
         barrels    = { cat = "barrels", w = 1.8, d = 1.8, h = 1.1, anchor = "corner", clear = 0.8 },
         -- lairs, bars
-        dais       = { cat = "dais", w = 7.0, d = 3.0, h = 0.4, anchor = "far_wall", clear = 1.0, blocks = false, spots = { { "boss", 0, 1.9 } } },
+        dais       = { cat = "dais", w = 7.0, d = 3.0, h = 0.4, anchor = "far_wall", clear = 1.0, blocks = false, spots = { { "boss", 0, 2.35 } } },
         throne     = { cat = "throne", w = 1.6, d = 1.2, h = 2.6, on = "dais", clear = 0.3 },
         bar        = { cat = "bar", w = 4.4, d = 0.9, h = 1.1, anchor = "wall_gap", gapw = 1.7, clear = 0.8, spots = { { "idle", 0, -0.85 } } },
         shelf_wall = { cat = "shelf", w = 3.0, d = 0.4, h = 2.3, behind = "bar", clear = 0.3, offs = { -1.7, 1.7 } },
@@ -186,7 +186,8 @@ function deco_layout(theme, room, doors, mk, fl, extra)
         end
         return true
     end
-    local function add(it) items[#items + 1] = it; return it end
+    local serial = 0
+    local function add(it) serial = serial + 1; it.n = serial; items[#items + 1] = it; return it end
     local FACES = { "+z", "-z", "+x", "-x" }
     local M = TH.margin or 1.0
     -- candidate generators by anchor (one random candidate per call)
@@ -384,7 +385,7 @@ function deco_layout(theme, room, doors, mk, fl, extra)
     for _, it in ipairs(items) do
         for _, sp in ipairs(it.def.spots or {}) do
             local x, z = frame(it, it.w / 2 + sp[2], sp[3])
-            if spot_ok(x, z) then spots[#spots + 1] = { kind = sp[1], x = x, z = z, face = it.face, item = it.id } end
+            if spot_ok(x, z) then spots[#spots + 1] = { kind = sp[1], x = x, z = z, face = it.face, item = it.id, n = it.n } end
         end
     end
     if TH.door_guards then
@@ -396,7 +397,7 @@ function deco_layout(theme, room, doors, mk, fl, extra)
                 if x >= X0 + 0.8 and z >= Z0 + 0.8 and x <= X1 - 0.8 and z <= Z1 - 0.8 then
                     local ok = true
                     for _, p in ipairs(items) do if p.blocks and x > p.x0 - 0.45 and x < p.x1 + 0.45 and z > p.z0 - 0.45 and z < p.z1 + 0.45 then ok = false end end
-                    if ok then spots[#spots + 1] = { kind = "guard", x = x, z = z, face = d.side, item = "door" } end
+                    if ok then spots[#spots + 1] = { kind = "guard", x = x, z = z, face = d.side, item = "door", n = 0 } end
                 end
             end
         end
@@ -409,7 +410,7 @@ function deco_layout(theme, room, doors, mk, fl, extra)
         if ok or #items == 0 then break end
         local gone = table.remove(items)
         lay.trimmed = lay.trimmed + 1
-        for i = #spots, 1, -1 do if spots[i].item == gone.id then table.remove(spots, i) end end
+        for i = #spots, 1, -1 do if spots[i].n == gone.n then table.remove(spots, i) end end
     end
     return lay
 end
@@ -600,4 +601,185 @@ end
 function deco_item_parts(it)
     if it.id == "barrels" then return { { "barrel", it.x0 + 0.5, it.z0 + 0.5 }, { "barrel", it.x0 + 1.3, it.z0 + 0.5 }, { "barrel", it.x0 + 0.9, it.z0 + 1.3 } } end
     return {}
+end
+
+-- ---------------------------------------------------------------------------------------------- the halls (P6d part 3): what a corridor looks like
+-- the palette of a room theme: { floor material, trim material } (a hall takes the palette of the room its half leaves: the first half of a corridor is the room's, the second the next room's)
+function deco_palette(theme, fl)
+    local P = {
+        library = { "dark_wood", "dark_wood" }, safe = { "dark_wood", "carpet" }, rest = { "dark_wood", "carpet" }, grotto = { "cavestone", "mossy" }, flooded = { "flagstone", "mossy" },
+        ballroom = { "marble", "marble" }, warlord = { "obsidian", "dark_wood" }, crypt = { "flagstone", "bone" }, depot = { "dark_wood", "metal" }, furnace = { "obsidian", "metal" },
+        arena = { "marble", "gold" }, ante = { "marble", "gold" }, guild = { "marble", "gold" }, prize = { "marble", "gold" }, captive = { "flagstone", "metal" },
+    }
+    local p = P[theme]
+    if p then return p[1], p[2] end
+    if fl == 2 then return "flagstone", "brick" end
+    return "flagstone", "brick"
+end
+
+-- the segment of the hall half that leaves a cell's room by side d (nil when there is none or it is no corridor kind): shared by the hook and the contract
+function deco_hall_seg(info, d)
+    local kind, r = info.open[d], info.room
+    if not r or not kind or kind == "internal" or not (info.door and info.door[d]) then return nil end
+    local HW = { tree = 6, loop = 6, side = 4, alley = 3 }
+    local HH = { tree = 5, loop = 5, side = 5, alley = 3 }
+    if not HW[kind] then return nil end
+    local u0, len
+    if d == "E" then u0, len = r.x + r.w, 32 - r.x - r.w elseif d == "W" then u0, len = r.x, r.x elseif d == "S" then u0, len = r.z + r.d, 32 - r.z - r.d else u0, len = r.z, r.z end
+    return { side = d, kind = kind, c = info.door[d], hw = HW[kind], h = HH[kind], u0 = u0, len = len, theme = info.theme }
+end
+
+-- one half of a hall as a segment: seg = { side = "E" | "S" | "W" | "N" (the way the half leaves its room), kind, c (the middle of the hall across), hw (its width), u0 (the coordinate along the axis where the half
+-- starts: the room's wall), len (metres to the cell border), h (its height in m), theme (of the room it leaves), bath (the along-coordinate of the bathroom door's plate or nil) }
+-- Returns the protrusions for contract item 16: a list of { u0, u1, side (-1 | 1), depth }.
+function deco_hall(B, seg, mk, fl)
+    local r = mk(7)
+    local hw, h, kind = seg.hw, seg.h, seg.kind
+    local len = seg.len - ((seg.kind == "alley") and 0.6 or (seg.hw / 2 + 0.5))      -- (the last stretch near the border is the jog to the neighbour's door)
+    local floor_mat_, trim = deco_palette(seg.theme, fl)
+    local prot = {}
+    local function XZ(u, v)
+        if seg.side == "E" then return seg.u0 + u, seg.c + v elseif seg.side == "W" then return seg.u0 - u, seg.c + v
+        elseif seg.side == "S" then return seg.c + v, seg.u0 + u else return seg.c + v, seg.u0 - u end
+    end
+    local function box(u0, y0, v0, u1, y1, v1, mat)
+        local ax, az = XZ(u0, v0); local bx, bz = XZ(u1, v1)
+        B.fill(math.min(ax, bx), y0, math.min(az, bz), math.max(ax, bx), y1, math.max(az, bz), mat)
+    end
+    local function note(u0, u1, side, depth) prot[#prot + 1] = { u0, u1, side, depth } end
+    if len < 3 then return prot end
+    local function bath_clear(u0, u1, side) return not (seg.bath and side == -1 and u1 > seg.bath - 1.4 and u0 < seg.bath + 1.4) end
+    if kind == "tree" or kind == "loop" or kind == "side" then
+        -- the floor in the palette of the room, a trim band at the height of a hand along both walls
+        box(1.0, -0.0625, -hw / 2, len, 0, hw / 2, floor_mat_)
+        local ht = hw / 2
+        if bath_clear(1.0, len, -1) then box(1.0, 0.85, -ht, len, 1.0, -ht + 0.08, trim) end
+        box(1.0, 0.85, ht - 0.08, len, 1.0, ht, trim)
+        note(1.0, len, -1, 0.08); note(1.0, len, 1, 0.08)
+        local dep = (kind == "side") and 0.3 or 0.35
+        local step = 6
+        local u = 2.5 + r.int(0, 2)
+        while u < len - 0.8 do
+            for _, s in ipairs({ -1, 1 }) do
+                if bath_clear(u - 0.3, u + 0.3, s) then
+                    local v0, v1 = (s > 0) and (ht - dep) or -ht, (s > 0) and ht or (-ht + dep)
+                    box(u - 0.2, 0, v0, u + 0.2, h - 0.3, v1, "marble")
+                    box(u - 0.3, h - 0.3, v0 - ((s > 0) and 0.1 or -0.1) * 0, u + 0.3, h - 0.05, v1, "marble")
+                    note(u - 0.3, u + 0.3, s, dep + 0.1)
+                end
+            end
+            if kind ~= "side" then box(u - 0.2, h - 0.5, -ht, u + 0.2, h - 0.05, ht, "dark_wood") end      -- a beam across, over the pilasters
+            u = u + step
+        end
+        if kind == "side" then                                   -- pipes along the ceiling on one wall, a cable on the other
+            box(0.5, h - 0.6, ht - 0.4, len, h - 0.4, ht - 0.2, "metal"); box(0.5, h - 0.45, -ht + 0.15, len, h - 0.35, -ht + 0.25, "metal")
+        else
+            box(1.0, 0, -0.8, len, 0.0625, 0.8, "carpet")           -- a runner down the middle of the main corridors
+        end
+    elseif kind == "alley" then
+        -- a back lane: rubble, crates, litter on ONE side (the other stays free; nothing deeper than 0.5 m)
+        local s = (r.next() < 0.5) and -1 or 1
+        if not bath_clear(0, 0, s) then s = -s end
+        local ht = hw / 2
+        box(0.6, -0.0625, -ht, len, 0, ht, "cobble")
+        local u = 1.5 + r.next() * 2
+        while u < len - 1 do
+            local k = r.int(1, 4)
+            local v0, v1 = (s > 0) and (ht - 0.4) or -ht, (s > 0) and ht or (-ht + 0.4)
+            if k == 1 then box(u, 0, v0, u + 0.8, 0.35, v1, "cavestone"); box(u + 0.2, 0.35, v0 + 0.1, u + 0.6, 0.5, v1 - 0.1, "cavestone")
+            elseif k == 2 then box(u, 0, v0, u + 0.7, 0.7, v1, "dark_wood"); box(u + 0.05, 0.7, v0, u + 0.65, 1.2, v1 - 0.05, "chest_wood")
+            elseif k == 3 then box(u, 0, v0 + 0.1, u + 0.3, 0.1, v0 + 0.4, "bone"); box(u + 0.5, 0, v0 + 0.1, u + 0.6, 0.06, v0 + 0.3, "bone")
+            else box(u, 0, v0 + 0.05, u + 0.9, 0.0625, v1 - 0.05, "gutter_water") end
+            note(u, u + 0.9, s, 0.4)
+            u = u + 2.2 + r.next() * 3
+        end
+        -- a wall lamp on the free side every 5.5 m (the alleys have no ceiling lights)
+        local lu = 2.0 + r.next() * 1.5
+        while lu < len - 1 do
+            local lv = (-s > 0) and (ht - 0.1) or -ht
+            box(lu - 0.1, 1.9, lv, lu + 0.1, 2.0, lv + 0.1, "metal"); box(lu - 0.08, 2.0, lv, lu + 0.08, 2.35, lv + 0.1, "lantern")
+            note(lu - 0.1, lu + 0.1, -s, 0.1)
+            lu = lu + 5.5
+        end
+        -- loose paper and pebbles on the floor (flat: stepped over)
+        for _ = 1, 3 do local pu, pv = 1 + r.next() * (len - 2), (r.next() - 0.5) * (hw - 0.6); box(pu, 0, pv, pu + 0.25, 0.0625, pv + 0.2, "sand") end
+    end
+    return prot
+end
+
+-- an artery's strip (the street): the cell's own 4 m half along one side. `seg` = { side (the side of the cell the strip lies on), w (3 or 4 m), doors = { c1, c2 ... centres of halls that open into it, with their widths },
+-- fl }. Lamp posts every 8 m on the inner wall, a bench and a banner between them, a gutter strip along the wall and drains in the floor; nothing within a hall's mouth.
+function deco_street(B, seg, mk, fl)
+    local r = mk(8)
+    local w = seg.w
+    local function XZ(u, v)                          -- u along the strip (0 .. 32), v from the inner wall into the strip (0 .. w)
+        if seg.side == "E" then return 32 - w + v, u elseif seg.side == "W" then return w - v, u elseif seg.side == "S" then return u, 32 - w + v else return u, w - v end
+    end
+    local function box(u0, y0, v0, u1, y1, v1, mat)
+        local ax, az = XZ(u0, v0); local bx, bz = XZ(u1, v1)
+        B.fill(math.min(ax, bx), y0, math.min(az, bz), math.max(ax, bx), y1, math.max(az, bz), mat)
+    end
+    local function mouth(u0, u1)
+        for _, d in ipairs(seg.doors or {}) do if u1 > d[1] - d[2] / 2 - 1.0 and u0 < d[1] + d[2] / 2 + 1.0 then return true end end
+        return false
+    end
+    local prot = {}
+    local off = r.int(0, 3)
+    local gutter = (r.next() < 0.5) and "gutter_water" or "dark_wood"
+    -- the gutter strip along the inner wall (one voxel deep, 0.3 m wide), broken at the mouths
+    local u = 0
+    while u < 32 do
+        local u1 = math.min(32, u + 4)
+        if not mouth(u, u1) then box(u, -0.0625, 0, u1, 0, 0.3, gutter) end
+        u = u1
+    end
+    for k = 0, 3 do
+        local lu = 4 + k * 8 + off * 0.25
+        if not mouth(lu - 0.5, lu + 0.5) then
+            box(lu - 0.15, 0, 0, lu + 0.15, 3.3, 0.3, "metal"); box(lu - 0.25, 3.3, 0, lu + 0.25, 3.45, 0.5, "metal"); box(lu - 0.18, 3.45, 0.05, lu + 0.18, 3.8, 0.4, "lantern")
+            prot[#prot + 1] = { lu - 0.25, lu + 0.25, 0.5 }
+        end
+        local mu = lu + 4
+        if mu < 31 and not mouth(mu - 1, mu + 1) then
+            if (k + off) % 2 == 0 then
+                box(mu - 0.9, 0, 0, mu + 0.9, 0.45, 0.5, "dark_wood"); box(mu - 0.9, 0.45, 0, mu + 0.9, 0.55, 0.12, "dark_wood")        -- a bench against the wall
+                prot[#prot + 1] = { mu - 0.9, mu + 0.9, 0.5 }
+            else
+                box(mu - 0.6, 1.4, 0, mu + 0.6, 3.6, 0.1, (k % 2 == 0) and "neon_red" or "gold")                                         -- a banner on the wall
+                box(mu - 0.7, 3.6, 0, mu + 0.7, 3.7, 0.12, "metal")
+                prot[#prot + 1] = { mu - 0.7, mu + 0.7, 0.12 }
+            end
+        end
+    end
+    for k = 0, 2 do
+        local du = 6 + k * 10 + off * 0.5
+        if not mouth(du - 0.4, du + 0.4) then box(du, -0.0625, w * 0.5 - 0.25, du + 0.5, 0, w * 0.5 + 0.25, "metal") end        -- a drain
+    end
+    return prot
+end
+
+-- contract item 16 for a street: the items stand on the inner wall (at most 0.5 m deep: 3.5 of 4 m stay free) and none within a hall's mouth
+function deco_street_check(seg, prot)
+    local bad = {}
+    for _, p in ipairs(prot) do
+        if seg.w - p[3] < math.max(seg.w - 1, 2.5) then bad[#bad + 1] = "street " .. seg.side .. ": an item " .. p[3] .. " m deep leaves " .. (seg.w - p[3]) .. " m" end
+        for _, d in ipairs(seg.doors or {}) do if p[2] > d[1] - d[2] / 2 and p[1] < d[1] + d[2] / 2 then bad[#bad + 1] = "street " .. seg.side .. ": an item in a hall's mouth" end end
+    end
+    return bad
+end
+
+-- contract item 16: the free corridor of a hall half: at no point may the protrusions of both walls leave less than max(hw - 1, 2.5) m, and the mouths stay free
+function deco_hall_check(seg, prot)
+    local need = math.max(seg.hw - 1, 2.5)
+    local bad = {}
+    local len = seg.len
+    for u = 0, len, 0.25 do
+        local l, rr = 0, 0
+        for _, p in ipairs(prot) do if u >= p[1] and u <= p[2] then if p[3] < 0 then l = math.max(l, p[4]) else rr = math.max(rr, p[4]) end end end
+        if seg.hw - l - rr < need - 1e-6 then bad[#bad + 1] = string.format("hall %s %s: free %.2f m at %.1f", seg.side, seg.kind, seg.hw - l - rr, u); break end
+    end
+    for _, p in ipairs(prot) do
+        if p[1] < 0.99 or p[2] > len then bad[#bad + 1] = string.format("hall %s %s: an item in the mouth (%.1f .. %.1f)", seg.side, seg.kind, p[1], p[2]); break end
+    end
+    return bad
 end

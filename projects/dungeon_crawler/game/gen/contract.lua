@@ -267,6 +267,42 @@ function K.check(plan, CG)
         S.furnished = n15
     end
 
+    -- 16. the halls (gen/furnish.lua deco_hall / deco_street): every corridor keeps a free width of at least max(width - 1, 2.5) m along its whole half, nothing stands in a mouth
+    if CG.H and deco_hall then
+        local stub = { fill = function() end, vbox = function() end, sphere = function() end, pillar = function() end, ring = function() end }
+        local n16 = 0
+        for _, id in ipairs(plan.order) do
+            local info = plan.cells[id]
+            if info.room then
+                for _, d in ipairs({ "E", "S", "W", "N" }) do
+                    local seg = deco_hall_seg(info, d)
+                    if seg then
+                        n16 = n16 + 1
+                        local prot = deco_hall(stub, seg, function(salt) return deco_rng(CG.H, ctx.floor, info.ci, info.cj, (salt or 1) + (d == "E" and 0 or (d == "S" and 20 or (d == "W" and 40 or 60)))) end, ctx.floor)
+                        for _, b in ipairs(deco_hall_check(seg, prot)) do bad(16, id .. ": " .. b) end
+                    end
+                end
+            end
+        end
+        S.halls = n16
+        if plan.P.kind ~= "ruin" then                                     -- the streets (the strips of the arteries on the block borders)
+            local len = (ctx.floor == 2) and 3 or 4
+            for _, id in ipairs(plan.order) do
+                local info = plan.cells[id]
+                for _, d in ipairs({ "E", "S", "W", "N" }) do
+                    local ci, cj = info.ci, info.cj
+                    if (d == "E" and ci % 8 == 7) or (d == "W" and ci % 8 == 0) or (d == "S" and cj % 8 == 7) or (d == "N" and cj % 8 == 0) then
+                        local mouths = {}
+                        if info.open[d] == "artery" and info.door and info.door[d] then mouths[1] = { info.door[d], 6 } end
+                        local seg = { side = d, w = len, doors = mouths }
+                        local prot = deco_street(stub, seg, function(salt) return deco_rng(CG.H, ctx.floor, ci, cj, salt or 1) end, ctx.floor)
+                        for _, b in ipairs(deco_street_check(seg, prot)) do bad(16, id .. ": " .. b) end
+                    end
+                end
+            end
+        end
+    end
+
     -- theme sizes: every theme fits its room
     for _, id in ipairs(plan.order) do
         local info = plan.cells[id]

@@ -59,6 +59,36 @@ function shell_region(rx, rz, wh, run)
     local floors = {}                              -- floor material boxes, placed after the carving
     local function floor_mat(x0, x1, z0, z1, mat) floors[#floors + 1] = { x0, x1, z0, z1, mat } end
 
+    -- the builder of the decoration (rooms, halls, streets): B.fill and B.vbox put boxes of the cell's own metres / voxels, B.sphere, B.pillar and B.ring the round things
+    local B = {}
+    local function yv(y) return YF + R(y) end
+    local function rows(cx, cz, r, y0, y1, mat, r0)
+        local RV, R0 = R(r), R(r0 or 0)
+        for dz = -RV, RV do
+            local w1 = math.floor(math.sqrt(RV * RV - dz * dz) + 0.5)
+            local lo, hi = X0 + R(cx) - w1, X0 + R(cx) + w1
+            local z = Z0 + R(cz) + dz
+            local kind = mat and "box" or "clear"
+            if math.abs(dz) >= R0 then
+                ops[#ops + 1] = { kind = kind, lo = { lo, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
+            else
+                local w0 = math.floor(math.sqrt(R0 * R0 - dz * dz) + 0.5)
+                ops[#ops + 1] = { kind = kind, lo = { lo, yv(y0), z }, hi = { X0 + R(cx) - w0 - 1, yv(y1) - 1, z }, material = mat }
+                ops[#ops + 1] = { kind = kind, lo = { X0 + R(cx) + w0 + 1, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
+            end
+        end
+    end
+    function B.fill(x0, y0, z0, x1, y1, z1, mat)
+        local ax, az, bx, bz = X0 + R(x0), Z0 + R(z0), X0 + R(x1) - 1, Z0 + R(z1) - 1
+        local ay, by = yv(y0), yv(y1) - 1
+        if bx < ax or bz < az or by < ay then return end
+        ops[#ops + 1] = { kind = mat and "box" or "clear", lo = { ax, ay, az }, hi = { bx, by, bz }, material = mat }
+    end
+    function B.vbox(x0, y0, z0, x1, y1, z1, mat) ops[#ops + 1] = { kind = "box", lo = { X0 + x0, YF + y0, Z0 + z0 }, hi = { X0 + x1, YF + y1, Z0 + z1 }, material = mat } end
+    function B.sphere(cx, cy, cz, r, mat) ops[#ops + 1] = { kind = "sphere", c = { X0 + R(cx), yv(cy), Z0 + R(cz) }, r = R(r), material = mat } end
+    function B.pillar(cx, cz, r, y0, y1, mat) rows(cx, cz, r, y0, y1, mat, 0) end
+    function B.ring(cx, cz, r0, r1, y0, y1, mat) rows(cx, cz, r1, y0, y1, mat, r0) end
+
     -- the arteries: 4 m strips along every side that lies on a block border (and the rim ring's half)
     local function artery_side(d)
         local len = (fl == 2) and 3 or 4                           -- (floor 2: narrower arteries, 6 m)
@@ -69,6 +99,12 @@ function shell_region(rx, rz, wh, run)
         for t = 4, 28, 8 do
             if d == "E" then light(32 - 2, t, YF + 143) elseif d == "W" then light(2, t, YF + 143)
             elseif d == "S" then light(t, 32 - 2, YF + 143) else light(t, 2, YF + 143) end
+        end
+        if in_cell then                                          -- the street: lamp posts, benches, banners, a gutter and drains along the inner wall, off the mouths of the halls that open into it
+            local inf = CG.cell(ctx, ci, cj)
+            local mouths = {}
+            if inf.open[d] == "artery" and inf.door and inf.door[d] then mouths[1] = { inf.door[d], 6 } end
+            deco_street(B, { side = d, w = len, doors = mouths }, function(salt) return deco_rng(H_, fl, ci, cj, salt or 1) end, fl)
         end
     end
     if in_cell and not OPEN then
@@ -145,6 +181,11 @@ function shell_region(rx, rz, wh, run)
                         box(a - 0.12, a, zm - 0.8, zm + 0.8, YF, YF + 38, "dark_wood"); box(a - 0.12, a, zm - 0.4, zm + 0.4, YF + 42, YF + 50, "lantern")
                     end
                 end
+                -- the hall's own decoration (pilasters, beams, a runner, trim in the palette of the room it leaves; pipes in a side hall; rubble and crates in an alley): floors 1, 2 and up under a roof
+                if not OPEN then
+                    local seg = deco_hall_seg(info, d)
+                    if seg then deco_hall(B, seg, function(salt) return deco_rng(H_, fl, ci, cj, (salt or 1) + (d == "E" and 0 or (d == "S" and 20 or (d == "W" and 40 or 60)))) end, fl) end
+                end
                 -- a light in the middle of every hall's half
                 if kind ~= "alley" then
                     local lm = (kind == "side") and ((fl == 2) and "lichen_orange" or "lichen_green") or nil
@@ -156,34 +197,6 @@ function shell_region(rx, rz, wh, run)
     end
     for _, f in ipairs(floors) do box(f[1], f[2], f[3], f[4], YF - 2, YF - 1, f[5]) end
     if deco then
-        local B = {}
-        local function yv(y) return YF + R(y) end
-        local function rows(cx, cz, r, y0, y1, mat, r0)
-            local RV, R0 = R(r), R(r0 or 0)
-            for dz = -RV, RV do
-                local w1 = math.floor(math.sqrt(RV * RV - dz * dz) + 0.5)
-                local lo, hi = X0 + R(cx) - w1, X0 + R(cx) + w1
-                local z = Z0 + R(cz) + dz
-                local kind = mat and "box" or "clear"
-                if math.abs(dz) >= R0 then
-                    ops[#ops + 1] = { kind = kind, lo = { lo, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
-                else
-                    local w0 = math.floor(math.sqrt(R0 * R0 - dz * dz) + 0.5)
-                    ops[#ops + 1] = { kind = kind, lo = { lo, yv(y0), z }, hi = { X0 + R(cx) - w0 - 1, yv(y1) - 1, z }, material = mat }
-                    ops[#ops + 1] = { kind = kind, lo = { X0 + R(cx) + w0 + 1, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
-                end
-            end
-        end
-        function B.fill(x0, y0, z0, x1, y1, z1, mat)
-            local ax, az, bx, bz = X0 + R(x0), Z0 + R(z0), X0 + R(x1) - 1, Z0 + R(z1) - 1
-            local ay, by = yv(y0), yv(y1) - 1
-            if bx < ax or bz < az or by < ay then return end
-            ops[#ops + 1] = { kind = mat and "box" or "clear", lo = { ax, ay, az }, hi = { bx, by, bz }, material = mat }
-        end
-        function B.vbox(x0, y0, z0, x1, y1, z1, mat) ops[#ops + 1] = { kind = "box", lo = { X0 + x0, YF + y0, Z0 + z0 }, hi = { X0 + x1, YF + y1, Z0 + z1 }, material = mat } end
-        function B.sphere(cx, cy, cz, r, mat) ops[#ops + 1] = { kind = "sphere", c = { X0 + R(cx), yv(cy), Z0 + R(cz) }, r = R(r), material = mat } end
-        function B.pillar(cx, cz, r, y0, y1, mat) rows(cx, cz, r, y0, y1, mat, 0) end
-        function B.ring(cx, cz, r0, r1, y0, y1, mat) rows(cx, cz, r1, y0, y1, mat, r0) end
         local doors = {}
         for _, d in ipairs({ "E", "S", "W", "N" }) do
             local k = info_open and info_open[d]
