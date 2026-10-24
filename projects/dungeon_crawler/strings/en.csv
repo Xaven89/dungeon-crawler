@@ -452,3 +452,12 @@ run.diff,DIFFICULTY
 run.diff.easy,Gentle
 run.diff.normal,Standard
 run.diff.hard,Cruel
+run.newseed,"A new seed is a new world: close the game and start tools/play.sh new [SEED]"
+room.safe.1,"{1}. A safe room. Nothing can hurt you here that is not already on your sponsor's contract."
+room.rest.1,"{1}. A rest stop: three cots, a fountain, no vending machine. Nobody said the show was generous."
+room.guild.1,"{1}. A classroom. The lesson is: do not stand there."
+room.connector.1,"{1}. A junction. Several doors, one decision, no refunds."
+room.borough.1,"{1}. The square of a neighbourhood. Everybody here has been told about you."
+room.stairs_free.1,"{1}. A hole in the floor with a very bright light. Whoever digs there is not allowed to stay."
+room.arena.1,"{1}. The neighbourhood's boss lives here. The sign on the door says come in. The sign is lying."
+room.ante.1,"{1}. Everyone in here is waiting for the door to the boss. So is everything else."

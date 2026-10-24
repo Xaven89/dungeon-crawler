@@ -13,6 +13,18 @@ T.barrels = {}
 T.hazards = {}
 T.plates = {}
 
+-- a cell of a big floor goes: forget what it registered (its event nodes, emitters and bodies go through gen/track.lua)
+function T.drop_cell(id)
+    local function keep(list) local out = {}; for _, e in ipairs(list or {}) do if e.cell ~= id then out[#out + 1] = e elseif e.body then pcall(body.remove, e.body) end end return out end
+    T.interact, T.barrels, T.hazards, T.floating_list = keep(T.interact), keep(T.barrels), keep(T.hazards), keep(T.floating_list)
+    for cid_, c in pairs(T.crates or {}) do
+        if c.cell == id then
+            T.crates[cid_] = nil
+            for i, ch in ipairs(T.all_chests) do if ch.id == cid_ then table.remove(T.all_chests, i); break end end
+        end
+    end
+end
+
 -- a new floor: forget everything the old one registered (the nodes and bodies themselves go through gen/track.lua)
 function T.reset()
     T.crate_loot = {}
@@ -22,7 +34,7 @@ function T.reset()
 end
 
 function T.add_interact(name, lx, ly, lz, prompt, radius, active)
-    T.interact[#T.interact + 1] = { name = name, x = lx, y = ly, z = lz, prompt = prompt, radius = radius or 2.6, active = active }
+    T.interact[#T.interact + 1] = { cell = T.cell, name = name, x = lx, y = ly, z = lz, prompt = prompt, radius = radius or 2.6, active = active }
 end
 
 -- the prompt to show now: the nearest active interactable within reach and roughly in front
@@ -160,7 +172,7 @@ function T.crate(id, tier, lx, ly, lz, face)
     T.all_chests[#T.all_chests + 1] = { tier = tier, lx = lx, ly = ly, lz = lz, face = face, id = id }
     if opened then return end
     local cx, cz = lx + lx_ / 32, lz + lz_ / 32                   -- the centre of the chest (metres)
-    T.crates[id] = { id = id, tier = tier, lx = lx, ly = ly, lz = lz, face = face, cx = cx, cy = ly + 0.3, cz = cz }
+    T.crates[id] = { cell = T.cell, id = id, tier = tier, lx = lx, ly = ly, lz = lz, face = face, cx = cx, cy = ly + 0.3, cz = cz }
     local node = events.button{ name = "crate_" .. id, box = lockbox, prompt = "Open the " .. G.items.tiers[tier].name, on = "neon", off = tier_glow[tier], press_ticks = 10 }
     events.on(node, "pressed", function() T.open_crate(id) end)
     T.add_interact("crate_" .. id, cx, ly + 0.5, cz, "Open the " .. G.items.tiers[tier].name, 3.0, function() return not G.state.opened[id] end)
@@ -266,7 +278,7 @@ function T.barrel(lx, ly, lz)
         edit.paint_box(x - 5, y, z - 5, x + 5, y + 14, z + 5, "dark_red")
         edit.paint_box(x - 5, y + 2, z - 5, x + 5, y + 3, z + 5, "dark_slate"); edit.paint_box(x - 5, y + 10, z - 5, x + 5, y + 11, z + 5, "dark_slate")
     end
-    T.barrels[#T.barrels + 1] = { x = lx, y = ly + 0.45, z = lz, alive = true }
+    T.barrels[#T.barrels + 1] = { cell = T.cell, x = lx, y = ly + 0.45, z = lz, alive = true }
 end
 
 function T.explode_barrel(b, by_chain)
@@ -347,13 +359,13 @@ T.floating_list = {}
 function T.floating(id, lx, ly, lz, kind, payload)
     if G.state.opened["float_" .. id] then return end
     local b = body.box(G.mx(lx), G.my(ly), G.mz(lz), 5, 5, 5, "lantern")
-    T.floating_list[#T.floating_list + 1] = { id = id, body = b, kind = kind, payload = payload, x = lx, y = ly, z = lz }
+    T.floating_list[#T.floating_list + 1] = { cell = T.cell, id = id, body = b, kind = kind, payload = payload, x = lx, y = ly, z = lz }
 end
 
 -- ---------------------------------------------------------------------------------------------- hazards: a box (local metres) that hurts whoever stands in it
 -- kind: "lava" (burns), "water" (wet: only the achievement), "fire"
 function T.hazard(kind, x0, y0, z0, x1, y1, z1, dmg)
-    T.hazards[#T.hazards + 1] = { kind = kind, x0 = x0, y0 = y0, z0 = z0, x1 = x1, y1 = y1, z1 = z1, dmg = dmg or 25 }
+    T.hazards[#T.hazards + 1] = { cell = T.cell, kind = kind, x0 = x0, y0 = y0, z0 = z0, x1 = x1, y1 = y1, z1 = z1, dmg = dmg or 25 }
 end
 
 function T.tick_floating(t)

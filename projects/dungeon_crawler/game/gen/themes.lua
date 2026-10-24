@@ -1,5 +1,6 @@
--- gen/themes: what a generated room looks like and who lives in it. Each theme: voxels(room, ctx) (only while the floor is built), things(room, ctx) (every start: lights, hazards, crates,
--- the population), weight(floor, room) for the pick, names for the signs and the announcer. Rooms of the plan: x, z, w, d, h (metres, local), index, role.
+-- gen/themes: who lives in a room of a big floor and what stands around them. A theme: things(room, ctx) (made when the cell comes alive: lights, hazards, the population), names for the signs and the announcer.
+-- The decoration itself (pillars, pools, shelves, the loot crates' voxels) is the region hook's (gen/deco.lua): the things here ask the same pure `deco_*_plan` functions for where it stands.
+-- A room (F.layout.rooms[id]): x, z, w, d, h in the floor's local metres, ci / cj the cell, info the plan's cell (info.room: the room in the cell's own coordinates, what deco_* takes).
 Game = Game or {}
 local G = Game
 local F = G.floorgen
@@ -7,13 +8,13 @@ local L = G.gen.layout
 local floor, max, min = math.floor, math.max, math.min
 
 -- ---------------------------------------------------------------------------------------------- who lives here
--- weights by floor: { kind, first_floor, weight }
 local ROSTER = {
     { "rat", 1, 3 }, { "slime", 1, 3 }, { "intern", 1, 2 }, { "goblin", 1, 2 },
     { "slime_toxic", 2, 2 }, { "spitter", 2, 2 }, { "bandit", 2, 2 }, { "orc", 2, 2 },
     { "imp", 3, 2 }, { "samurai", 4, 1.5 }, { "troll", 4, 2 },
 }
 local AFFIXES = { "swift", "armored", "explosive" }
+F.AFFIXES = AFFIXES
 function F.pick_kind(rng, floor_n)
     local total = 0
     for _, e in ipairs(ROSTER) do if floor_n >= e[2] then total = total + e[3] end end
@@ -24,9 +25,17 @@ function F.pick_kind(rng, floor_n)
     return "rat"
 end
 
--- n enemies somewhere in the room (3 m from the walls, 2.5 m from each other, 5 m from the doors). opts: kinds = { {kind, weight} } instead of the floor's roster, allow(x, z) -> bool, elite = n of them tougher
+-- the plan functions of deco.lua work in the cell's own coordinates (that is what the hook has); the things want the floor's: shift by the cell's origin
+function F.off(room) return room.ci * 32, room.cj * 32 end
+function F.lroom(room) return room.info.room end
+
+-- n enemies somewhere in the room (3 m from the walls, 2.5 m from each other, 5 m from the doors). opts: kinds = { {kind, weight} } instead of the floor's roster, allow(x, z) -> bool,
+-- own = true: this theme's own cast (a warlord's retinue), not the quadrant's. With the plan's population of the cell (ctx.cellpop: the budget by distance from the arrival, one mob theme per
+-- quadrant) the number and the kinds come from the plan.
 function F.populate(room, ctx, rng, n, opts)
     opts = opts or {}
+    local plist = (not opts.own) and ctx.cellpop and ctx.cellpop.list or nil
+    if plist then n = #plist end
     local placed = {}
     local tries = 0
     while #placed < n and tries < n * 40 do
@@ -38,30 +47,35 @@ function F.populate(room, ctx, rng, n, opts)
         if ok then for _, q in ipairs(placed) do if G.dist2(x, z, q[1], q[2]) < 2.5 then ok = false; break end end end
         if ok then placed[#placed + 1] = { x, z } end
     end
-    for _, q in ipairs(placed) do
-        local kind
-        if opts.kinds then
-            local total = 0; for _, k in ipairs(opts.kinds) do total = total + k[2] end
-            local x = rng.next() * total
-            for _, k in ipairs(opts.kinds) do x = x - k[2]; if x <= 0 then kind = k[1]; break end end
+    for i, q in ipairs(placed) do
+        local kind, extra
+        if plist then
+            kind = plist[i].kind
+            if plist[i].elite then extra = { affix = AFFIXES[1 + (room.index + i) % 3] } end
+        else
+            if opts.kinds then
+                local total = 0; for _, k in ipairs(opts.kinds) do total = total + k[2] end
+                local x = rng.next() * total
+                for _, k in ipairs(opts.kinds) do x = x - k[2]; if x <= 0 then kind = k[1]; break end end
+            end
+            if ctx.floor >= 2 and rng.next() < min(0.3, 0.07 * (ctx.floor - 1)) then extra = { affix = AFFIXES[rng.int(1, 3)] } end
         end
-        local extra
-        if ctx.floor >= 2 and rng.next() < min(0.3, 0.07 * (ctx.floor - 1)) then extra = { affix = AFFIXES[rng.int(1, 3)] } end
         ctx.add(room, kind or F.pick_kind(rng, ctx.floor), q[1], q[2], opts.y or 0, extra)
     end
     return #placed
 end
 
--- wall sconces along the four walls, none within 3 m of a door
+-- wall sconces along the four walls, none within 3 m of a door (the flame only: the plate on the wall is not built on a big floor)
 function F.sconces(room, ctx, step, y)
-    step = step or 8; y = y or 3.3
+    step = (step or 8) * 1.5; y = y or 3.3
+    local dk = G.gen.rules.dark()
     for x = room.x + 4, room.x + room.w - 3, step do
-        if not ctx.near_door(room, x, room.z, 3) then G.sconce(x, y, room.z, "+z", { intensity = 11 * G.gen.rules.dark() }) end
-        if not ctx.near_door(room, x, room.z + room.d, 3) then G.sconce(x, y, room.z + room.d, "-z", { intensity = 11 * G.gen.rules.dark() }) end
+        if not ctx.near_door(room, x, room.z, 3) then G.sconce(x, y, room.z, "+z", { intensity = 11 * dk, far = 24 }) end
+        if not ctx.near_door(room, x, room.z + room.d, 3) then G.sconce(x, y, room.z + room.d, "-z", { intensity = 11 * dk, far = 24 }) end
     end
     for z = room.z + 4, room.z + room.d - 3, step do
-        if not ctx.near_door(room, room.x, z, 3) then G.sconce(room.x, y, z, "+x", { intensity = 11 * G.gen.rules.dark() }) end
-        if not ctx.near_door(room, room.x + room.w, z, 3) then G.sconce(room.x + room.w, y, z, "-x", { intensity = 11 * G.gen.rules.dark() }) end
+        if not ctx.near_door(room, room.x, z, 3) then G.sconce(room.x, y, z, "+x", { intensity = 11 * dk, far = 24 }) end
+        if not ctx.near_door(room, room.x + room.w, z, 3) then G.sconce(room.x + room.w, y, z, "-x", { intensity = 11 * dk, far = 24 }) end
     end
 end
 
@@ -69,113 +83,119 @@ end
 function F.lamps(room, intensity, reach)
     local nx, nz = max(1, floor(room.w / 8)), max(1, floor(room.d / 8))
     for i = 1, nx do for j = 1, nz do
-        G.lamp(room.x + room.w * (i - 0.5) / nx, room.z + room.d * (j - 0.5) / nz, room.h, 1.2, { reach = reach or 12, intensity = (intensity or 11) * G.gen.rules.dark() })
+        G.lamp(room.x + room.w * (i - 0.5) / nx, room.z + room.d * (j - 0.5) / nz, room.h, 1.2, { reach = reach or 12, far = 24, intensity = (intensity or 11) * G.gen.rules.dark() })
     end end
 end
 
--- how many enemies a room of this size holds on this floor
+-- how many enemies a room of this size holds on this floor (the fallback without the plan's population)
 function F.head_count(room, floor_n, rng)
     local n = floor(room.w * room.d / 75) + rng.int(0, 2) + floor((floor_n - 1) / 2)
     return max(3, min(floor(n * G.gen.rules.count() + 0.5), 14))
 end
 
--- ---------------------------------------------------------------------------------------------- the safe rooms and the lair are drawn by gen/safe.lua; these only name them
-F.register("arrival", { names = { "Intake Landing" }, weight = function() return 0 end })
-F.register("stairwell", { names = { "Stairwell" }, weight = function() return 0 end })
-
--- ---------------------------------------------------------------------------------------------- lair: the boss room (a big hall with a ring of pillars)
-F.register("lair", {
-    names = { "The Manager's Office", "The Corner Office", "The Compliance Floor", "The Board Room" },
-    weight = function() return 0 end,
-    voxels = function(room, ctx)
-        G.room{ x = room.x, z = room.z, w = room.w, d = room.d, h = room.h, floor = "marble", wall = "dungeon_brick", ceil = "dungeon_brick", wtex = "blocks", ctex = "planks" }
-        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
-        G.ring(cx, cz, 7.5, 8.2, 0, 0.1, "gold")
-        G.ring(cx, cz, 11.5, 12.0, 0, 0.1, "gold")
-        for i = 0, 7 do
-            local a = i * math.pi / 4 + math.pi / 8
-            G.pillar(cx + math.cos(a) * 11, cz + math.sin(a) * 9, 0.7, 0, room.h, "marble", "blocks")
-        end
-    end,
+-- ---------------------------------------------------------------------------------------------- the rooms that are not fights: safe rooms, the rest stop, the stairwell, connectors
+F.register("safe", { names = { "Intake Landing", "The Lounge", "Safe Harbour", "Mild Relief" }, things = function(room, ctx) G.gen.safe.things(room, ctx, {}) end })
+F.register("rest", {
+    names = { "Rest Stop", "The Cot Room", "Break Room", "Quiet Corner" },
     things = function(room, ctx)
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        G.torch(cx, 2.4, cz, { preset = "campfire", color = { 1, 0.6, 0.25 }, reach = 12, far = 24, name = room.id .. "_fire" })
+        G.dust(room.id .. "_dust", "dust_motes", { G.mx(cx), G.my(2), G.mz(cz) }, { 4, 2, 4 })
+    end,
+})
+F.register("guild", {
+    names = { "The Guild Classroom", "Orientation Annex", "Training Hall" },
+    things = function(room, ctx) F.sconces(room, ctx, 8, 3.3); F.lamps(room, 13, 11) end,
+})
+F.register("connector", {
+    names = { "A Corridor", "Service Junction", "The Landing", "Utility Closet" },
+    things = function(room, ctx)
+        G.torch(room.x + room.w / 2, 2.8, room.z + room.d / 2, { preset = "torch", reach = 9, far = 22, intensity = 9 * G.gen.rules.dark(), name = room.id .. "_c" })
+    end,
+})
+F.register("borough", {
+    names = { "The Courtyard", "Borough Square", "The Rotunda" },
+    things = function(room, ctx)
+        local r = ctx.rng(room)
+        F.sconces(room, ctx, 8, 3.4); F.lamps(room, 13, 12)
+        F.populate(room, ctx, r, 4, { own = true, kinds = { { "orc", 3 }, { "bandit", 3 }, { "goblin", 3 } } })
+    end,
+})
+F.register("stairs_free", {
+    names = { "Stairwell", "Service Stairs", "The Way Down" },
+    things = function(room, ctx)
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        G.torch(cx, 2.2, cz, { preset = "campfire", color = { 1, 0.8, 0.4 }, reach = 14, far = 26, name = room.id .. "_glow" })
+        F.sconces(room, ctx, 8, 3.2)
+        local id = room.id .. "_down"
+        local box = { G.wx(cx - 1.8), G.wy(-1.4), G.wz(cz - 1.8), G.wx(cx + 1.8) - 1, G.wy(-0.4), G.wz(cz + 1.8) - 1 }
+        local vol = events.volume{ name = id, box = box, player = true, bodies = false }
+        events.on(vol, "enter", function() F.stairs_enter() end)
+        G.traps.add_interact(id, cx, 0.4, cz, tr("ui.descend", G.run.next_floor(ctx.floor) or "?"), 3.4)
+    end,
+})
+
+-- ---------------------------------------------------------------------------------------------- arena: a neighbourhood boss (a miniboss and his guards)
+F.register("arena", {
+    names = { "The Manager's Office", "The Corner Office", "The Compliance Floor", "The Board Room" },
+    things = function(room, ctx)
+        local r = ctx.rng(room)
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
         for i = 0, 3 do
             local a = i * math.pi / 2 + math.pi / 4
-            G.brazier(cx + math.cos(a) * 11, cz + math.sin(a) * 9, { reach = 16 })
+            G.brazier(cx + math.cos(a) * 9, cz + math.sin(a) * 7, { reach = 16, far = 26 })
         end
-        G.dust(room.id .. "_dust", "dust_motes", { G.mx(cx), G.my(room.h / 2), G.mz(cz) }, { 12, room.h / 2, 10 })
-        for i = 0, 7 do
-            local a = i * math.pi / 4
-            G.lamp(cx + math.cos(a) * 14, cz + math.sin(a) * 11, room.h, 1.6, { reach = 15, intensity = 15 * G.gen.rules.dark() })
-        end
-        G.lamp(cx, cz, room.h, 2.0, { reach = 18, intensity = 16 * G.gen.rules.dark() })
+        G.lamp(cx, cz, room.h, 2.0, { reach = 18, far = 26, intensity = 16 * G.gen.rules.dark() })
+        local kind = (ctx.floor >= 3) and "cyclops" or "troll"
+        ctx.add(room, kind, cx, cz, 0, { hp = (kind == "troll") and 2.4 or 1.6, name = "Neighbourhood boss" })
+        F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { own = true, kinds = { { "orc", 4 }, { "bandit", 3 }, { "goblin", 3 } }, allow = function(x, z) return G.dist2(x, z, cx, cz) > 5 end })
+    end,
+})
+F.register("ante", {
+    names = { "The Antechamber", "Waiting Room B", "The Vestibule" },
+    things = function(room, ctx)
+        local r = ctx.rng(room)
+        F.sconces(room, ctx, 8, 3.3); F.lamps(room, 14, 12)
+        local pil = {}
+        local ox, oz = F.off(room)
+        for _, p in ipairs(deco_hall_plan(F.lroom(room), ctx.mk(room))) do pil[#pil + 1] = { p[1] + ox, p[2] + oz } end
+        F.populate(room, ctx, L.make_rng(ctx.seed, ctx.floor, 2000 + room.index), 3, { allow = function(x, z) for _, p in ipairs(pil) do if G.dist2(x, z, p[1], p[2]) < 1.6 then return false end end return true end })
     end,
 })
 
 -- ---------------------------------------------------------------------------------------------- hall: the plain fighting room
--- the pillars of a hall: a pure function of the room (the voxels and the population both ask for it)
-local function hall_plan(room, ctx)
-    local r = ctx.rng(room)
-    local pillars = {}
-    local nx, nz = floor(room.w / 8), floor(room.d / 8)
-    for i = 1, nx do for j = 1, nz do
-        if r.next() < 0.7 then pillars[#pillars + 1] = { room.x + room.w * i / (nx + 1), room.z + room.d * j / (nz + 1) } end
-    end end
-    return pillars
-end
-
 F.register("hall", {
     names = { "Hall of Mild Peril", "The Waiting Room", "Hall of Pending Approvals", "The Open Plan" },
-    weight = function(floor_n, room) return 3 end,
-    voxels = function(room, ctx)
-        G.room{ x = room.x, z = room.z, w = room.w, d = room.d, h = room.h, floor = "flagstone", wall = "dungeon_brick", ceil = "dungeon_brick", ftex = "tiles", wtex = "blocks", ctex = "planks" }
-        -- a carpet down the long axis
-        if room.w >= room.d then G.fill(room.x + 1, 0, room.z + room.d / 2 - 2, room.x + room.w - 1, 0.05, room.z + room.d / 2 + 2, "carpet")
-        else G.fill(room.x + room.w / 2 - 2, 0, room.z + 1, room.x + room.w / 2 + 2, 0.05, room.z + room.d - 1, "carpet") end
-        for _, p in ipairs(hall_plan(room, ctx)) do G.pillar(p[1], p[2], 0.7, 0, room.h, "marble", "blocks") end
-        for x = room.x + 3, room.x + room.w - 3, 6 do G.fill(x, room.h - 0.8, room.z, x + 0.5, room.h, room.z + room.d, "dark_wood") end
-    end,
     things = function(room, ctx)
-        local r = ctx.rng(room)
         F.sconces(room, ctx)
         F.lamps(room, 15, 13)
-        local pil = hall_plan(room, ctx)
+        local ox, oz = F.off(room)
+        local pil = {}
+        for _, p in ipairs(deco_hall_plan(F.lroom(room), ctx.mk(room))) do pil[#pil + 1] = { p[1] + ox, p[2] + oz } end
         local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)
         F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = function(x, z) for _, p in ipairs(pil) do if G.dist2(x, z, p[1], p[2]) < 1.6 then return false end end return true end })
-        if r2.next() < 0.5 then ctx.crate(room, ctx.floor >= 3 and "silver" or "bronze", room.x + 3, room.z + 3, "+z") end
     end,
 })
 
--- ---------------------------------------------------------------------------------------------- warlord: a hall with a miniboss and his retinue (a gold crate behind them)
+-- ---------------------------------------------------------------------------------------------- warlord: a hall with a miniboss and his retinue
 F.register("warlord", {
     names = { "The Warlord's Lounge", "Middle Management", "The Regional Office", "Hall of Brutal Efficiency" },
-    weight = function(f, room) return (f >= 2 and room.w >= 20 and room.d >= 18) and (0.8 + 0.25 * f) or 0 end,
-    voxels = function(room, ctx)
-        G.room{ x = room.x, z = room.z, w = room.w, d = room.d, h = room.h, floor = "obsidian", wall = "dungeon_brick", ceil = "dungeon_brick", ftex = "tiles", wtex = "blocks", ctex = "planks" }
-        local cx = room.x + room.w / 2
-        G.fill(cx - 3, 0, room.z + room.d - 6, cx + 3, 0.5, room.z + room.d - 1, "dark_wood"); G.fill(cx - 3, 0.5, room.z + room.d - 6, cx + 3, 0.55, room.z + room.d - 1, "carpet")
-        for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do G.pillar(cx + dx, room.z + room.d * k / 3, 0.8, 0, room.h, "dungeon_brick", "blocks") end end
-        for i = 1, 3 do G.fill(room.x + room.w * i / 4 - 0.6, 3.2, room.z + 0.05, room.x + room.w * i / 4 + 0.6, 6, room.z + 0.2, "neon_red") end        -- banners
-    end,
     things = function(room, ctx)
         local r = ctx.rng(room)
         local cx = room.x + room.w / 2
         F.sconces(room, ctx, 8, 3.3); F.lamps(room, 15, 12)
-        G.brazier(cx - 5, room.z + room.d - 3, { reach = 12 }); G.brazier(cx + 5, room.z + room.d - 3, { reach = 12 })
-        ctx.crate(room, "gold", cx - 0.6, room.z + room.d - 2, "-z", 0.55)
+        G.brazier(cx - 5, room.z + room.d - 3, { reach = 12, far = 24 }); G.brazier(cx + 5, room.z + room.d - 3, { reach = 12, far = 24 })
         local kind = (ctx.floor >= 3) and "cyclops" or "troll"
         local extra = { hp = (kind == "troll") and 1.8 or 1 }
-        -- from floor 3 a rival crawler may hold the room instead (the one you did not kill follows you from floor to floor)
-        local first
-        for _, id in ipairs(ctx.plan.order) do if ctx.plan.rooms[id].theme == "warlord" then first = id; break end end
-        if ctx.floor >= 3 and first == room.id and G.hash(ctx.seed % 100000, ctx.floor, 3) < 0.7 then
+        -- from floor 3 a rival crawler may hold the first warlord room of the floor (the one you did not kill follows you from floor to floor)
+        if ctx.floor >= 3 and ctx.first_of("warlord") and G.hash(ctx.seed % 100000, ctx.floor, 3) < 0.7 then
             local names = { "Skullface Tamara", "Reginald Redundant", "Big Dolly", "Wendell the Unpaid", "Madame Overdraft", "The Intern Who Knew Too Much" }
             kind = ({ "rival_samurai", "rival_adventurer", "rival_witch" })[1 + floor(G.hash(ctx.floor, room.index, 5) * 3) % 3]
             extra = { name = names[1 + floor(G.hash(ctx.seed % 100000, ctx.floor, 77) * #names) % #names], hp = 1 }
             if G.state.rival then extra.name = G.state.rival; extra.rematch = true; extra.hp = 1.3 end
         end
         ctx.add(room, kind, cx, room.z + room.d - 8, 0, extra)
-        F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { kinds = { { "orc", 4 }, { "bandit", 3 }, { "imp", 2 } }, allow = function(x, z)
+        F.populate(room, ctx, r, 3 + floor(ctx.floor / 2), { own = true, kinds = { { "orc", 4 }, { "bandit", 3 }, { "imp", 2 } }, allow = function(x, z)
             if z >= room.z + room.d - 10 then return false end
             for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do if G.dist2(x, z, cx + dx, room.z + room.d * k / 3) < 1.8 then return false end end end
             return true

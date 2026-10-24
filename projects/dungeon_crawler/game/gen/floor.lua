@@ -1,452 +1,406 @@
--- gen/floor: builds a generated floor from its plan (gen/layout.lua) in the one volume the dungeon has, takes the old floor away first, and wires the rest of the game (game/world.lua) to it.
+-- gen/floor: the BIG floors at runtime (P2 of ~/share/big-floors-plan.md). The voxels of a floor come from the region hook (gen/shell.lua, gen/deco.lua); this module is everything that is not a voxel:
+-- the plan of the floor (gen/cell.lua, the same pure code as the hook), the local frame of the floor's band, the cells that are alive around the player (things, population, lights) and the way in and out.
 --
---   F.plan(seed, floor)            the plan (memoised)
---   F.start(seed, floor, on_done)  tears the old floor down, wipes the volume, builds voxels room by room across ticks (a loading veil), then makes the things; on_done() at the end
---   F.load(seed, floor)            a saved run: the plan again and the things only (the voxels are in the world save)
--- A theme (gen/themes.lua) has `voxels(room, ctx)` (only while building) and `things(room, ctx)` (every start; fills the population, crates, hazards).
+--   F.enter(floor_n, on_done)   a new floor of the run: the frame of its band, the plan, the tables of the world, the player in the arrival room; on_done() when the arrival room has been generated
+--   F.load(floor_n)             a saved run: the same without the teleport (the things are made again around the player)
+--   F.tick(t)                   the cells around the player come alive (radius 1, two per tick) and go (beyond 2); the enemies of the cells next to the player exist
+--   F.leave()                   back to the Orientation (or the end of a run): every cell is taken away
+-- A floor is the band z = floor * 1024 m + 64 m .. of the endless world, x = 0 ..; the game's local frame (metres, G.OX / G.OZ) is the floor's own: local (x, z) = (cell column * 32 + ..., cell row * 32 + ...).
+-- A cell is `F.layout.rooms[id]` ("c4_0"): { id, ci, cj, x, z, w, d, h (local metres), theme, cellrole, name, info }.
 Game = Game or {}
 local G = Game
 G.gen = G.gen or {}
 local F = {}
 G.floorgen = F
-local L = G.gen.layout
-local floor = math.floor
+local floor, max, min = math.floor, math.max, math.min
 
-F.themes = {}            -- name -> { voxels, things, weight(floor), names = {..} }
-F.layout = nil
-F.active = false         -- a generated floor is the world now
-F.job = nil
-
--- the volume of the dungeon, in the local frame (metres): what a wipe takes
-F.VOL = { x0 = -4, z0 = -4, x1 = 130, z1 = 158, y0 = -7, y1 = 15 }
+F.themes = {}            -- name -> { things(room, ctx), names = { .. } }   (gen/themes.lua, themes_more.lua)
+F.layout = nil           -- the plan of the floor in the world (nil: the Orientation)
+F.active = false         -- a big floor is the world now
+F.job = nil              -- the loading veil: { i, n, done }
+F.made, F.made_list = {}, {}
+F.queue = {}
+F.RADIUS_MAKE, F.RADIUS_KEEP = 1, 2
+F.ENEMY_CAP = 56
 
 function F.register(name, def) def.name = name; F.themes[name] = def end
 
-local memo_key, memo
-function F.plan(seed, floor_n)
-    local k = seed .. ":" .. floor_n
-    if memo_key ~= k then memo = L.generate(seed, floor_n); memo_key = k; F.assign_themes(memo); memo.rules = G.gen.rules.choose(seed, floor_n) end
-    return memo
+-- ---------------------------------------------------------------------------------------------- the plan: the same pure code as the hook
+local CGobj, Hobj
+function F.cg()
+    if not CGobj then Hobj = cellgen_hash_from(worldgen.hash); CGobj = cellgen_make(Hobj) end
+    return CGobj, Hobj
+end
+function F.world_seed() return floor(worldgen.seed or 0) end
+
+-- the frame of a band (or of the Orientation: floor 0)
+F.ORIENT = { 1072, 128, 848 }
+function F.frame(fl)
+    if not fl or fl == 0 then G.OX, G.OY, G.OZ = F.ORIENT[1], F.ORIENT[2], F.ORIENT[3]
+    else G.OX, G.OY, G.OZ = 0, 128, (fl * 32 + 2) * 512 end
 end
 
--- ---------------------------------------------------------------------------------------------- themes and names
-function F.assign_themes(p)
-    local r = L.make_rng(p.seed, p.floor, 777)
-    local names = {}
-    for n in pairs(F.themes) do names[#names + 1] = n end
-    table.sort(names)
-    local used = {}
-    for _, id in ipairs(p.order) do
-        local room = p.rooms[id]
-        if room.role == "start" then room.theme = "arrival"
-        elseif room.role == "exit" then room.theme = "stairwell"
-        elseif room.role == "boss" then room.theme = "lair"
-        else
-            -- weighted pick, a theme twice in a row on one floor is less likely
-            local total, ws = 0, {}
-            for _, n in ipairs(names) do
-                local def = F.themes[n]
-                local w = (def.weight and def.weight(p.floor, room) or 0)
-                if used[n] then w = w * 0.35 end
-                ws[#ws + 1] = w; total = total + w
+local function cid(ci, cj) return "c" .. ci .. "_" .. cj end
+F.cid = cid
+
+-- ---------------------------------------------------------------------------------------------- the plan of a floor as the game sees it
+function F.build_plan(fl)
+    local CG = F.cg()
+    local plan = CG.plan(0, fl, "small")
+    local seed = F.world_seed()
+    local P = { floor = fl, seed = seed, big = true, plan = plan, ctx = plan.ctx, order = {}, start = plan.arrival, W = plan.W, H = plan.H, rooms = {}, doors = {} }
+    P.dist = CG.bfs(plan, { plan.arrival })
+    P.rules = G.gen.rules.choose(seed, fl)
+    for _, id in ipairs(plan.order) do
+        local info = plan.cells[id]
+        local r = info.room
+        if r then
+            local def = F.themes[info.theme]
+            local names = def and def.names or { "Room" }
+            local role = (info.role == "arrival") and "start" or ((info.role == "stairs") and "exit" or ((info.role == "lair") and "boss" or "room"))
+            P.rooms[id] = { id = id, index = info.ci * 100 + info.cj, ci = info.ci, cj = info.cj, x = info.ci * 32 + r.x, z = info.cj * 32 + r.z, w = r.w, d = r.d, h = r.h,
+                            theme = info.theme, cellrole = info.role, role = role, kind = info.theme, name = names[1 + floor(Hobj(0, fl * 1000 + 700, info.ci, info.cj, 1) * #names)], info = info }
+            P.order[#P.order + 1] = id
+            local l = {}
+            for _, d in ipairs({ "E", "S", "W", "N" }) do
+                local k = info.open[d]
+                if k and k ~= "internal" and info.door and info.door[d] then
+                    l[#l + 1] = { side = d, pos = ((d == "E" or d == "W") and info.cj or info.ci) * 32 + info.door[d], kind = k }
+                end
             end
-            local pick = names[1]
-            if total > 0 then
-                local x = r.next() * total
-                for i, n in ipairs(names) do x = x - ws[i]; if x <= 0 then pick = n; break end end
-            end
-            if F.force and F.themes[F.force] then pick = F.force end
-            room.theme = pick
-            used[pick] = (used[pick] or 0) + 1
+            P.doors[id] = l
         end
-        local def = F.themes[room.theme]
-        local pool = def and def.names or { "Room" }
-        room.name = pool[r.int(1, #pool)]
     end
+    P.first_of = {}
+    for _, id in ipairs(P.order) do local th = P.rooms[id].theme; if not P.first_of[th] then P.first_of[th] = id end end
+    return P
 end
 
--- ---------------------------------------------------------------------------------------------- the world tables of the game (game/world.lua) follow the plan
-function F.apply_tables(p)
+-- the doors of a room in the room's own cell coordinates (what deco_* takes)
+function F.local_doors(room)
+    local l = {}
+    for _, d in ipairs({ "E", "S", "W", "N" }) do
+        local k = room.info.open[d]
+        if k and k ~= "internal" and room.info.door and room.info.door[d] then l[#l + 1] = { side = d, pos = room.info.door[d] } end
+    end
+    return l
+end
+function F.local_room(room) return room.info.room end
+
+-- the tables of the game's world follow the plan
+function F.apply_tables(P)
     local W = G.world
     if not F.authored then
         F.authored = { rooms = W.rooms, zones = W.zones, checkpoints = W.checkpoints, room_order = W.room_order, neighbors = W.neighbors, populate_list = W.populate_list }
     end
-    W.rooms = {}
-    W.zones = {}
-    W.checkpoints = {}
-    for id, r in pairs(p.rooms) do
-        W.rooms[id] = { x = r.x, z = r.z, w = r.w, d = r.d, h = r.h, name = r.name, kind = r.theme, role = r.role }
+    W.rooms, W.zones, W.checkpoints, W.neighbors, W.populate_list = {}, {}, {}, {}, {}
+    for _, id in ipairs(P.order) do
+        local r = P.rooms[id]
+        W.rooms[id] = r
         W.checkpoints[id] = { x = r.x + r.w / 2, y = 0.1, z = r.z + r.d / 2 }
-    end
-    -- a place to wake up in a room that is not its middle (the middle of a furnace is lava, of a library a shelf): just inside the first door, on the free 4 m along the walls
-    for _, e in ipairs(p.edges) do
-        for _, d in ipairs(e.doors) do
-            local r = p.rooms[d.room]
-            if r.role == "room" or r.role == "boss" then
-                local c = W.checkpoints[d.room]
-                if not c.door then
-                    if d.side == "E" then c.x, c.z = r.x + r.w - 2.5, d.z elseif d.side == "W" then c.x, c.z = r.x + 2.5, d.z
-                    elseif d.side == "S" then c.x, c.z = d.x, r.z + r.d - 2.5 else c.x, c.z = d.x, r.z + 2.5 end
-                    c.door = true
-                end
-            end
+        -- a place to wake up that is not the middle (a pool, a pillar, a shelf): just inside the first door
+        local d = P.doors[id] and P.doors[id][1]
+        if d and r.cellrole ~= "arrival" then
+            local c = W.checkpoints[id]
+            if d.side == "E" then c.x, c.z = r.x + r.w - 2.5, d.pos elseif d.side == "W" then c.x, c.z = r.x + 2.5, d.pos
+            elseif d.side == "S" then c.x, c.z = d.pos, r.z + r.d - 2.5 else c.x, c.z = d.pos, r.z + 2.5 end
         end
     end
-    W.room_order = p.order
-    W.neighbors = p.neighbors
-    W.populate_list = {}
+    W.room_order = P.order
     G.traps.reset()
     G.enemies.reset_floor()
     G.torches = {}
     if G.boss and G.boss.reset then G.boss.reset() end
-    G.gen.rules.apply(p)
+    G.gen.rules.apply(P)
 end
 
--- ---------------------------------------------------------------------------------------------- the context a theme gets
-local function make_ctx(p, building)
-    local ctx = { plan = p, floor = p.floor, seed = p.seed, building = building }
+-- ---------------------------------------------------------------------------------------------- the context a theme gets (the same shape as the old floors')
+local function make_ctx(P, room)
+    local CG, H = F.cg()
+    local ctx = { plan = P, floor = P.floor, seed = P.seed, building = false, cell = room.id }
     ctx.pop = G.world.populate_list
-    function ctx.rng(room) return L.make_rng(p.seed, p.floor, 1000 + room.index) end
-    function ctx.add(room, kind, lx, lz, ly, extra)
-        local l = ctx.pop[room.id]
-        if not l then l = {}; ctx.pop[room.id] = l end
+    if room.cellrole == "room" or room.cellrole == "ante" or room.cellrole == "prize" then ctx.cellpop = CG.population(P.ctx, room.info, P.dist[room.id]) end
+    function ctx.rng(rm) return deco_rng(H, P.floor, rm.ci, rm.cj, 1) end
+    function ctx.mk(rm) return function(salt) return deco_rng(H, P.floor, rm.ci, rm.cj, salt or 1) end end
+    function ctx.add(rm, kind, lx, lz, ly, extra)
+        local l = ctx.pop[rm.id]
+        if not l then l = {}; ctx.pop[rm.id] = l end
         local e = { kind, lx, lz, ly or 0 }
         if extra then for k, v in pairs(extra) do e[k] = v end end
         l[#l + 1] = e
     end
-    -- where the corridors meet each room: ctx.doors[room.id] = { { side = "E", pos = z or x (metres) } ... }; nothing may stand in front of them
-    ctx.doors = {}
-    for _, e in ipairs(p.edges) do
-        for _, d in ipairs(e.doors) do
-            local l = ctx.doors[d.room]; if not l then l = {}; ctx.doors[d.room] = l end
-            l[#l + 1] = { side = d.side, pos = d.z or d.x }
-        end
-    end
-    function ctx.near_door(room, x, z, r)
-        for _, d in ipairs(ctx.doors[room.id] or {}) do
+    ctx.doors = { [room.id] = P.doors[room.id] or {} }
+    function ctx.near_door(rm, x, z, r)
+        for _, d in ipairs(ctx.doors[rm.id] or {}) do
             local dx, dz
-            if d.side == "E" then dx, dz = room.x + room.w, d.pos elseif d.side == "W" then dx, dz = room.x, d.pos
-            elseif d.side == "S" then dx, dz = d.pos, room.z + room.d else dx, dz = d.pos, room.z end
+            if d.side == "E" then dx, dz = rm.x + rm.w, d.pos elseif d.side == "W" then dx, dz = rm.x, d.pos
+            elseif d.side == "S" then dx, dz = d.pos, rm.z + rm.d else dx, dz = d.pos, rm.z end
             if G.dist2(x, z, dx, dz) < r then return true end
         end
         return false
     end
-    ctx.crate_n = 0
-    function ctx.crate(room, tier, lx, lz, face, ly)
-        ctx.crate_n = ctx.crate_n + 1
-        local id = "f" .. p.floor .. "c" .. room.index .. "_" .. ctx.crate_n
-        G.traps.crate(id, tier, lx, ly or 0, lz, face or "+z")
-        return id
-    end
+    function ctx.first_of(theme) return P.first_of and P.first_of[theme] == room.id end
     return ctx
 end
 
--- ---------------------------------------------------------------------------------------------- corridors
-local function corridor_shell(s)
-    local t = 0.25
-    G.fill(s[1] - t, -0.5, s[2] - t, s[3] + t, 4.9, s[4] + t, "dungeon_brick", "blocks")
-end
--- the air of a segment; where it meets a room (`lo` / `hi`: the end at the smaller / larger coordinate along `axis`) it reaches 0.3 m into the room, because the lining of the corridor
--- (0.25 m all round) covers the last bit of the room's floor space at the door otherwise and the door is walled shut
-local function corridor_air(s, axis, lo, hi)
-    local x0, z0, x1, z1 = s[1], s[2], s[3], s[4]
-    if axis == "x" then if lo then x0 = x0 - 0.3 end; if hi then x1 = x1 + 0.3 end
-    else if lo then z0 = z0 - 0.3 end; if hi then z1 = z1 + 0.3 end end
-    G.clear(x0, 0, z0, x1, 4.5, z1)
-    G.fill(x0, -0.5, z0, x1, 0, z1, "flagstone", "tiles")
-end
-
-local function build_corridors(p)
-    for _, e in ipairs(p.edges) do for _, s in ipairs(e.segs) do corridor_shell(s) end end
-    for _, e in ipairs(p.edges) do
-        local axis = (e.doors[1].side == "E") and "x" or "z"
-        for k, s in ipairs(e.segs) do corridor_air(s, axis, k == 1, k == #e.segs) end
-    end
-end
-
--- boulder corridors: a pressure plate in the middle of a long straight corridor (from floor 2), a boulder that comes out of one end. Pure function of the plan.
-function F.trap_edges(p)
-    local out = {}
-    if p.floor < 2 then return out end
-    for i, e in ipairs(p.edges) do
-        if #e.segs == 1 and e.a ~= p.exit and e.b ~= p.exit then
-            local s = e.segs[1]
-            local along_x = (s[3] - s[1]) >= (s[4] - s[2])
-            local len = along_x and (s[3] - s[1]) or (s[4] - s[2])
-            if len >= 24 and G.hash(p.seed % 100000, p.floor, i) < 0.5 then
-                local cx, cz = (s[1] + s[3]) / 2, (s[2] + s[4]) / 2
-                local dir = (G.hash(p.seed % 100000, p.floor, i + 50) < 0.5) and 1 or -1       -- the boulder rolls towards +x / +z (dir = 1) or the other way
-                local from = along_x and { dir == 1 and s[1] + 2 or s[3] - 2, 1.7, cz } or { cx, 1.7, dir == 1 and s[2] + 2 or s[4] - 2 }
-                out[#out + 1] = { edge = i, along_x = along_x, cx = cx, cz = cz, from = from, dir = dir, id = "f" .. p.floor .. "trap" .. i }
-            end
-        end
-    end
-    return out
-end
-
--- marble door frames where a corridor meets a room (voxels): two posts and a lintel, outside the 4 m opening
-local function build_frames(p)
-    for _, t in ipairs(F.trap_edges(p)) do G.fill(t.cx - 1.0, 0, t.cz - 1.0, t.cx + 1.0, 0.04, t.cz + 1.0, "hazard_y") end        -- the plate
-    for _, e in ipairs(p.edges) do
-        for _, d in ipairs(e.doors) do
-            local r = p.rooms[d.room]
-            if d.side == "E" or d.side == "W" then
-                local xw = (d.side == "E") and (r.x + r.w) or r.x
-                local x0, x1 = xw - 0.3, xw + 0.55
-                if d.side == "W" then x0, x1 = xw - 0.55, xw + 0.3 end
-                G.fill(x0, 0, d.z - 2.6, x1, 4.6, d.z - 2.0, "marble", "blocks"); G.fill(x0, 0, d.z + 2.0, x1, 4.6, d.z + 2.6, "marble", "blocks")
-                G.fill(x0, 4.5, d.z - 2.6, x1, 5.0, d.z + 2.6, "marble", "blocks")
-            else
-                local zw = (d.side == "S") and (r.z + r.d) or r.z
-                local z0, z1 = zw - 0.3, zw + 0.55
-                if d.side == "N" then z0, z1 = zw - 0.55, zw + 0.3 end
-                G.fill(d.x - 2.6, 0, z0, d.x - 2.0, 4.6, z1, "marble", "blocks"); G.fill(d.x + 2.0, 0, z0, d.x + 2.6, 4.6, z1, "marble", "blocks")
-                G.fill(d.x - 2.6, 4.5, z0, d.x + 2.6, 5.0, z1, "marble", "blocks")
-            end
-        end
-    end
-end
-
-local fired = {}
-local function corridor_things(p)
-    local T = G.traps
-    for _, t in ipairs(F.trap_edges(p)) do
-        local plate = events.volume{ name = t.id .. "_plate", box = { G.wx(t.cx - 1.0), G.wy(0), G.wz(t.cz - 1.0), G.wx(t.cx + 1.0) - 1, G.wy(0.5), G.wz(t.cz + 1.0) - 1 }, player = true, bodies = false }
-        events.on(plate, "enter", function()
-            if fired[t.id] then return end
-            fired[t.id] = true
-            G.announcer.say_key("trap.plate", { prio = 1 })
-            G.sfx.play("trap_click", t.cx, 0, t.cz)
-            after(60, function()
-                local dx, dz = 0, 0
-                if t.along_x then dx = t.dir else dz = t.dir end
-                T.release_boulder(t.from[1], t.from[2], t.from[3], dx, dz, 24, 11)
-                after(600, function() fired[t.id] = nil end)
-            end)
-        end)
-    end
+-- ---------------------------------------------------------------------------------------------- one cell comes alive
+local function cell_lights(P, room)
+    local dk = G.gen.rules.dark()
+    local info = room.info
     local n = 0
-    for _, e in ipairs(p.edges) do
-        for k, s in ipairs(e.segs) do
-            local len = math.max(s[3] - s[1], s[4] - s[2])
-            if len >= 10 then
-                local count = math.max(1, floor(len / 9))
-                for q = 1, count do
-                    n = n + 1
-                    local f = (q - 0.5) / count
-                    local cx, cz = s[1] + (s[3] - s[1]) * f, s[2] + (s[4] - s[2]) * f
-                    G.torch(cx, 3.2, cz, { preset = "torch", reach = 10, intensity = 9 * G.gen.rules.dark(), name = "f" .. p.floor .. "_corr" .. n })
+    -- a torch in the middle of every hall (not alleys), at the wall of the room
+    for _, d in ipairs(P.doors[room.id] or {}) do
+        if d.kind == "tree" or d.kind == "loop" or d.kind == "side" then
+            local x, z
+            if d.side == "E" then x, z = room.x + room.w + (32 - (room.info.room.x + room.w)) / 2, d.pos
+            elseif d.side == "W" then x, z = room.ci * 32 + room.info.room.x / 2, d.pos
+            elseif d.side == "S" then x, z = d.pos, room.cj * 32 + room.info.room.z + room.d + (32 - room.info.room.z - room.d) / 2
+            else x, z = d.pos, room.cj * 32 + room.info.room.z / 2 end
+            n = n + 1
+            G.torch(x, 3.2, z, { preset = "torch", reach = 10, far = 24, intensity = 9 * dk, name = room.id .. "_h" .. n })
+        end
+    end
+    -- the artery strips along the block borders: a torch every 8 m
+    local ci, cj, W, H = room.ci, room.cj, P.W, P.H
+    local x0, z0 = ci * 32, cj * 32
+    local function strip(side)
+        for t = 4, 28, 8 do
+            n = n + 1
+            local x, z
+            if side == "E" then x, z = x0 + 30, z0 + t elseif side == "W" then x, z = x0 + 2, z0 + t elseif side == "S" then x, z = x0 + t, z0 + 30 else x, z = x0 + t, z0 + 2 end
+            G.torch(x, 4.5, z, { preset = "torch", reach = 12, far = 28, intensity = 11 * dk, name = room.id .. "_a" .. n })
+        end
+    end
+    if ci % 8 == 0 then strip("W") end
+    if ci % 8 == 7 then strip("E") end
+    if cj % 8 == 0 then strip("N") end
+    if cj % 8 == 7 then strip("S") end
+end
+
+function F.make_cell(id)
+    local P = F.layout
+    local room = P and P.rooms[id]
+    if not room or F.made[id] then return end
+    F.made[id] = true
+    F.made_list[#F.made_list + 1] = id
+    local prev = G.gen.track.scope
+    G.gen.track.scope = "cell" .. P.floor .. id
+    G.traps.cell = id
+    local ctx = make_ctx(P, room)
+    local def = F.themes[room.theme]
+    local ok, err = pcall(function()
+        if def and def.things then def.things(room, ctx) end
+        -- the loot crates: the voxels are the hook's (deco_crates), the buttons are ours
+        local lroom, ldoors = room.info.room, F.local_doors(room)
+        local mk = ctx.mk(room)
+        for k, c in ipairs(deco_crates(room.theme, lroom, ldoors, mk, P.floor)) do
+            local cidn = string.format("c%d_%d_%d_%d", P.floor, room.ci, room.cj, k)
+            G.traps.crate(cidn, c.tier, room.ci * 32 + c.x, c.y, room.cj * 32 + c.z, c.face)
+            if c.mimic then
+                G.traps.crate_hooks[cidn] = function()
+                    G.announcer.say_key("prize.mimic", { prio = 2 })
+                    G.announcer.award("mimic_food")
+                    local r = ctx.rng(room)
+                    for q = 1, 5 do
+                        local e = G.enemies.spawn(F.pick_kind(r, P.floor), room.ci * 32 + c.x + (q - 3) * 0.9, 0, room.cj * 32 + c.z + 2.2, { room = room.id, index = 90 + q })
+                        if e then G.enemies.aggro(e, true) end
+                    end
                 end
             end
         end
-    end
+        cell_lights(P, room)
+    end)
+    if not ok then print("floor: cell " .. id .. " failed: " .. tostring(err)) end
+    G.traps.cell = nil
+    G.gen.track.scope = prev
 end
 
--- ---------------------------------------------------------------------------------------------- the build, one slice per tick
-local function wipe_boxes(p_old)
-    local boxes = {}
-    local V = F.VOL
-    if not p_old then
-        -- the Orientation floor (hand built): the whole volume, in 40 m tiles (an edit may reach 40 m)
-        local tile = 40
-        for x = V.x0, V.x1 - 1, tile do
-            for z = V.z0, V.z1 - 1, tile do
-                boxes[#boxes + 1] = { x, V.y0, z, math.min(x + tile, V.x1), V.y1, math.min(z + tile, V.z1) }
+function F.drop_cell(id)
+    local P = F.layout
+    if not F.made[id] then return end
+    F.made[id] = nil
+    for i, v in ipairs(F.made_list) do if v == id then table.remove(F.made_list, i); break end end
+    G.gen.track.teardown("cell" .. P.floor .. id)
+    G.traps.drop_cell(id)
+    G.enemies.despawn_room(id)
+    G.world.populate_list[id] = nil
+end
+
+-- ---------------------------------------------------------------------------------------------- the cells around the player
+function F.player_cell()
+    local px, py, pz = player.pos()
+    local lx, ly, lz = G.to_local(px, py, pz)
+    return floor(lx / 32), floor(lz / 32), lx, ly, lz
+end
+
+local function in_queue(id) for _, v in ipairs(F.queue) do if v == id then return true end end return false end
+
+function F.update_cells(force)
+    local P = F.layout
+    if not P then return end
+    local ci, cj = F.player_cell()
+    if ci == F.pci and cj == F.pcj and not force then return end
+    F.pci, F.pcj = ci, cj
+    local R = F.RADIUS_MAKE
+    for d = 0, R do                                     -- the nearest first
+        for dj = -d, d do for di = -d, d do
+            if max(math.abs(di), math.abs(dj)) == d then
+                local id = cid(ci + di, cj + dj)
+                if P.rooms[id] and not F.made[id] and not in_queue(id) then F.queue[#F.queue + 1] = id end
             end
-        end
-    else
-        for _, id in ipairs(p_old.order) do
-            local r = p_old.rooms[id]
-            boxes[#boxes + 1] = { r.x - 2, V.y0, r.z - 2, r.x + r.w + 2, V.y1, r.z + r.d + 2 }
-        end
-        for _, e in ipairs(p_old.edges) do
-            for _, s in ipairs(e.segs) do boxes[#boxes + 1] = { s[1] - 2, V.y0, s[2] - 2, s[3] + 2, V.y1, s[4] + 2 } end
-        end
+        end end
     end
-    return boxes
-end
-
-local function stone(b) G.vfill(G.vox(b[1]), G.vox(b[2]), G.vox(b[3]), G.vox(b[4]) - 1, G.vox(b[5]) - 1, G.vox(b[6]) - 1, "stone") end
-
--- the voxels of one room by its theme
-local function room_voxels(p, room, ctx)
-    local def = F.themes[room.theme]
-    if room.theme == "arrival" then G.gen.safe.voxels(room, ctx, {})
-    elseif room.theme == "stairwell" then G.gen.safe.voxels(room, ctx, { stairs = true })
-    elseif def and def.voxels then def.voxels(room, ctx) end
-end
-local function room_things(p, room, ctx)
-    local def = F.themes[room.theme]
-    if room.theme == "arrival" then G.gen.safe.things(room, ctx, {})
-    elseif room.theme == "stairwell" then G.gen.safe.things(room, ctx, { stairs = true, next_floor = p.floor + 1 })
-    elseif def and def.things then def.things(room, ctx) end
-end
-
-function F.make_things(p, building)
-    local ctx = make_ctx(p, building)
-    G.gen.track.scope = "floor" .. p.floor
-    for _, id in ipairs(p.order) do room_things(p, p.rooms[id], ctx) end
-    corridor_things(p)
-    F.ctx = ctx
-end
-
-function F.start(seed, floor_n, on_done)
-    local old = F.layout                       -- nil: the hand built Orientation floor is in the world
-    G.state.flags.boss_dead = nil              -- (the last floor's boss)
-    local steps = {}
-    G.gen.track.teardown(old and ("floor" .. old.floor) or "orientation")
-    G.gen.track.scope = "floor" .. floor_n
-    G.rebuilding = true
-    local p = F.plan(seed, floor_n)
-    local bad = L.check(p)
-    if #bad > 0 then print("gen: plan problems: " .. table.concat(bad, "; ")) end
-    -- (the tables first: from here on the rooms of the new floor are the world's)
-    F.layout = p
-    F.active = true
-    F.apply_tables(p)
-    local boxes = wipe_boxes(old)
-    for _, b in ipairs(boxes) do steps[#steps + 1] = function() stone(b) end end
-    local ctx = make_ctx(p, true)
-    for _, id in ipairs(p.order) do
-        local room = p.rooms[id]
-        steps[#steps + 1] = function() room_voxels(p, room, ctx) end
+    for i = #F.made_list, 1, -1 do
+        local id = F.made_list[i]
+        local room = P.rooms[id]
+        if max(math.abs(room.ci - ci), math.abs(room.cj - cj)) > F.RADIUS_KEEP then F.drop_cell(id) end
     end
-    steps[#steps + 1] = function() build_corridors(p); build_frames(p); F.build_gate(p) end
-    steps[#steps + 1] = function() F.make_things(p, true) end
-    steps[#steps + 1] = function() G.rebuilding = false end
-    F.job = { steps = steps, i = 0, n = #steps, done = on_done, floor = floor_n }
-    return F.job
+    F.sync_enemies()
 end
 
--- a saved run: the voxels are in the world, the things are made again
-function F.load(seed, floor_n)
-    local p = F.plan(seed, floor_n)
-    F.layout = p
-    F.active = true
-    G.rebuilding = false
-    F.apply_tables(p)
-    F.gate_of(p)
-    p.gate = F.gate_of(p)
-    F.make_things(p, false)
-    G.show.redeclare()
+-- who exists: the enemies of the cell the player is in and of the cells next to it (inside the engine's 64 agents)
+function F.sync_enemies()
+    local P = F.layout
+    if not P then return end
+    local W = G.world
+    for _, id in ipairs(F.made_list) do
+        local room = P.rooms[id]
+        local near = max(math.abs(room.ci - (F.pci or -99)), math.abs(room.cj - (F.pcj or -99))) <= 1
+        local list = W.populate_list[id]
+        if list and near then
+            if G.enemies.alive_count() < F.ENEMY_CAP then G.enemies.spawn_room(id, list) end
+        else G.enemies.despawn_room(id) end
+    end
 end
 
 function F.tick(t)
     local j = F.job
-    if not j then return end
-    j.i = j.i + 1
-    local ok, err = pcall(j.steps[j.i])
-    if not ok then print("gen: step " .. j.i .. " failed: " .. tostring(err)) end
-    if j.i >= j.n then
-        F.job = nil
-        G.rebuilding = false
-        if j.done then j.done() end
+    if j then
+        j.i = j.i + 1
+        -- the arrival room must be generated: the floor under the player is not "unloaded"
+        local r = F.layout.rooms[F.layout.start]
+        local m = world.material_at(G.wx(r.x + r.w / 2), G.wy(-0.1), G.wz(r.z + r.d / 2))
+        local ready = (m ~= "unloaded" and m ~= "air") and j.i >= 8
+        if ready or j.i > 1800 then
+            F.job = nil
+            F.update_cells(true)
+            for _ = 1, 4 do local id = table.remove(F.queue, 1); if id then F.make_cell(id) end end
+            if j.done then j.done() end
+        end
+        return
     end
+    if not (F.active and F.layout) then return end
+    if t % 5 == 0 then F.update_cells(false) end
+    for _ = 1, 2 do local id = table.remove(F.queue, 1); if id then F.make_cell(id) end end
+    if t % 30 == 0 then F.sync_enemies() end
 end
 
 function F.progress()
     local j = F.job
     if not j then return 1 end
-    return j.i / j.n
+    return min(1, j.i / 60)
 end
 
--- back to the hand built Orientation (a new run that starts there while the world holds a generated floor): the generated floor goes, the volume is wiped, the old floor is built again
+-- ---------------------------------------------------------------------------------------------- the way in and out
+function F.teardown_all()
+    local P = F.layout
+    if P then
+        for i = #F.made_list, 1, -1 do F.drop_cell(F.made_list[i]) end
+        G.gen.track.teardown("floor" .. P.floor)
+    end
+    F.made, F.made_list, F.queue = {}, {}, {}
+    F.pci, F.pcj = nil, nil
+end
+
+function F.enter(fl, on_done)
+    G.gen.track.teardown("orientation")
+    F.teardown_all()
+    G.state.flags.boss_dead = nil
+    F.frame(fl)
+    G.bigfloor = true
+    local P = F.build_plan(fl)
+    F.layout, F.active = P, true
+    G.gen.track.scope = "floor" .. fl
+    F.apply_tables(P)
+    local r = P.rooms[P.start]
+    local x, y, z = G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2)
+    player.teleport(x, y, z)
+    G.frozen_at = { x, y, z }                                -- (the veil holds the player where the floor will appear)
+    G.current_room = nil
+    F.job = { i = 0, done = on_done }
+end
+
+-- a saved run: the frame and the plan, the cells come alive around the player when the hook has made them
+function F.load(fl)
+    G.gen.track.teardown("orientation")
+    F.teardown_all()
+    F.frame(fl)
+    G.bigfloor = true
+    local P = F.build_plan(fl)
+    F.layout, F.active = P, true
+    G.gen.track.scope = "floor" .. fl
+    F.apply_tables(P)
+    G.show.redeclare()
+end
+
+-- back to the hand built Orientation
 function F.restore_authored(on_done)
     local W = G.world
-    local old = F.layout
-    G.gen.track.teardown(old and ("floor" .. old.floor) or "orientation")
-    local a = F.authored
-    if a then
-        W.rooms, W.zones, W.checkpoints, W.room_order, W.neighbors, W.populate_list = a.rooms, a.zones, a.checkpoints, a.room_order, a.neighbors, a.populate_list
-    end
+    F.teardown_all()
     G.traps.reset(); G.enemies.reset_floor(); G.torches = {}
-    F.active, F.layout = false, nil
-    local steps = {}
-    for _, b in ipairs(wipe_boxes(nil)) do steps[#steps + 1] = function() stone(b) end end
-    steps[#steps + 1] = function()
-        G.gen.track.scope = "orientation"
-        G.rebuilding = true
-        G.world.build()
-        G.rebuilding = false
-    end
-    steps[#steps + 1] = function() G.world.populate() end
-    F.job = { steps = steps, i = 0, n = #steps, done = on_done }
+    local a = F.authored
+    if a then W.rooms, W.zones, W.checkpoints, W.room_order, W.neighbors, W.populate_list = a.rooms, a.zones, a.checkpoints, a.room_order, a.neighbors, a.populate_list end
+    F.active, F.layout, G.bigfloor = false, nil, false
+    F.frame(0)
+    G.gen.track.scope = "orientation"
+    G.world.build()                                          -- (the things; the voxels are in the world)
+    G.world.populate()
+    if on_done then on_done() end
 end
 
--- ---------------------------------------------------------------------------------------------- the gate in front of the exit, the boss, the rooms as the player walks through them
--- a portcullis of voxels across the first corridor segment on the way to the exit (it opens when the boss falls): like the Orientation's gates, plain voxels that the script clears
-function F.gate_of(p)
-    for _, e in ipairs(p.edges) do
-        if e.a == p.exit or e.b == p.exit then
-            local s = e.segs[1]
-            if e.b == p.exit then s = e.segs[#e.segs] end
-            -- (the first segment on the boss side: the boss is the other end)
-            local bossfirst = (e.a == p.boss) and e.segs[1] or e.segs[#e.segs]
-            s = bossfirst
-            local along_x = (s[3] - s[1]) >= (s[4] - s[2])
-            local mid_x, mid_z = (s[1] + s[3]) / 2, (s[2] + s[4]) / 2
-            local g
-            if along_x then g = { x0 = G.vox(mid_x) - 4, x1 = G.vox(mid_x) + 3, z0 = G.vox(s[2]), z1 = G.vox(s[4]) - 1, h = 71, along_x = true }
-            else g = { x0 = G.vox(s[1]), x1 = G.vox(s[3]) - 1, z0 = G.vox(mid_z) - 4, z1 = G.vox(mid_z) + 3, h = 71, along_x = false } end
-            return g
-        end
-    end
+-- ---------------------------------------------------------------------------------------------- rooms as the player walks through them
+function F.room_at(lx, lz)
+    local P = F.layout
+    if not P then return nil end
+    local ci, cj = floor(lx / 32), floor(lz / 32)
+    local id = cid(ci, cj)
+    local r = P.rooms[id]
+    if r and lx >= r.x and lx < r.x + r.w and lz >= r.z and lz < r.z + r.d then return id, r end
+    return nil
 end
 
-local function build_gate(p)
-    local g = F.gate_of(p)
-    p.gate = g
-    if not g or G.state.flags["gate_" .. p.boss] then return end
-    if g.along_x then
-        for z = g.z0, g.z1, 4 do G.vfill(g.x0, 0, z, g.x1, g.h, math.min(z + 1, g.z1), "metal") end
-    else
-        for x = g.x0, g.x1, 4 do G.vfill(x, 0, g.z0, math.min(x + 1, g.x1), g.h, g.z1, "metal") end
-    end
-    G.vfill(g.x0, 0, g.z0, g.x1, 3, g.z1, "metal"); G.vfill(g.x0, 34, g.z0, g.x1, 37, g.z1, "metal"); G.vfill(g.x0, 68, g.z0, g.x1, g.h, g.z1, "metal")
-end
-F.build_gate = build_gate
-
--- which boss waits on this floor: the Floor Manager on the first two, then by the seed
-function F.boss_kind(p)
-    if p.floor <= 2 then return "manager" end
-    local r = L.make_rng(p.seed, p.floor, 4242)
-    return ({ "manager", "golem", "auditor" })[r.int(1, 3)]
-end
-
-function F.lair_of(p)
-    local r = p.rooms[p.boss]
-    return { room = p.boss, x = r.x + r.w / 2, z = r.z + r.d / 2, kind = F.boss_kind(p), hp_mult = 1 + (p.floor - 1) * 0.18,
-             on_dead = function()
-                 G.world.gate_open(p.gate, "gate_" .. p.boss)
-                 G.announcer.say_key("floor.gate", { prio = 1 })
-                 local c = p.rooms[p.boss]
-                 G.traps.build_crate_now("f" .. p.floor .. "boss", p.floor >= 4 and "platinum" or "gold", c.x + c.w / 2 - 0.6, 0, c.z + 2, "+z")
-             end }
-end
+local SAFE = { safe = true, rest = true, guild = true }
+function F.is_safe(room) return SAFE[room.theme] == true end
 
 function F.enter_room(id, old)
-    local p = F.layout
-    local room = p.rooms[id]
+    local P = F.layout
+    local room = P.rooms[id]
     local s, A = G.state, G.announcer
     s.flags["visited_" .. id] = true
-    if room.role ~= "start" then A.award("hello_world") end
+    if room.cellrole ~= "arrival" then A.award("hello_world") end
     if G.gen.rules.muted_rooms[id] then A.say_key("rule.muted.enter", { prio = 1, key = "muted_" .. id, cooldown = 99999 }) end
     A.say_key("room." .. room.theme, { prio = 0, key = "room_" .. id, cooldown = 99999 }, room.name)
     if G.music and G.music.on_room then G.music.on_room(id) end
-    G.safe = (room.role == "start" or room.role == "exit")
+    G.safe = F.is_safe(room) or room.cellrole == "arrival"
     if G.safe then G.player.set_checkpoint(id); G.show.deliver(room) end
-    if room.role == "boss" and not s.flags["gate_" .. id] and G.boss then after(120, function() if G.current_room == id then G.boss.begin(F.lair_of(p)) end end) end
-    G.world.sync_active(id)
+    F.sync_enemies()
 end
 
 function F.room_cleared(id)
-    local p = F.layout
-    local room = p.rooms[id]
+    local P = F.layout
+    local room = P.rooms[id]
     if not room then return end
     G.announcer.say_key("room.cleared", { prio = 0, key = "cleared_" .. id, cooldown = 99999 }, room.name)
     G.contracts.on_room_cleared()
-    if room.role == "room" then
+    if room.theme == "arena" then
+        G.traps.build_crate_now("f" .. P.floor .. "boss" .. id, P.floor >= 4 and "platinum" or "gold", room.x + room.w / 2 - 0.6, 0, room.z + 2, "+z")
+    elseif room.cellrole == "room" then
         G.state.checkpoint = id            -- (quietly: the next death starts in the last room that was cleared)
-        G.state.flags["visited_" .. id] = true
     end
+end
+
+-- the stairwell: the pit of a free stairwell takes the player down (the recap first)
+function F.stairs_enter()
+    if G.screen or G.player.dead then return end
+    G.run.descend()
 end

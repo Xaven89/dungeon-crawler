@@ -46,10 +46,7 @@ def shrunk(lo, hi, W, H, keep=""):
 bad_total = 0
 for seed in seeds:
     t0 = time.time()
-    if "cfg" not in globals(): cfg = open("projects/dc_p1/project.cfg").read()
-    import re
-    open("projects/dc_p1/project.cfg", "w").write(re.sub(r"(?m)^seed\s*=.*$", "seed = %d" % seed, cfg))   # the world seed is the project's (--seed does not override it)
-    with Voxelith(["--project", "projects/dc_p1", "--threads", "3"]) as v:
+    with Voxelith(["--project", "projects/dc_p1", "--threads", "3", "--seed", str(seed)]) as v:
         v.step(10)
         out = v.lua(PLAN, ticks=0)["output"]
         W, H = [int(x) for x in out[0].split("\t")[1:3]]
@@ -67,25 +64,33 @@ for seed in seeds:
         def check(label, lo_m, hi_m, frm_m):
             global checks
             checks += 1
-            r, lo, hi = flood(v, lo_m, hi_m, frm_m)
+            try: r, lo, hi = flood(v, lo_m, hi_m, frm_m)
+            except Exception as e: problems.append("%s: %s (from %.1f, %.1f, theme %s)" % (label, str(e)[:60], frm_m[0], frm_m[1], cells.get((int(frm_m[0] // 32), int(frm_m[1] // 32)), {}).get("theme"))); return
             if r["unknown_columns"]: problems.append("%s: %d unknown columns" % (label, r["unknown_columns"])); return
             if r["standable"] == 0: problems.append("%s: nothing standable" % label); return
             if r["unreached"] == 0: return
             bz = (fl * 32 + 2) * 32.0
-            real = [(isl["cells"], (isl["min"][0] / 16, isl["min"][2] / 16 - bz, isl["max"][0] / 16, isl["max"][2] / 16 - bz)) for isl in r["islands"]]
-            if real or r.get("islands_cut"): problems.append("%s: %d unreached, islands %s" % (label, r["unreached"], real[:3]))
+            # an island that is not at floor level (+-4 voxels) is decoration (the top of a sarcophagus, a shelf, a crate stack) or a pit (lava, the stairwell): not a place the walker must reach
+            real = [(isl["cells"], (isl["min"][0] / 16, isl["min"][2] / 16 - bz, isl["max"][0] / 16, isl["max"][2] / 16 - bz)) for isl in r["islands"] if abs(isl["seed"][1] - 128) <= 4 and isl["cells"] > 40]
+            if real or (r.get("islands_cut") and not r["islands"]): problems.append("%s: %d unreached, islands %s" % (label, r["unreached"], real[:3]))
         for (ci, cj), c in sorted(cells.items(), key=lambda kv: (kv[0][1], kv[0][0])):
             rm = c["room"]
             if rm[2] < 0: continue
-            frm = (ci * 32 + rm[0] + 1.5, cj * 32 + rm[1] + 1.5)
+            def inside_door(d, dr):
+                """a spot 1.5 m inside the room at its door on side d (the doors are kept free by every theme)"""
+                if d == "E": return (ci * 32 + rm[0] + rm[2] - 1.5, cj * 32 + dr)
+                if d == "W": return (ci * 32 + rm[0] + 1.5, cj * 32 + dr)
+                if d == "S": return (ci * 32 + dr, cj * 32 + rm[1] + rm[3] - 1.5)
+                return (ci * 32 + dr, cj * 32 + rm[1] + 1.5)
             for d, (dx, dz) in (("E", (1, 0)), ("S", (0, 1))):
                 kind, dr = c["sides"][d]
-                if kind in (None, "artery", "internal") and not (kind == "internal"): continue
+                if kind in (None, "artery"): continue
+                if kind == "internal": dr = (rm[1] if d == "E" else rm[0]) + 4        # (inside a super-cell: any spot of the quarter room)
                 ni, nj = ci + dx, cj + dz
                 if (ni, nj) not in cells: continue
                 x0, z0 = ci * 32, cj * 32
                 lo, hi = shrunk((x0, z0), (x0 + 32 * (1 + dx), z0 + 32 * (1 + dz)), W, H)
-                check("c%d_%d -%s- c%d_%d (%s)" % (ci, cj, d, ni, nj, kind), lo, hi, frm)
+                check("c%d_%d -%s- c%d_%d (%s)" % (ci, cj, d, ni, nj, kind), lo, hi, inside_door(d, dr))
             for d in "ESWN":
                 kind, dr = c["sides"][d]
                 if kind != "artery": continue
@@ -96,10 +101,11 @@ for seed in seeds:
                 if d == "S": hi[1] += 5
                 if d == "N": lo[1] -= 5
                 lo, hi = shrunk(lo, hi, W, H, keep=d)
-                check("c%d_%d artery door %s" % (ci, cj, d), lo, hi, frm)
+                check("c%d_%d artery door %s" % (ci, cj, d), lo, hi, inside_door(d, dr))
+        hk = v.tool("status")["world"].get("hook") or {}
+        if hk.get("failed"): problems.append("the region hook failed in %d region(s) (see the log)" % hk["failed"])
         print("seed %d floor %d: %d checks, %d problems, %.0f s" % (seed, fl, checks, len(problems), time.time() - t0))
         for p in problems[:12]: print("   ", p)
         bad_total += len(problems)
-open("projects/dc_p1/project.cfg", "w").write(cfg)   # the seed of the project again
 print("problems:", bad_total)
 sys.exit(1 if bad_total else 0)

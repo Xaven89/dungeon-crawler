@@ -201,3 +201,12 @@ rule.muted.name,RUHIGE EBENE
 rule.crowd.name,PUBLIKUMSLIEBLING
 rule.muted.popup,DER RAUM SCHLUCKT DEINEN ZAUBER
 boss.meter,PRUEFUNG
+run.newseed,"Ein neuer Seed ist eine neue Welt: Spiel schliessen und tools/play.sh new [SEED] starten"
+room.safe.1,"{1}. Ein sicherer Raum. Hier kann dir nichts passieren, was nicht schon im Vertrag deines Sponsors steht."
+room.rest.1,"{1}. Eine Raststaette: drei Feldbetten, ein Brunnen, kein Automat. Grosszuegig war die Show nie."
+room.guild.1,"{1}. Ein Klassenzimmer. Die Lektion: nicht dort stehen."
+room.connector.1,"{1}. Eine Kreuzung. Mehrere Tueren, eine Entscheidung, keine Rueckerstattung."
+room.borough.1,"{1}. Der Platz eines Viertels. Alle hier wurden ueber dich informiert."
+room.stairs_free.1,"{1}. Ein Loch im Boden mit sehr hellem Licht. Wer hier steht, darf nicht bleiben."
+room.arena.1,"{1}. Hier wohnt der Boss der Nachbarschaft. Auf dem Schild steht: komm herein. Das Schild luegt."
+room.ante.1,"{1}. Alle hier warten auf die Tuer zum Boss. Alles andere auch."

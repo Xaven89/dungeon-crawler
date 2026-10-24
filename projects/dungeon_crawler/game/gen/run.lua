@@ -36,11 +36,19 @@ local function reset_state()
     G.player.dead = false
 end
 
--- the run screen's answer: `skip` = start on a generated floor instead of the Orientation
+-- the floors of a run, in order: the Orientation counts as floor 1 (band 0); 3 (the open-air city, P4) and 4 (the transit floor, its own plan) are skipped until they exist; the run ends after 8
+R.FLOORS = { 1, 2, 5, 6, 7, 8 }
+function R.next_floor(n)
+    for _, f in ipairs(R.FLOORS) do if f > n then return f end end
+    return nil
+end
+
+-- the run screen's answer: `skip` = start on a generated floor instead of the Orientation. The run's seed is the world's (design M1 a): the typed seed is not used any more, a new seed is a new
+-- world (`tools/play.sh new [SEED]`).
 function R.start(seed, skip, diff)
     if G.screen ~= "run" then return end
     reset_state()
-    G.state.run = { mode = skip and "gen" or "orientation", seed = seed, floor = 1, started = time.tick(), diff = diff or "normal" }
+    G.state.run = { mode = skip and "gen" or "orientation", seed = G.floorgen.world_seed(), floor = 1, started = time.tick(), diff = diff or "normal" }
     G.state.checkpoint = "lobby"
     if not skip and G.floorgen.active then
         G.screen = "loading"
@@ -53,7 +61,7 @@ function R.start(seed, skip, diff)
     end
 end
 
--- the class was chosen (player.pick_class): a generated run starts building its first floor
+-- the class was chosen (player.pick_class): a generated run starts on its first floor
 function R.after_class()
     local run = R.cur()
     if run and run.mode == "gen" and not G.floorgen.job then R.begin_floor(run.floor) end
@@ -62,26 +70,23 @@ end
 function R.begin_floor(n)
     local run = R.cur()
     run.floor = n
-    run.building = n                      -- (saved with the world: a start that finds this knows the build was cut off)
     G.save()
     G.screen = "loading"
     G.safe = false
     G.current_room = nil
-    G.floorgen.start(run.seed, n, function() R.floor_ready(n) end)
+    G.floorgen.enter(n, function() R.floor_ready(n) end)
 end
 
 function R.floor_ready(n)
     local F = G.floorgen
-    R.cur().building = nil
     if n >= 3 then G.announcer.award("deep_three") end
     if n >= 5 then G.announcer.award("deep_five") end
     if n >= 3 and G.contracts.hardcore() then G.announcer.award("hardcore_two") end
     local p = F.layout
-    local r = p.rooms[p.start]
     G.state.checkpoint = p.start
     G.state.flags["visited_" .. p.start] = true
     G.world.last_safe = nil
-    player.teleport(G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2))
+    G.frozen_at = nil
     G.screen = nil
     G.announcer.say_key("floor.arrive", { prio = 2 }, n)
     for _, id in ipairs(p.rules or {}) do G.announcer.say_key("rule." .. id, { prio = 0 }) end
@@ -89,33 +94,28 @@ function R.floor_ready(n)
     if G.state.ally then G.ally.respawn() end
     G.show.floor_begin()
     if n > 1 then G.contracts.on_new_floor() end
-    G.show.deliver(r)
+    G.show.deliver(p.rooms[p.start])
     G.save()
     after(150, function() if G.screen == nil and not G.player.dead then G.contracts.open(G.run.cur().seed, n) end end)
 end
 
--- the stairs down (the button in the exit stairwell, or the end screen of the Orientation)
+-- the stairs down (a free stairwell, or the end screen of the Orientation)
 function R.descend(confirmed)
     local run = R.cur()
     if not run or G.screen == "loading" then return end
     if not confirmed and run.mode == "gen" then G.show.open_recap(); return end        -- the recap first; its button comes back here
     G.screen = nil
     if run.mode == "orientation" then run.mode = "gen" end
-    R.begin_floor(run.floor + 1)
+    local nxt = R.next_floor(run.floor)
+    if not nxt then G.finish_floor(); return end
+    R.begin_floor(nxt)
 end
 
--- on_start of a saved gen run: the plan again, the things again (the voxels are in the world save)
+-- on_start of a saved gen run: the plan again (the voxels are the hook's, the things come alive around the player)
 function R.resume()
     local run = R.cur()
     if run and run.mode == "gen" and run.floor then
-        if run.building then
-            -- the game was closed while the floor was being built: the world holds half of it. Wipe everything and build it again.
-            G.floorgen.layout, G.floorgen.active = nil, false
-            G.world.populate_list = G.world.populate_list or {}
-            after(30, function() R.begin_floor(run.building) end)
-            return true
-        end
-        G.floorgen.load(run.seed, run.floor)
+        G.floorgen.load(run.floor)
         if G.state.ally then after(60, function() G.ally.respawn() end) end
         if G.state.run_over then G.screen = "runover"; G.run.over = { src = G.state.run_over_src or "?", floor = run.floor, seed = run.seed } end
         return true

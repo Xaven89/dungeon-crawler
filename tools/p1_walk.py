@@ -13,8 +13,6 @@ ns = ap.parse_args()
 fl, seed = ns.floor, ns.seed
 SH = os.path.expanduser("~/share/big_floors_p1"); os.makedirs(SH, exist_ok=True)
 BZ = fl * 1024.0 + 64.0
-cfg = open("projects/dc_p1/project.cfg").read()
-open("projects/dc_p1/project.cfg", "w").write(re.sub(r"(?m)^seed\s*=.*$", "seed = %d" % seed, cfg))
 PATH = """
 local CG = cellgen_make(cellgen_hash_from(worldgen.hash))
 local ctx = CG.new(0, %d, 'small')
@@ -46,7 +44,7 @@ for _, id in ipairs(chain) do
   if x then print('W', id, x, z) end
 end
 """ % (fl, fl)
-with Voxelith(["--project", "projects/dc_p1", "--threads", "3"]) as v:
+with Voxelith(["--project", "projects/dc_p1", "--threads", "3", "--seed", str(seed)]) as v:
     v.step(20)
     out = v.lua(PATH, ticks=0)["output"]
     wps = [(l.split("\t")[1], float(l.split("\t")[2]), float(l.split("\t")[3])) for l in out if l.startswith("W")]
@@ -73,5 +71,4 @@ with Voxelith(["--project", "projects/dc_p1", "--threads", "3"]) as v:
         if not done:
             print("STUCK on the way to %s (%s): at (%s, %s), wanted (%.1f, %.1f), mode %s" % (nid, i, a[0], a[1], x, BZ + z, a[2])); ok = False; break
     print("walk %s: %d waypoints, %d ticks (%.0f s of game time), %.0f s real" % ("REACHED THE STAIRWELL" if ok else "FAILED", len(wps), ticks, ticks / 60, time.time() - t0))
-open("projects/dc_p1/project.cfg", "w").write(cfg)
 sys.exit(0 if ok else 1)

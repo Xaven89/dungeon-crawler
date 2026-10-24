@@ -23,13 +23,11 @@ function H.run_screen(w, h, input)
     ui.rect(0, 0, w, h, "#05060af2")
     ui.text(w / 2, 120, tr("run.title"), { size = 84, color = C.gold, align = "center" })
     ui.text(w / 2, 220, tr("run.sub"), { size = 26, color = C.dim, align = "center" })
-    if not H.seed_text then H.seed_text = tostring(G.run.entropy_seed(input.x, input.y)) end
+    -- the run's seed is the world's: a new seed is a new world (tools/play.sh new [SEED])
+    local seed = G.floorgen.world_seed()
     ui.text(w / 2 - 330, 292, tr("run.seed"), { size = 30, color = "#eef1f8" })
-    local txt = uikit.text_input("run_seed", H.seed_text, w / 2 - 200, 284, 300, 46, { hint = "a number or any words", max = 24 })
-    if txt and txt ~= H.seed_text then H.seed_text = txt end
-    if uikit.button("run_roll", tr("run.roll"), w / 2 + 120, 284, 200, 46) then H.seed_text = tostring(G.run.entropy_seed(input.x, input.y)) end
-    local seed = H.seed_of(H.seed_text)
-    if not tonumber(H.seed_text or "") then ui.text(w / 2 + 340, 296, "= " .. tostring(seed), { size = 20, color = C.dim }) end
+    ui.text(w / 2 - 200, 290, tostring(seed), { size = 34, color = C.gold })
+    ui.text(w / 2 + 20, 298, tr("run.newseed"), { size = 20, color = C.dim })
     -- the difficulty: three buttons
     H.diff = H.diff or "normal"
     ui.text(w / 2 - 330, 340, tr("run.diff"), { size = 26, color = "#eef1f8" })
@@ -105,7 +103,7 @@ function H.recap_screen(w, h, input)
     ui.text(rx, 474, string.format("%+d %s", r.followers or 0, tr("show.followers")), { size = 22, color = "#ffd24a", align = "center" })
     local ly = 640
     for _, ln in ipairs(H.wrap(r.line or "", 26, 1100)) do ui.text(w / 2, ly, ln, { size = 26, color = "#dfe4f0", align = "center" }); ly = ly + 34 end
-    if uikit.button("recap_go", tr("ui.descend", (r.floor or 1) + 1), w / 2 - 190, h - 130, 380, 60, { color = C.gold }) then ui.run("Game.run.descend(true)") end
+    if uikit.button("recap_go", tr("ui.descend", G.run.next_floor(r.floor or 1) or "?"), w / 2 - 190, h - 130, 380, 60, { color = C.gold }) then ui.run("Game.run.descend(true)") end
     if uikit.button("recap_back", tr("recap.back"), w / 2 - 190, h - 60, 380, 44) or (input.keys and input.keys.escape) then ui.run("Game.close_end()") end
 end
 

@@ -22,7 +22,7 @@ function G.to_local(wxm, wym, wzm) if not wxm then return end return wxm - units
 
 -- voxels are built on the first run only (the save keeps them), or when the guard finds the world undone (Z is the engine's undo key and cannot be unbound)
 G.rebuilding = false
-function G.should_build() return G.rebuilding or project.first_run() end
+function G.should_build() if G.bigfloor then return false end return G.rebuilding or project.first_run() end
 
 -- ---------------------------------------------------------------------------------------------- random numbers (an LCG: the engine's own determinism, not the C library's)
 local rng_state = 12345
@@ -164,7 +164,7 @@ function G.torch(xm, ym, zm, opts)
     local m = math.max(col[1], col[2], col[3], 0.001)
     col = { col[1] / m, col[2] / m, col[3] / m }
     local def = { name = name, preset = opts.preset or "torch", pos = { G.mx(xm), G.my(ym), G.mz(zm) },
-                  light = { color = col, intensity = opts.intensity or 11, reach = opts.reach or 14, flicker = opts.flicker ~= false } }
+                  light = { color = col, intensity = opts.intensity or 11, reach = opts.reach or 14, far = opts.far or 30, flicker = opts.flicker ~= false } }
     if MOTE_PRESETS[def.preset] then G.as_motes(def, 2.5, 14) end
     emitter.create(def)
     G.torches[#G.torches + 1] = name
@@ -199,7 +199,7 @@ function G.lamp(xm, zm, y_ceil, drop, opts)
         G.fill(xm - 0.2, y_ceil - drop - 0.4, zm - 0.2, xm + 0.2, y_ceil - drop, zm + 0.2, opts.mat or "lantern")
         G.fill(xm - 0.25, y_ceil - drop - 0.05, zm - 0.25, xm + 0.25, y_ceil - drop, zm + 0.25, "metal")
     end
-    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 1.0, 0.67, 0.33 }, reach = opts.reach or 15, intensity = opts.intensity, flicker = true })
+    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 1.0, 0.67, 0.33 }, reach = opts.reach or 15, far = opts.far, intensity = opts.intensity, flicker = true })
 end
 
 -- a floor brazier / standing fire bowl
@@ -211,7 +211,7 @@ function G.brazier(xm, zm, opts)
         edit.box(cx - 5, y + 11, cz - 5, cx + 5, y + 13, cz + 5, "metal")
         edit.box(cx - 4, y + 14, cz - 4, cx + 4, y + 14, cz + 4, "ember")
     end
-    return G.torch(xm, (opts.y or 0) + 1.1, zm, { preset = "campfire", reach = opts.reach or 16, color = opts.color or { 1.0, 0.5, 0.15 } })
+    return G.torch(xm, (opts.y or 0) + 1.1, zm, { preset = "campfire", reach = opts.reach or 16, far = opts.far, color = opts.color or { 1.0, 0.5, 0.15 } })
 end
 
 -- ---------------------------------------------------------------------------------------------- small helpers

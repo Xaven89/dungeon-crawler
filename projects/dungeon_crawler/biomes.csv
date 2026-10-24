@@ -1,0 +1,3 @@
+# biomes.csv with rules (docs/WORLD_GEN.md "Rules"): the last four cells are expressions: height_add, surface_rule, subsurface_rule, sub_depth_rule
+# name, temp_lo, temp_hi, moist_lo, moist_hi, surface, subsurface, sub_depth, base, amplitude, roughness, sea, trees, tree_spacing, caves, snow_line, height_add, surface_rule, subsurface_rule, sub_depth_rule, fog, fog_tint, sky_tint, wind, bed, bed_level, ores, cave_water, stalactites, overhang
+bedrock, 0, 1, 0, 1, grass, dirt, 24, 400, 0, 0, none, none, 0, 0, 0

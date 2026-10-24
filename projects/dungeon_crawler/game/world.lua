@@ -23,6 +23,7 @@ W.rooms = {
 
 -- which room is this local point in (nil: a corridor or outside)
 function W.room_at(lx, lz)
+    if G.floorgen and G.floorgen.active then return G.floorgen.room_at(lx, lz) end
     for id, r in pairs(W.rooms) do
         if lx >= r.x and lx < r.x + r.w and lz >= r.z and lz < r.z + r.d then return id, r end
     end
@@ -141,6 +142,7 @@ W.neighbors = {
     ballroom = { "gutter", "grotto" }, grotto = { "ballroom", "arena" }, arena = { "grotto", "stairwell" }, stairwell = { "arena" },
 }
 function W.sync_active(room)
+    if G.floorgen and G.floorgen.active then return G.floorgen.sync_enemies() end
     local active = {}
     if room then
         active[room] = true
@@ -178,6 +180,10 @@ function W.tick(t)
         local px, py, pz = player.pos()
         local lx, ly, lz = G.to_local(px, py, pz)
         local outside = lx < -2 or lx > 126 or lz < -3 or lz > 154 or ly < -8 or ly > 16.5
+        if G.floorgen and G.floorgen.active and G.floorgen.layout then
+            local P = G.floorgen.layout
+            outside = lx < -6 or lx > P.W * 32 + 6 or lz < -6 or lz > P.H * 32 + 6 or ly < -8 or ly > 16.5
+        end
         local stuck = world.solid(math.floor(units.vox(px)), math.floor(units.vox(py + 1.6)), math.floor(units.vox(pz))) and world.solid(math.floor(units.vox(px)), math.floor(units.vox(py + 0.3)), math.floor(units.vox(pz)))
         if outside or stuck then
             local ls = W.last_safe or { W.start_position() }

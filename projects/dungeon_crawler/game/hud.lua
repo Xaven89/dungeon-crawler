@@ -250,8 +250,57 @@ end
 
 -- the map (top left, under the place): the rooms the contestant has seen, the corridors between them, an arrow for the player
 local links = { { "lobby", "hall" }, { "hall", "boiler" }, { "boiler", "conveyor" }, { "conveyor", "gutter" }, { "gutter", "ballroom" }, { "ballroom", "grotto" }, { "grotto", "arena" }, { "arena", "stairwell" } }
+-- the map of a big floor: a window of 220 x 220 px around the player (0.55 px per metre: 12 cells), the rooms the contestant has seen, the halls between them, the safe rooms and the stairwells
+-- within two cells (even in the fog), the arrow of the player
+local MM_COL = { safe = "#2f6f4f", rest = "#2f6f4f", guild = "#3f6f6f", stairs_free = "#a88a2a", arena = "#8a2f2f", ante = "#5a3f3f", prize = "#7a5fa0", connector = "#2a3347", borough = "#4a3f2f" }
+function G.minimap_cells(w, h)
+    local F, s = G.floorgen, G.state
+    local P = F.layout
+    local mx, my, size, sc = 26, 92, 220, 0.55
+    ui.rect(mx - 8, my - 8, size + 16, size + 16, "#0b0d14a0", { radius = 10 })
+    local px, py, pz = player.pos()
+    local lx, ly, lz = G.to_local(px, py, pz)
+    local function sx(x) return mx + size / 2 + (x - lx) * sc end
+    local function sz(z) return my + size / 2 + (z - lz) * sc end
+    local pci, pcj = math.floor(lx / 32), math.floor(lz / 32)
+    local function visible(r) return sx(r.x) < mx + size and sx(r.x + r.w) > mx and sz(r.z) < my + size and sz(r.z + r.d) > my end
+    local function clipped(x, y, rw, rh, col, opts)
+        local x0, y0, x1, y1 = math.max(x, mx), math.max(y, my), math.min(x + rw, mx + size), math.min(y + rh, my + size)
+        if x1 > x0 and y1 > y0 then ui.rect(x0, y0, x1 - x0, y1 - y0, col, opts) end
+    end
+    -- the halls between rooms that were both visited
+    for _, e in ipairs(P.plan.edges) do
+        local a, b = P.rooms[e.a], P.rooms[e.b]
+        if a and b and s.flags["visited_" .. e.a] and s.flags["visited_" .. e.b] then
+            local ax, ay, bx, by = sx(a.x + a.w / 2), sz(a.z + a.d / 2), sx(b.x + b.w / 2), sz(b.z + b.d / 2)
+            if ax > mx and ax < mx + size and ay > my and ay < my + size and bx > mx and bx < mx + size and by > my and by < my + size then ui.line(ax, ay, bx, by, "#6a7388", 2) end
+        end
+    end
+    for _, id in ipairs(P.order) do
+        local r = P.rooms[id]
+        if visible(r) then
+            local seen = s.flags["visited_" .. id]
+            local near = math.abs(r.ci - pci) <= 2 and math.abs(r.cj - pcj) <= 2
+            local special = (r.theme == "safe" or r.theme == "rest" or r.theme == "stairs_free" or r.theme == "guild")
+            if seen or (special and near) then
+                local cur = (G.current_room == id)
+                local col = seen and (cur and "#4a6a9a" or (MM_COL[r.theme] or "#2a3347")) or (MM_COL[r.theme] or "#2a3347") .. "80"
+                clipped(sx(r.x), sz(r.z), r.w * sc, r.d * sc, col, { radius = 2 })
+                if cur then clipped(sx(r.x), sz(r.z), r.w * sc, r.d * sc, "#9fd0ff", { radius = 2, outline = true, thickness = 2 }) end
+                if r.theme == "stairs_free" then ui.text(sx(r.x + r.w / 2) - 4, sz(r.z + r.d / 2) - 8, "v", { size = 16, color = "#ffe27a" }) end
+            end
+        end
+    end
+    local fx, fy, fz = player.forward()
+    local n = math.max(0.01, math.sqrt(fx * fx + fz * fz))
+    local ax, ay = mx + size / 2, my + size / 2
+    ui.line(ax, ay, ax + fx / n * 12, ay + fz / n * 12, "#ffd24a", 3)
+    ui.circle(ax, ay, 4.5, "#ffd24a")
+end
+
 function G.minimap(w, h)
     if G.screen == "class" or not G.state.class then return end
+    if G.floorgen and G.floorgen.active and G.floorgen.layout then return G.minimap_cells(w, h) end
     local W, s = G.world, G.state
     local mx, my, sc = 26, 92, 1.55
     local pw, ph = 124 * sc + 16, 154 * sc + 16

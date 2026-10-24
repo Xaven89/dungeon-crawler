@@ -9,7 +9,7 @@ G.music = M
 M.beds = { lobby = { file = "m_lobby", vol = 0.6 }, dungeon = { file = "m_dungeon", vol = 0.8 }, ballroom = { file = "m_ballroom", vol = 0.6 },
            cave = { file = "m_cave", vol = 0.75 }, safe = { file = "m_safe", vol = 0.6 }, boss = { file = "m_boss", vol = 0.55 }, victory = { file = "m_victory", vol = 0.7, once = true } }
 M.room_bed = { lobby = "lobby", hall = "dungeon", boiler = "dungeon", conveyor = "dungeon", gutter = "cave", ballroom = "ballroom", grotto = "cave", arena = "dungeon", stairwell = "safe" }
-M.kind_bed = { arrival = "safe", stairwell = "safe", grotto = "cave", flooded = "cave", crypt = "cave", ballroom = "ballroom", prize = "lobby" }      -- (generated rooms by theme)
+M.kind_bed = { arrival = "safe", stairwell = "safe", safe = "safe", rest = "safe", stairs_free = "safe", guild = "lobby", grotto = "cave", flooded = "cave", crypt = "cave", ballroom = "ballroom", prize = "lobby" }      -- (generated rooms by theme)
 M.want = "lobby"
 M.enabled = true
 M.cur, M.cur_name = nil, nil          -- the handle and the name of the bed that plays
