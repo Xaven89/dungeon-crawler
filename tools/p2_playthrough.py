@@ -219,6 +219,7 @@ end""", 5)
         if os.environ.get("PROBE_OUT"): open(os.environ["PROBE_OUT"] + "_live.txt", "w").write(v.stderr_tail(1000000))
     if "--no-replay" not in sys.argv:
         restore_state(snap, present)
+        _fresh_scratch()          # (a replay with the same --save file would LOAD the live run's world: the scratch must not exist)
         print("replaying the recording ...")
         r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3", "--save", "/tmp/descent_scratch.vxs"], capture_output=True, text=True, cwd=ROOT)
         print([l for l in (r.stdout + r.stderr).splitlines() if "hash" in l.lower() or "replay" in l.lower()][-4:])
