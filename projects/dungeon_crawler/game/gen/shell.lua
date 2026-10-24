@@ -9,7 +9,8 @@ function shell_region(rx, rz, wh, run)
     local V = 16
     local fl = (rz - 1) // 32
     local ci, cj = rx, rz - fl * 32 - 2
-    if fl < 1 or fl > 8 or fl == 4 then return {} end
+    if fl == 4 then return transit_region(rx, rz, wh, run) end            -- the Iron Tangle: its own cells (gen/transit_shell.lua)
+    if fl < 1 or fl > 8 then return {} end
     local CG = cellgen_make(cellgen_hash_from(wh, run))
     local P = CG.params(fl, "small")
     if not P or (P.kind ~= "grid" and P.kind ~= "ruin") or ci < -1 or cj < -1 or ci > P.W or cj > P.H then return {} end

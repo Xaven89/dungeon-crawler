@@ -136,10 +136,13 @@ function F.apply_tables(P)
     for _, id in ipairs(P.order) do
         local r = P.rooms[id]
         W.rooms[id] = r
-        W.checkpoints[id] = { x = r.x + r.w / 2, y = 0.1, z = r.z + r.d / 2 }
+        W.checkpoints[id] = { x = r.x + r.w / 2, y = 0.1 + (r.info.room.y or 0), z = r.z + r.d / 2 }
         -- a place to wake up that is not the middle (a pool, a pillar, a shelf): just inside the first door
         local d = P.doors[id] and P.doors[id][1]
-        if d and r.cellrole ~= "arrival" then
+        local tcx, tcz
+        if P.plan.P.kind == "transit" then tcx, tcz = transit_checkpoint(r.info) end
+        if tcx then W.checkpoints[id].x, W.checkpoints[id].z = r.ci * 32 + tcx, r.cj * 32 + tcz
+        elseif d and r.cellrole ~= "arrival" then
             local c = W.checkpoints[id]
             if d.side == "E" then c.x, c.z = r.x + r.w - 2.5, d.pos elseif d.side == "W" then c.x, c.z = r.x + 2.5, d.pos
             elseif d.side == "S" then c.x, c.z = d.pos, r.z + r.d - 2.5 else c.x, c.z = d.pos, r.z + 2.5 end
@@ -530,7 +533,7 @@ end
 
 function F.safe_closed() return F.layout ~= nil and F.frac() >= F.AT_CLOSE end
 
-local SAFE = { safe = true, rest = true, guild = true }
+local SAFE = { safe = true, rest = true, guild = true, hub = true }
 function F.is_safe(room) return SAFE[room.theme] == true and not F.safe_closed() end
 
 -- the sealed pit of a free stairwell: a glowing slab over the round hole until the stairs exist (edits, saved: the state is re-applied whenever the cell comes alive)

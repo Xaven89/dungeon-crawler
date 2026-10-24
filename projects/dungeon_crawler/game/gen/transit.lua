@@ -105,7 +105,7 @@ function transit_lines()
     local function pt(x, z) red[#red + 1] = { x, z } end
     local function arc(cx, cz, a0, a1)               -- degrees, points from a0 to a1 (both included)
         local n = 12
-        for k = 0, n do local a = math.rad(a0 + (a1 - a0) * k / n); pt(cx + 12 * math.cos(a), cz + 12 * math.sin(a)) end
+        for k = 0, n do local a = (a0 + (a1 - a0) * k / n) * math.pi / 180; pt(cx + 12 * math.cos(a), cz + 12 * math.sin(a)) end
     end
     local function stop() stops[#stops + 1] = { #red, 25 } end
     pt(80, 144); stop()                                 -- HUB S
@@ -197,4 +197,31 @@ function transit_sweep(line)
     lap(true)
     if #bad == 0 and not line.closed then lap(false) end
     return bad
+end
+
+-- the fixtures of a hub (the safe station): the crystal that saves and the vending machine stand against the wall of the north (axis x) or west (axis z) platform; the place to wake up is on the
+-- platform too. Positions in cell metres. Also the text of the sign of every station.
+function transit_hub_fixtures(info)
+    if info.axis == "x" then return { vend = { x = 9, z = 6.45 }, crystal = { x = 23, z = 7.2 }, wake = { x = 12, z = 10.5 }, face = "+z" } end
+    return { vend = { x = 6.45, z = 24 }, crystal = { x = 7.2, z = 8 }, wake = { x = 10.5, z = 12 }, face = "+x" }
+end
+
+function transit_station_text(info)
+    local c = info.code
+    if c == "H" then return "HUB " .. (info.cj == 0 and "NORTH" or (info.cj == 4 and "SOUTH" or (info.ci == 0 and "WEST" or "EAST"))) end
+    if c == "Y" then return (info.ci == 1) and "YELLOW 1" or "YELLOW 3" end
+    if c == "B" then return (info.cj == 1) and "BLUE 1" or "BLUE 3" end
+    if c == "X" then return "THE ABYSS" end
+    return nil
+end
+
+-- where the player wakes up in a cell (cell metres): the platform of a hub, the ledge beside the track of a tunnel, the middle elsewhere
+function transit_checkpoint(info)
+    if info.code == "H" or info.code == "Y" then
+        local f = transit_hub_fixtures(info)
+        return f.wake.x, f.wake.z
+    end
+    if info.code == "-" then return 16, 13 end
+    if info.code == "|" then return 13, 16 end
+    return nil
 end

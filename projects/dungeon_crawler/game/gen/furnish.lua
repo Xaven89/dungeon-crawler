@@ -816,3 +816,39 @@ function deco_hall_check(seg, prot)
     end
     return bad
 end
+
+-- the builder of the decoration for a cell's ops (what shell_region builds inline): fill / vbox / sphere / pillar / ring / model in the cell's own metres, y above the floor surface YF
+function deco_builder(ops, X0, Z0, YF)
+    local V = 16
+    local B = {}
+    local function R(v) return math.floor(v * V + 0.5) end
+    local function yv(y) return YF + R(y) end
+    local function rows(cx, cz, r, y0, y1, mat, r0)
+        local RV, R0 = R(r), R(r0 or 0)
+        for dz = -RV, RV do
+            local w1 = math.floor(math.sqrt(RV * RV - dz * dz) + 0.5)
+            local lo, hi = X0 + R(cx) - w1, X0 + R(cx) + w1
+            local z = Z0 + R(cz) + dz
+            local kind = mat and "box" or "clear"
+            if math.abs(dz) >= R0 then
+                ops[#ops + 1] = { kind = kind, lo = { lo, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
+            else
+                local w0 = math.floor(math.sqrt(R0 * R0 - dz * dz) + 0.5)
+                ops[#ops + 1] = { kind = kind, lo = { lo, yv(y0), z }, hi = { X0 + R(cx) - w0 - 1, yv(y1) - 1, z }, material = mat }
+                ops[#ops + 1] = { kind = kind, lo = { X0 + R(cx) + w0 + 1, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
+            end
+        end
+    end
+    function B.fill(x0, y0, z0, x1, y1, z1, mat)
+        local ax, az, bx, bz = X0 + R(x0), Z0 + R(z0), X0 + R(x1) - 1, Z0 + R(z1) - 1
+        local ay, by = yv(y0), yv(y1) - 1
+        if bx < ax or bz < az or by < ay then return end
+        ops[#ops + 1] = { kind = mat and "box" or "clear", lo = { ax, ay, az }, hi = { bx, by, bz }, material = mat }
+    end
+    function B.vbox(x0, y0, z0, x1, y1, z1, mat) ops[#ops + 1] = { kind = "box", lo = { X0 + x0, YF + y0, Z0 + z0 }, hi = { X0 + x1, YF + y1, Z0 + z1 }, material = mat } end
+    function B.sphere(cx, cy, cz, r, mat) ops[#ops + 1] = { kind = "sphere", c = { X0 + R(cx), yv(cy), Z0 + R(cz) }, r = R(r), material = mat } end
+    function B.model(file, x, y, z, rot) ops[#ops + 1] = { kind = "model", file = file, at = { X0 + R(x), yv(y), Z0 + R(z) }, rot = rot } end
+    function B.pillar(cx, cz, r, y0, y1, mat) rows(cx, cz, r, y0, y1, mat, 0) end
+    function B.ring(cx, cz, r0, r1, y0, y1, mat) rows(cx, cz, r1, y0, y1, mat, r0) end
+    return B
+end
