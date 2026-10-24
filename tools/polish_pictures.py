@@ -49,6 +49,8 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         tp(ox + 31, oz + 30, wait=400)
         L(v, "Game.gen.overcity.fixed = %s" % opt("--time", "0.25"), 0); v.step(130)
         if "square_f3_day" in only: shot("square_f3_day", BZ, 25.06, ox + 28.5, 1.8, oz + 27.5, ox + 33, 1.2, oz + 34)
+        if "meadow_f3" in only:                 # outside the village: the plain's grass (not one of the five fixed views)
+            tp(ox + 31, oz + 1, wait=400); shot("meadow_f3", BZ, 25.06, ox + 31, 1.8, oz + 2, ox + 31, 1.0, oz - 14)
         if "pub_f3_inside" in only:
             plan = L(v, "local H = select(2, Game.floorgen.cg()); local pl = deco_village_plan(function(salt) return deco_rng(H, 3, %d, %d, salt or 1) end); for _, b in ipairs(pl.buildings) do print(b.kind, b.x0, b.z0, b.x1, b.z1, b.door.side, b.door.pos) end" % (oci, ocj), 0)
             for line in plan:

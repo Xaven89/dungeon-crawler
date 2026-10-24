@@ -410,6 +410,36 @@ function deco_village(B, cu, cv, room, doors, mk)
         local d = b.door
         if d.side == "E" then bb(b.x1 - 0.6, 0, d.pos - 1.25, b.x1 + 0.02, 3.0, d.pos + 1.25, nil) else bb(b.x0 - 0.02, 0, d.pos - 1.25, b.x0 + 0.6, 3.0, d.pos + 1.25, nil) end
         bb(b.x0 + 0.5, -0.125, b.z0 + 0.5, b.x1 - 0.5, 0, b.z1 - 0.5, "oak_floor")   -- the floor
+        -- (bucket C) a house is more than a box: eaves 0.5 m out, a cornice band under them, window holes with a glass pane, a sill and a lintel, a frame round the door
+        bb(b.x0 - 0.5, b.h - 0.4, b.z0 - 0.5, b.x1 + 0.5, b.h, b.z1 + 0.5, "terracotta")
+        bb(b.x0 - 0.15, b.h - 0.9, b.z0 - 0.15, b.x1 + 0.15, b.h - 0.4, b.z1 + 0.15, "plinth_stone")
+        local function window(wx, wz, along_x)                                                  -- the middle of the window on the wall's outer face
+            if along_x then
+                local zo = (wz < (b.z0 + b.z1) / 2) and b.z0 or b.z1
+                local zi, zj = math.min(zo, zo + ((zo == b.z0) and 0.5 or -0.5)), math.max(zo, zo + ((zo == b.z0) and 0.5 or -0.5))
+                bb(wx - 0.5, 1.2, zi, wx + 0.5, 2.7, zj, nil)
+                bb(wx - 0.5, 1.2, (zi + zj) / 2 - 0.0625, wx + 0.5, 2.7, (zi + zj) / 2 + 0.0625, "glass")
+                bb(wx - 0.65, 1.05, zi - 0.12, wx + 0.65, 1.2, zj, "dark_wood"); bb(wx - 0.65, 2.7, zi, wx + 0.65, 2.85, zj, "dark_wood")
+            else
+                local xo = (wx < (b.x0 + b.x1) / 2) and b.x0 or b.x1
+                local xi, xj = math.min(xo, xo + ((xo == b.x0) and 0.5 or -0.5)), math.max(xo, xo + ((xo == b.x0) and 0.5 or -0.5))
+                bb(xi, 1.2, wz - 0.5, xj, 2.7, wz + 0.5, nil)
+                bb((xi + xj) / 2 - 0.0625, 1.2, wz - 0.5, (xi + xj) / 2 + 0.0625, 2.7, wz + 0.5, "glass")
+                bb(xi - 0.12, 1.05, wz - 0.65, xj, 1.2, wz + 0.65, "dark_wood"); bb(xi, 2.7, wz - 0.65, xj, 2.85, wz + 0.65, "dark_wood")
+            end
+        end
+        for _, side in ipairs({ "N", "S", "E", "W" }) do
+            local len = (side == "N" or side == "S") and (b.x1 - b.x0) or (b.z1 - b.z0)
+            local n = math.floor((len - 2.5) / 3.5)
+            for k = 1, n do
+                local t = (k - 0.5) / n * (len - 2.5) + 1.25
+                if side == "N" then window(b.x0 + t, b.z0 + 0.1, true) elseif side == "S" then window(b.x0 + t, b.z1 - 0.1, true)
+                elseif side == "W" and not (d.side == "W" and math.abs(b.z0 + t - d.pos) < 2.4) then window(b.x0 + 0.1, b.z0 + t, false)
+                elseif side == "E" and not (d.side == "E" and math.abs(b.z0 + t - d.pos) < 2.4) then window(b.x1 - 0.1, b.z0 + t, false) end
+            end
+        end
+        if d.side == "E" then bb(b.x1 - 0.6, 0, d.pos - 1.5, b.x1 + 0.08, 3.2, d.pos - 1.25, "dark_wood"); bb(b.x1 - 0.6, 0, d.pos + 1.25, b.x1 + 0.08, 3.2, d.pos + 1.5, "dark_wood"); bb(b.x1 - 0.6, 3.0, d.pos - 1.5, b.x1 + 0.08, 3.25, d.pos + 1.5, "dark_wood")
+        else bb(b.x0 - 0.08, 0, d.pos - 1.5, b.x0 + 0.6, 3.2, d.pos - 1.25, "dark_wood"); bb(b.x0 - 0.08, 0, d.pos + 1.25, b.x0 + 0.6, 3.2, d.pos + 1.5, "dark_wood"); bb(b.x0 - 0.08, 3.0, d.pos - 1.5, b.x0 + 0.6, 3.25, d.pos + 1.5, "dark_wood") end
         if b.kind == "pub" then
             bb(b.crystal.x - 1, 0, b.crystal.z - 0.8, b.crystal.x + 1, 0.9, b.crystal.z + 0.8, "marble")
             if cu * 32 <= b.crystal.x and b.crystal.x < cu * 32 + 32 and cv * 32 <= b.crystal.z and b.crystal.z < cv * 32 + 32 then B.sphere(b.crystal.x - ox, 1.55, b.crystal.z - oz, 0.55, "rune") end
