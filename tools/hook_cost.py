@@ -24,8 +24,14 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
     h0 = v.tool("status")["world"]["hook"]
     ids = L(v, "local P = Game.floorgen.layout; local t = {}; for _, id in ipairs(P.order) do t[#t+1] = id end; print(table.concat(t, ','))", 0)[0].split(",")
     step = max(1, len(ids) // NR)
+    prev = 0
     for id in ids[::step][:NR]:
         L(v, "local G=Game; local c=G.world.checkpoints['%s']; if c then player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true }) end" % id, 200)
+        rm = v.tool("status")["world"]["hook"]["recent_max_ms"]
+        if rm > prev + 0.5 and rm > 12:
+            th = L(v, "local r = Game.floorgen.layout.rooms['%s']; print(r.theme, r.w, r.d)" % id, 0)
+            print("  spike %.1f ms after the visit to %s (%s)" % (rm, id, th))
+        prev = rm
     h = v.tool("status")["world"]["hook"]
     n = h["regions_computed"] - h0["regions_computed"]
     print("floor %d: %d regions, mean %.2f ms, total %.0f ms, max %.1f ms, recent_max %.1f ms, failed %d" % (FLOOR, n, (h["total_ms"] - h0["total_ms"]) / max(1, n), h["total_ms"] - h0["total_ms"], h["max_ms"], h["recent_max_ms"], h["failed"]))

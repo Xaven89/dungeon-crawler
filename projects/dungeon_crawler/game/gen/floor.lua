@@ -226,7 +226,6 @@ function F.make_cell(id)
     local room = P and P.rooms[id]
     if not room or F.made[id] then return end
     F.made[id] = true
-    F.made_tick[id] = time.tick()
     F.made_list[#F.made_list + 1] = id
     local prev = G.gen.track.scope
     G.gen.track.scope = "cell" .. P.floor .. id
@@ -267,7 +266,6 @@ function F.drop_cell(id)
     local P = F.layout
     if not F.made[id] then return end
     F.made[id] = nil
-    F.made_tick[id] = nil
     for i, v in ipairs(F.made_list) do if v == id then table.remove(F.made_list, i); break end end
     G.gen.track.teardown("cell" .. P.floor .. id)
     for _, ring in ipairs(P.ring_list or {}) do if ring.origin == id then ring.walls = nil end end
@@ -311,7 +309,7 @@ end
 
 -- who exists: the enemies of the cell the player is in and of the cells next to it, nearest first; a room is spawned whole only when all of it fits under the cap (the engine's 64 agents
 -- also carry the ally, the companion and a boss): otherwise it waits for the next sync
-function F.despawn(id) G.enemies.despawn_room(id) end
+function F.despawn(id) F.grounded[id] = nil; G.enemies.despawn_room(id) end
 
 function F.sync_enemies()
     local P = F.layout
@@ -338,15 +336,17 @@ function F.sync_enemies()
     end
 end
 
--- an enemy can be spawned only when its cell has existed for F.GROUND_TICKS ticks (0 now, see below): an agent placed over a chunk the hook has not made yet falls through the world, dies there and its body falls for ever (the borough's
--- guards: 13 bodies of 2,900 kg below the band after the first visit). The wait is a number of TICKS, not a look at the chunks (`world.material_at` depends on how fast a thread was: a recording
--- replayed to another hash with it); a room of a ring waits for its origin cell.
-F.GROUND_TICKS = 0          -- (0 = spawn at once: a delay of 120 or 300 ticks made the recordings of fights replay with a different ORDER OF FILE READS, ENGINE_FEEDBACK Phase 23)
-F.made_tick = {}
+-- the enemies of a room are spawned only when the floor under every entry exists: an agent placed over a chunk the hook has not made yet falls through the world (the borough's guards after a
+-- teleport). Looks at the world, `world.material_at` (not air, not unknown); once per room until it despawns. (The engine since 7026177 replays this equal; a delay in ticks did not help.)
+F.grounded = {}
 function F.ground_ready(id, list)
-    local ring = F.layout.rings and F.layout.rings[id]
-    local at = F.made_tick[ring and ring.origin or id]
-    return at ~= nil and time.tick() - at >= F.GROUND_TICKS
+    if F.grounded[id] then return true end
+    for _, e in ipairs(list) do
+        local m = world.material_at(G.wx(e[2]), G.wy((e[4] or 0) - 0.1), G.wz(e[3]))
+        if m == "unloaded" or m == "air" then return false end
+    end
+    F.grounded[id] = true
+    return true
 end
 
 -- whatever is below every floor (a fall through a hole of the band, a body that outlived its room): removed at once (the same check every 30 ticks, order free)
@@ -424,7 +424,7 @@ function F.teardown_all()
         G.gen.track.teardown("floor" .. P.floor)
     end
     F.made, F.made_list, F.queue = {}, {}, {}
-    F.made_tick = {}
+    F.grounded = {}
     F.pci, F.pcj = nil, nil
 end
 

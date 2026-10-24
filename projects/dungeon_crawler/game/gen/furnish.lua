@@ -12,7 +12,8 @@
 -- blocks, zone = the footprint with its free band }. In its own frame u runs across (0 .. w), v from the back (0) to the front (d); a wall item has its back on the wall.
 
 function deco_catalogue()
-    return {
+    if deco_catalogue_memo then return deco_catalogue_memo end
+    deco_catalogue_memo = {
         -- furniture
         table      = { cat = "table", w = 1.6, d = 0.9, h = 0.8, anchor = "centre", clear = 0.8, slots = "around", spots = { { "idle", 0, 1.1 } } },
         table_long = { cat = "table", w = 3.2, d = 1.0, h = 0.8, anchor = "centre", clear = 0.8, slots = "around", spots = { { "idle", 0, 1.2 } } },
@@ -44,12 +45,14 @@ function deco_catalogue()
         banner     = { cat = "banner", w = 1.2, d = 0.15, h = 2.6, anchor = "wall", clear = 0, blocks = false },
         bones      = { cat = "bones", w = 0.6, d = 0.4, h = 0.3, anchor = "free", clear = 0, blocks = false },
     }
+    return deco_catalogue_memo
 end
 
 -- a row per theme. margin: how far the free items keep from the walls; fill: { id, base, area (per 100 m2), wall (per metre of wall), jit, p } in this order;
 -- door_guards: spots flanking every door (the guards of an antechamber)
 function deco_layout_themes()
-    return {
+    if deco_layout_themes_memo then return deco_layout_themes_memo end
+    deco_layout_themes_memo = {
         hall = { margin = 1.2, fill = {
             { id = "pillar", p = 0.7 },
             { id = "bench", base = 0, wall = 0.045, jit = 1, p = 0.7 },
@@ -102,6 +105,7 @@ function deco_layout_themes()
             { id = "barrels", base = 1, jit = 1 },
         } },
     }
+    return deco_layout_themes_memo
 end
 
 -- ---------------------------------------------------------------------------------------------- the pass

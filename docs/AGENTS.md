@@ -15,6 +15,7 @@ agent.info(npc)   -- { x, y, z, yaw, speed, mode = "idle|goto|follow|wander", fa
 agent.list()
 function on_agent(id, what) end                               -- what = "arrived", "stuck", "no_path", "fell"
 
+agent.ride(npc, body [, {x, y, z}]); agent.unride(npc)   -- a passenger on a moving body (docs/RIDE.md); agent.info(npc).riding is the body
 nav.path(x0, y0, z0, x1, y1, z1)   -- { {x=, y=, z=}, ... } waypoints in metres, or nil if there is no way (a query only)
 nav.floor(x, y, z)                 -- the standing height in the column near y, or nil
 nav.flood(x, y, z, x0, y0, z0, x1, y1, z1)   -- metres: which standable cells of the box can be walked to from the spot at (x, y, z)? -> { standable, reached, unreached, islands = { { cells, min, max, seed }, ... } } or nil, reason ("Flood" below)
