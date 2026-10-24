@@ -269,7 +269,7 @@ function K.check(plan, CG)
 
     -- 16. the halls (gen/furnish.lua deco_hall / deco_street): every corridor keeps a free width of at least max(width - 1, 2.5) m along its whole half, nothing stands in a mouth
     if CG.H and deco_hall then
-        local stub = { fill = function() end, vbox = function() end, sphere = function() end, pillar = function() end, ring = function() end }
+        local stub = { model = function() end, fill = function() end, vbox = function() end, sphere = function() end, pillar = function() end, ring = function() end }
         local n16 = 0
         for _, id in ipairs(plan.order) do
             local info = plan.cells[id]

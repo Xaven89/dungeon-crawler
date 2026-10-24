@@ -52,7 +52,7 @@ for _, id in ipairs(plan.order) do
           end
         end
         local ops = 0
-        local B = { fill = function() ops = ops + 1 end, vbox = function() ops = ops + 1 end, sphere = function() ops = ops + 1 end, pillar = function() ops = ops + 1 end, ring = function() ops = ops + 1 end }
+        local B = { model = function() ops = ops + 1 end, fill = function() ops = ops + 1 end, vbox = function() ops = ops + 1 end, sphere = function() ops = ops + 1 end, pillar = function() ops = ops + 1 end, ring = function() ops = ops + 1 end }
         deco_room(B, info.theme, r, doors, mk, %d)
         local kinds = {}
         for _, sp in ipairs(lay.spots) do kinds[sp.kind] = (kinds[sp.kind] or 0) + 1 end

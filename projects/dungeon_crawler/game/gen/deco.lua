@@ -409,7 +409,8 @@ function deco_village(B, cu, cv, room, doors, mk)
                 { b.crystal.x - 1.6, b.crystal.z - 1.4, b.crystal.x + 1.6, b.crystal.z + 1.4 }, { b.fire.x - 1.8, b.fire.z - 0.9, b.fire.x + 1.8, b.fire.z + 1.2 },
                 { b.note.x - 1.2, b.note.z - 0.6, b.note.x + 1.2, b.note.z + 1.0 }, { b.cx - 1.0, b.cz + 0.5, b.cx + 1.0, b.cz + 2.5 } } })
             if lay then
-                local Bc = { fill = function(x0, y0, z0, x1, y1, z1, mat) bb(x0, y0, z0, x1, y1, z1, mat) end }
+                local Bc = { fill = function(x0, y0, z0, x1, y1, z1, mat) bb(x0, y0, z0, x1, y1, z1, mat) end,
+                             model = function(file, x, y, z, rot) if x >= ox and x < ox + 32 and z >= oz and z < oz + 32 then B.model(file, x - ox, y, z - oz, rot) end end }
                 for _, it in ipairs(lay.items) do deco_item_draw(Bc, it, 3) end
             end
         elseif b.kind == "store" then

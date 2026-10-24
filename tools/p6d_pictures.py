@@ -16,7 +16,7 @@ FLOOR = int(opt("--floor", "1")); themes = opt("--themes", "hall,library,crypt,d
 BZ = FLOOR * 1024 + 64
 SH = os.path.expanduser("~/share/big_floors_p6d"); os.makedirs(SH, exist_ok=True)
 def L(v, code, ticks=1): return v.lua(code, ticks=ticks).get("output", [])
-with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)]) as v:
+with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)] + os.environ.get("VX_ARGS", "").split()) as v:
     v.step(300)
     L(v, "Game.screen = 'run'; Game.run.start(0, true)", 2); L(v, "Game.player.pick_class('janitor')", 2); v.step(300)
     L(v, "Game.contracts.sign(nil)", 2); v.step(60)
@@ -29,7 +29,7 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         rid, x, z, w, d, nd = r[0].split("\t"); x, z, w, d = float(x), float(z), float(w), float(d)
         print(th, rid, x, z, w, d, "doors", nd)
         L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
-        lay = L(v, "local P = Game.floorgen.layout; local r = P.rooms['%s']; local ctx = { mk = function(salt) return deco_rng(Game.floorgen.cg and select(2, Game.floorgen.cg()), %d, r.ci, r.cj, salt or 1) end, floor = %d }; local lay = deco_layout(r.theme, r.info.room, Game.floorgen.local_doors(r), ctx.mk, %d); local c = {}; for _, it in ipairs(lay.items) do c[it.id] = (c[it.id] or 0) + 1 end; local t = {}; for k, n in pairs(c) do t[#t+1] = k .. '=' .. n end; table.sort(t); print(table.concat(t, ' '), #lay.spots .. ' spots')" % (rid, FLOOR, FLOOR, FLOOR), 0)
+        lay = L(v, "local P = Game.floorgen.layout; local r = P.rooms['%s']; local ctx = { mk = function(salt) return deco_rng(Game.floorgen.cg and select(2, Game.floorgen.cg()), %d, r.ci, r.cj, salt or 1) end, floor = %d }; local lay = deco_layout(r.theme, r.info.room, Game.floorgen.local_doors(r), ctx.mk, %d); if not lay then print('no layout row'); return end; local c = {}; for _, it in ipairs(lay.items) do c[it.id] = (c[it.id] or 0) + 1 end; local t = {}; for k, n in pairs(c) do t[#t+1] = k .. '=' .. n end; table.sort(t); print(table.concat(t, ' '), #lay.spots .. ' spots')" % (rid, FLOOR, FLOOR, FLOOR), 0)
         print("  layout:", lay)
         cx, cz = x + w / 2, z + d / 2
         for name, (ex, ez) in {"corner": (x + 2.2, z + 2.2), "corner2": (x + w - 2.2, z + d - 2.2)}.items():

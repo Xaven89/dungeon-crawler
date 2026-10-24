@@ -34,6 +34,17 @@ function deco_catalogue()
         -- stores
         crates     = { cat = "crates", w = 1.4, d = 1.4, h = 3.6, anchor = "free", clear = 0.9, spots = { { "idle", 1.5, 0.7 } } },
         barrels    = { cat = "barrels", w = 1.8, d = 1.8, h = 1.1, anchor = "corner", clear = 0.8 },
+        -- authored models (the starter kit's, copied to models/kit/): msize = the model's size in voxels (w, h, d), mfront = the way its front looks as it is; the hook places the file (B.model)
+        bed        = { cat = "bed", model = "models/kit/bed.vxm", msize = { 9, 11, 17 }, mfront = "+z", anchor = "wall", clear = 0.7 },
+        couch      = { cat = "sofa", model = "models/kit/couch.vxm", msize = { 19, 13, 11 }, mfront = "+z", anchor = "wall", clear = 0.7, spots = { { "idle", 0, 1.2 } } },
+        wardrobe   = { cat = "cabinet", model = "models/kit/wardrobe_light_brown.vxm", msize = { 20, 20, 11 }, mfront = "+z", anchor = "wall", clear = 0.7 },
+        drawer     = { cat = "cabinet", model = "models/kit/drawer_light_brown.vxm", msize = { 13, 11, 8 }, mfront = "+z", anchor = "wall", clear = 0.6 },
+        pub_table  = { cat = "table", model = "models/kit/pub_table.vxm", msize = { 11, 15, 25 }, mfront = "+z", anchor = "centre", clear = 0.8, slots = "around", spots = { { "idle", 0, 1.4 } } },
+        pub_stool  = { cat = "chair", model = "models/kit/pub_stool.vxm", msize = { 8, 10, 8 }, mfront = "+z", near = "table", per = { 2, 4 }, gap = 0.1 },
+        bar_stool  = { cat = "chair", model = "models/kit/pub_stool.vxm", msize = { 8, 10, 8 }, mfront = "+z", near = "bar", per = { 3, 5 }, gap = 0.12, front_only = true },
+        tomb_a     = { cat = "tomb", model = "models/kit/graveyard_tomb_1.vxm", msize = { 12, 20, 12 }, mfront = "+z", anchor = "free", clear = 0.7 },
+        tomb_b     = { cat = "tomb", model = "models/kit/graveyard_tomb_2.vxm", msize = { 11, 7, 12 }, mfront = "+z", anchor = "free", clear = 0.7 },
+        tomb_c     = { cat = "tomb", model = "models/kit/graveyard_tomb_3.vxm", msize = { 16, 15, 12 }, mfront = "+z", anchor = "free", clear = 0.7 },
         -- lairs, bars
         dais       = { cat = "dais", w = 7.0, d = 3.0, h = 0.4, anchor = "far_wall", clear = 1.0, blocks = false, spots = { { "boss", 0, 2.35 } } },
         throne     = { cat = "throne", w = 1.6, d = 1.2, h = 2.6, on = "dais", clear = 0.3 },
@@ -45,6 +56,9 @@ function deco_catalogue()
         banner     = { cat = "banner", w = 1.2, d = 0.15, h = 2.6, anchor = "wall", clear = 0, blocks = false },
         bones      = { cat = "bones", w = 0.6, d = 0.4, h = 0.3, anchor = "free", clear = 0, blocks = false },
     }
+    for _, d in pairs(deco_catalogue_memo) do
+        if d.msize then d.w, d.d, d.h = d.msize[1] / 16, d.msize[3] / 16, d.msize[2] / 16 end
+    end
     return deco_catalogue_memo
 end
 
@@ -58,6 +72,7 @@ function deco_layout_themes()
             { id = "bench", base = 0, wall = 0.045, jit = 1, p = 0.7 },
             { id = "urn", base = 1, jit = 2 },
             { id = "banner", base = 0, wall = 0.06, jit = 1 },
+            { id = "couch", base = 0, jit = 1.5 }, { id = "drawer", base = 0, jit = 1.5 },
             { id = "table", base = 0, area = 0.5, jit = 1.2, p = 0.6 },
             { id = "chair" },
         } },
@@ -71,7 +86,8 @@ function deco_layout_themes()
             { id = "chair" },
         } },
         crypt = { margin = 2.6, fill = {
-            { id = "sarcophagus", area = 4.0, jit = 2 },
+            { id = "sarcophagus", area = 3.0, jit = 2 },
+            { id = "tomb_a", area = 1.0, jit = 2 }, { id = "tomb_c", area = 0.8, jit = 2 }, { id = "tomb_b", area = 1.0, jit = 2 },
             { id = "candle", p = 0.6 },
             { id = "urn", base = 2, jit = 2 },
             { id = "bones", area = 1.4, jit = 2 },
@@ -89,14 +105,15 @@ function deco_layout_themes()
             { id = "urn", base = 1, jit = 1 },
         } },
         safe = { margin = 1.0, reserve = "safe", fill = {
-            { id = "bench", base = 2, jit = 2 },
+            { id = "bed", base = 1, jit = 2 }, { id = "couch", base = 0, jit = 2 }, { id = "drawer", base = 1, jit = 2 }, { id = "wardrobe", base = 0, jit = 2 },
+            { id = "bench", base = 1, jit = 2 },
             { id = "urn", base = 2, jit = 2 },
             { id = "banner", base = 2, jit = 2 },
         } },
         pub = { margin = 0.8, fill = {
-            { id = "bar" }, { id = "shelf_wall" }, { id = "stool" },
-            { id = "table", base = 2, jit = 1 },
-            { id = "chair" },
+            { id = "bar" }, { id = "shelf_wall" }, { id = "bar_stool" },
+            { id = "pub_table", base = 2, jit = 1 },
+            { id = "pub_stool" },
             { id = "bench", base = 1, jit = 1 },
         } },
         depot = { margin = 3.0, fill = {
@@ -503,6 +520,11 @@ function deco_item_draw(B, it, fl)
         B.fill(math.min(ax, bx), y0 + oy, math.min(az, bz), math.max(ax, bx), y1 + oy, math.max(az, bz), mat)
     end
     local id = it.id
+    if it.def and it.def.model then                                   -- an authored model: the hook places the file, turned so that its front looks the way the item faces
+        local IDX = { ["+z"] = 0, ["+x"] = 1, ["-z"] = 2, ["-x"] = 3 }
+        B.model(it.def.model, it.x0, oy, it.z0, (IDX[face] - IDX[it.def.mfront or "+z"]) % 4)
+        return
+    end
     if id == "table" or id == "table_long" then
         box(0, 0.72, 0, W, 0.8, D, "dark_wood")
         for _, u in ipairs({ 0.06, W - 0.18 }) do for _, v in ipairs({ 0.06, D - 0.18 }) do box(u, 0, v, u + 0.12, 0.72, v + 0.12, "dark_wood") end end
