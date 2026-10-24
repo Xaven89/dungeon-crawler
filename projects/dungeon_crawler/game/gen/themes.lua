@@ -119,7 +119,8 @@ end
 
 -- hanging lamps on a grid, about one per 60 m2
 function F.lamps(room, intensity, reach)
-    local nx, nz = max(1, floor(room.w / 8)), max(1, floor(room.d / 8))
+    local nx, nz = max(1, floor(room.w / 6)), max(1, floor(room.d / 6))
+    while nx * nz > 12 do if nx >= nz then nx = nx - 1 else nz = nz - 1 end end      -- (the engine's light budget of a room)
     for i = 1, nx do for j = 1, nz do
         G.lamp(room.x + room.w * (i - 0.5) / nx, room.z + room.d * (j - 0.5) / nz, room.h, 1.2, { reach = reach or 12, far = 24, intensity = (intensity or 11) * G.gen.rules.dark() })
     end end

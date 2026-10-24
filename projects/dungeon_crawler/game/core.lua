@@ -155,16 +155,22 @@ function G.dust(name, preset, pos, size) return emitter.create(G.as_motes({ name
 
 local torch_n = 0
 G.torches = {}
+G.WARM = { 1.0, 0.8, 0.55 }                      -- the two temperatures of the game's light: fire and lanterns are warm ...
+G.COOL = { 0.7, 0.8, 1.0 }                       -- ... runes, crystals, windows, the night of the over-city and the steel of floor 4 are cool; never both on one wall
+G.LIGHT = { intensity = 0.55, reach = 0.67, far = 0.8 }
 function G.torch(xm, ym, zm, opts)
     opts = opts or {}
     torch_n = torch_n + 1
     local name = opts.name or ("torch_" .. torch_n)
     -- an emitter light's `color` is a radiance (docs/EMITTERS.md): a hue scaled to its largest part, times `intensity` (14 is a torch)
-    local col = opts.color or { 1.0, 0.55, 0.2 }
+    local col = opts.color or G.WARM
     local m = math.max(col[1], col[2], col[3], 0.001)
     col = { col[1] / m, col[2] / m, col[3] / m }
+    -- the polish pass (bucket B): fewer lumens, shorter reach (the rooms hold more lights: pools of light and shadow between them); `raw` keeps a caller's own numbers
+    local k_i, k_r, k_f = G.LIGHT.intensity, G.LIGHT.reach, G.LIGHT.far
+    if opts.raw then k_i, k_r, k_f = 1, 1, 1 end
     local def = { name = name, preset = opts.preset or "torch", pos = { G.mx(xm), G.my(ym), G.mz(zm) },
-                  light = { color = col, intensity = opts.intensity or 11, reach = opts.reach or 14, far = opts.far or 30, flicker = opts.flicker ~= false } }
+                  light = { color = col, intensity = (opts.intensity or 11) * k_i, reach = (opts.reach or 14) * k_r, far = (opts.far or 30) * k_f, flicker = opts.flicker ~= false } }
     if MOTE_PRESETS[def.preset] then G.as_motes(def, 2.5, 14) end
     emitter.create(def)
     G.torches[#G.torches + 1] = name
@@ -196,10 +202,10 @@ function G.lamp(xm, zm, y_ceil, drop, opts)
     opts = opts or {}
     if G.should_build() then
         G.fill(xm - 0.04, y_ceil - drop, zm - 0.04, xm + 0.04, y_ceil, zm + 0.04, "metal")
-        G.fill(xm - 0.2, y_ceil - drop - 0.4, zm - 0.2, xm + 0.2, y_ceil - drop, zm + 0.2, opts.mat or "lantern")
+        G.fill(xm - 0.15, y_ceil - drop - 0.3, zm - 0.15, xm + 0.15, y_ceil - drop, zm + 0.15, opts.mat or "lantern")
         G.fill(xm - 0.25, y_ceil - drop - 0.05, zm - 0.25, xm + 0.25, y_ceil - drop, zm + 0.25, "metal")
     end
-    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 1.0, 0.67, 0.33 }, reach = opts.reach or 15, far = opts.far, intensity = opts.intensity, flicker = true })
+    return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color, reach = opts.reach or 15, far = opts.far, intensity = opts.intensity, flicker = true })
 end
 
 -- a lantern on a chain from the ceiling (E13): `hang` metres of chain (links of metal), a glass lantern at the end with a flame light that rides it; the player pushes it and it swings and settles.
@@ -213,9 +219,9 @@ function G.chain_lantern(xm, y_ceil, zm, hang, opts)
     if not ok or not c then return nil end
     torch_n = torch_n + 1
     local name = "chain_" .. torch_n
-    local col = opts.color or { 1.0, 0.67, 0.33 }
+    local col = opts.color or G.WARM
     local m = math.max(col[1], col[2], col[3], 0.001)
-    pcall(emitter.create, { name = name, preset = "torch", body = c.tip, offset = { 0, 0.15, 0}, light = { color = { col[1] / m, col[2] / m, col[3] / m }, intensity = (opts.intensity or 11) * G.gen.rules.dark(), reach = opts.reach or 11, far = opts.far or 24, flicker = true } })
+    pcall(emitter.create, { name = name, preset = "torch", body = c.tip, offset = { 0, 0.15, 0}, light = { color = { col[1] / m, col[2] / m, col[3] / m }, intensity = (opts.intensity or 11) * G.gen.rules.dark() * G.LIGHT.intensity, reach = (opts.reach or 11) * G.LIGHT.reach, far = (opts.far or 24) * G.LIGHT.far, flicker = true } })
     G.torches[#G.torches + 1] = name
     return c
 end

@@ -33,7 +33,8 @@ function OC.sky_colours(t)
     return { zenith = false, horizon = false, ground = false }
 end
 
-local PALETTE = { tint = { 1.15, 0.8, 0.75 }, fog_tint = { 1.25, 0.75, 0.6 }, sun = { 1.35, 0.65, 0.4 }, ambient = 1.0, fog = 1.6 }
+-- (the red is the sky's: the sun on the walls is a plain warm white by day; the red dusk of the book is the zenith / horizon colours above, which only the turn of the day replaces)
+local PALETTE = { tint = { 1.1, 0.9, 0.85 }, fog_tint = { 1.25, 0.75, 0.6 }, sun = { 1.1, 0.95, 0.8 }, ambient = 1.0, fog = 1.6 }
 
 function OC.enter(P)
     OC.npcs, OC.lights, OC.pubs, OC.night_added = {}, {}, {}, {}
@@ -202,7 +203,7 @@ function OC.make_village(P, sup, origin_id)
             OC.pubs[#OC.pubs + 1] = v.pub
             local c, nt, f = b.crystal, b.note, b.fire
             G.torch(ox + f.x, 0.8, oz + f.z, { preset = "campfire", color = { 1, 0.55, 0.2 }, reach = 12, far = 30, name = vid .. "_fire" })
-            G.torch(ox + c.x, 2.6, oz + c.z, { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 9, far = 30, name = vid .. "_crystal" })
+            G.torch(ox + c.x, 2.6, oz + c.z, { preset = "magic_sparks", color = { 0.62, 0.72, 1.0 }, reach = 9, far = 30, name = vid .. "_crystal" })
             G.torch(ox + b.cx, 3.2, oz + b.cz, { preset = "torch", reach = 10, far = 30, intensity = 12 * dk, name = vid .. "_pubcl" })
             button(vid .. "_save", ox + c.x - 0.25, 1.3, oz + c.z - 0.25, ox + c.x + 0.25, 1.9, oz + c.z + 0.25, tr("oc.pub_save"), function() G.save_now() end)
             button(vid .. "_note", ox + nt.x - 0.4, 1.4, oz + nt.z - 0.1, ox + nt.x + 0.4, 1.9, oz + nt.z + 0.15, tr("oc.pub_note"), function() OC.read_note() end)

@@ -9,6 +9,7 @@ local function yl(room) return room.info.room.y or 0 end
 
 -- a row of lights along the axis of a hall, every 8 m, at the ceiling of its level
 local function strip_lights(room, ctx, step, intensity, reach)
+    step = step * 2                                                    -- (one light per 12 m: the polish pass)
     local dk = G.gen.rules.dark()
     local ox, oz = F.off(room)
     local ir = room.info.room
@@ -19,7 +20,7 @@ local function strip_lights(room, ctx, step, intensity, reach)
         local x, z
         local o = (n % 2 == 0) and 2.5 or -2.5                         -- alternate beside the track (on the platform / the ledge), never over the bed
         if room.info.axis == "x" then x, z = ox + t, oz + 16 + o else x, z = ox + 16 + o, oz + t end
-        G.torch(x, y, z, { preset = "torch", reach = reach or 12, far = 26, intensity = (intensity or 10) * dk, name = room.id .. "_t" .. n })
+        G.torch(x, y, z, { preset = "torch", color = { 0.8, 0.88, 1.0 }, reach = reach or 12, far = 26, intensity = (intensity or 10) * dk, name = room.id .. "_t" .. n })
     end
 end
 
@@ -77,7 +78,7 @@ F.register("hub", {
         local f = transit_hub_fixtures(room.info)
         local id = room.id
         local T = G.traps
-        G.torch(ox + f.crystal.x, 2.6, oz + f.crystal.z, { preset = "magic_sparks", color = { 0.7, 0.3, 1.0 }, reach = 10, name = id .. "_crystal" })
+        G.torch(ox + f.crystal.x, 2.6, oz + f.crystal.z, { preset = "magic_sparks", color = { 0.62, 0.72, 1.0 }, reach = 10, name = id .. "_crystal" })
         G.dust(id .. "_dust", "dust_motes", { G.mx(ox + 16), G.my(2.5), G.mz(oz + 16) }, { 8, 2, 8 })
         local vx, vz, cx, cz = ox + f.vend.x, oz + f.vend.z, ox + f.crystal.x, oz + f.crystal.z
         local ax = (room.info.axis == "x")

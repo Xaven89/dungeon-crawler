@@ -127,6 +127,12 @@ end
 function F.local_room(room) return room.info.room end
 
 -- the tables of the game's world follow the plan
+-- the colour the far end of a hall or a corridor fades to (the horizon of the sky is the fog): one per floor instead of the night's dark blue (polish pass, bucket B)
+local FOG = { [1] = { 0.15, 0.11, 0.08 }, [2] = { 0.22, 0.10, 0.04 }, [4] = { 0.07, 0.10, 0.15 } }
+function F.fog(fl)
+    local c = FOG[fl] or { 0.09, 0.09, 0.11 }
+    sky.set{ horizon = c, fog = 1.4, blend = 0 }
+end
 function F.apply_tables(P)
     local W = G.world
     if not F.authored then
@@ -211,7 +217,7 @@ local function cell_lights(P, room)
     local ci, cj, W, H = room.ci, room.cj, P.W, P.H
     local x0, z0 = ci * 32, cj * 32
     local function strip(side)
-        for t = 4, 28, 8 do
+        for t = 4, 28, 12 do
             n = n + 1
             local x, z
             if side == "E" then x, z = x0 + 30, z0 + t elseif side == "W" then x, z = x0 + 2, z0 + t elseif side == "S" then x, z = x0 + t, z0 + 30 else x, z = x0 + t, z0 + 2 end
@@ -453,7 +459,7 @@ function F.enter(fl, on_done)
     F.layout, F.active = P, true
     G.gen.track.scope = "floor" .. fl
     F.apply_tables(P)
-    if fl == 3 then G.gen.overcity.enter(P) else G.gen.overcity.leave() end
+    if fl == 3 then G.gen.overcity.enter(P) else G.gen.overcity.leave(); F.fog(fl) end
     if fl == 4 then G.gen.trains.enter(P) end
     local r = P.rooms[P.start]
     local x, y, z = G.mx(r.x + r.w / 2), G.my(0.1), G.mz(r.z + r.d / 2)
@@ -474,7 +480,7 @@ function F.load(fl)
     F.layout, F.active = P, true
     G.gen.track.scope = "floor" .. fl
     F.apply_tables(P)
-    if fl == 3 then G.gen.overcity.enter(P) else G.gen.overcity.leave() end
+    if fl == 3 then G.gen.overcity.enter(P) else G.gen.overcity.leave(); F.fog(fl) end
     if fl == 4 then G.gen.trains.enter(P) end
     G.show.redeclare()
     -- the veil until the floor around the checkpoint exists (the hook makes it when the player is there), then the player wakes up at the checkpoint
