@@ -308,11 +308,13 @@ function E.kill(inst, opts)
     local k = A.bump("kills")
     if not T.boss then A.award("first_blood") end
     local gold = G.irange(T.gold[1], T.gold[2])
+    local sniped = inst.riding ~= nil                     -- shot from a platform while he rides: a time trap, low pay and no loot (the transit floor)
+    if sniped then gold = floor(gold * 0.25) end
     if G.state.marked_bonus and inst.marked then gold = gold * 2 end
     gold = floor(gold * (1 + P.gold_bonus()) + (inst.marked and inst.marked > time.tick() and gold or 0))
     s.gold = s.gold + gold
     if gold > 0 then P.log("+" .. gold .. " gold", "#ffd24a"); G.skills.bump("haggling", gold) end
-    P.add_xp(floor(T.xp * (1 + 0.0 * s.level)), "kill")
+    P.add_xp(floor(T.xp * (1 + 0.0 * s.level) * (sniped and 0.3 or 1)), "kill")
     if x then G.sfx.play(T.die_sfx or "squish_die", G.to_local(x, y, z)) end
     -- overkill: more than twice the hp that was left
     if inst.hp < -inst.max_hp * 0.8 then A.award("overkill") end
@@ -345,11 +347,11 @@ function E.kill(inst, opts)
     end
     agent.stop(inst.id)
     -- drops
-    if x and G.rand() < (T.loot_chance or 0) then
+    if x and not sniped and G.rand() < (T.loot_chance or 0) then
         local item = G.items.roll(T.loot or "drop", inst.id)
         E.drop(x, y + 0.3, z, "item", item)
     end
-    if x and gold > 3 then E.drop(x, y + 0.3, z, "gold", gold) end
+    if x and gold > 3 and not sniped then E.drop(x, y + 0.3, z, "gold", gold) end
     -- the cleanup of the body
     local id, mdl = inst.id, inst.mdl
     -- the body stays for a while (the last 8 bodies of the floor): it fades away when the 9th falls or after 40 s; single-part monsters (slimes) burst at once

@@ -53,6 +53,7 @@ function transit_region(rx, rz, wh, run)
         F(rx0, yl, rz0 + 3, rx1 - 1, yl + 1.0, rz0 + 3.1, "metal")                                          -- the rail along the stair's opening
         -- the pit: a round hole in the deck, a guard ring and the glow of the Abyss
         for _, p in ipairs({ { 22, 22 } }) do B.pillar(p[1], p[2], 2.6, yl - 1, yl, nil); B.ring(p[1], p[2], 2.6, 3.0, yl, yl + 1.0, "metal") end
+        F(21.6, yl + 0.5, 18.85, 22.4, yl + 1.0, 18.95, "gold")                                      -- the plaque on the rail of the pit: THE ABYSS (a button of the game)
         -- the columns that carry the deck (the cars and the Yellow platform stay clear: the columns stand at the corners)
         for _, p in ipairs({ { 6, 9 }, { 26, 9 }, { 6, 23 }, { 26, 23 } }) do B.pillar(p[1], p[2], 0.6, 0, yl, "metal") end
     elseif code == "c" then

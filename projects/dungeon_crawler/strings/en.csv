@@ -507,3 +507,6 @@ boss.name.golem,THE GOLDEN PARACHUTE
 boss.name.auditor,THE CHIEF AUDITOR
 boss.versus,VERSUS
 boss.winner,WINNER
+transit.abyss_prompt,Look into the Abyss
+transit.abyss.1,"You look into the Abyss. The Abyss looks into you. It is a very long way down and the brochure says the pit is 'decorative'. There is a gift shop at the bottom. It is closed."
+transit.abyss.2,"The Abyss: station 436 on the old maps. Today it is a hole with a rail around it. Do not drop anything. The lost-property office is also at the bottom."
