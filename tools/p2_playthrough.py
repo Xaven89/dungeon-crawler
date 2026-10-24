@@ -67,7 +67,7 @@ local G = Game
 if G.player.dead then return end
 local px, py, pz = player.pos(); local lx, ly, lz = G.to_local(px, py, pz)
 local r = G.floorgen.layout.rooms['%s']
-if lx < r.x - 8 or lx > r.x + r.w + 8 or lz < r.z - 8 or lz > r.z + r.d + 8 then local c = G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z)) end
+if lx < r.x - 8 or lx > r.x + r.w + 8 or lz < r.z - 8 or lz > r.z + r.d + 8 then local c = G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true }) end
 if G.state.hp < G.player.max_hp() * 0.45 then G.player.quick('heal') end
 print(G.enemies.alive_in('%s'), math.floor(G.state.hp), G.state.deaths)""" % (room, room, room), step)
         v.tool("input_action", name="ability", down=True, player=0)
@@ -77,7 +77,7 @@ print(G.enemies.alive_in('%s'), math.floor(G.state.hp), G.state.deaths)""" % (ro
 local px, py, pz = player.pos()
 for _, i in pairs(G.enemies.list) do if not i.dead and i.room == '%s' then local x, y, z = G.enemies.position(i); if x then local d = G.dist2(x, z, px, pz); if not bd or d < bd then best, bd = { x, y, z }, d end end end end
 local r = G.floorgen.layout.rooms['%s']; local cx, cz = G.mx(r.x + r.w / 2), G.mz(r.z + r.d / 2)
-if best and bd > 6 then local dx, dz = cx - best[1], cz - best[3]; local n = math.max(0.1, math.sqrt(dx*dx + dz*dz)); player.teleport(best[1] + dx / n * 2.2, best[2] + 0.1, best[3] + dz / n * 2.2) end""" % (room, room), 1)
+if best and bd > 6 then local dx, dz = cx - best[1], cz - best[3]; local n = math.max(0.1, math.sqrt(dx*dx + dz*dz)); local tx, ty, tz = best[1] + dx / n * 2.2, best[2] + 0.1, best[3] + dz / n * 2.2; local function solid(h) return world.solid(math.floor(tx * 16), math.floor((ty + h) * 16), math.floor(tz * 16)) end; if not (solid(0.2) or solid(1.0) or solid(1.7)) then player.teleport(tx, ty, tz, { wait = true }) end end""" % (room, room), 1)
         if out and out[0].split("\t")[0] == "0": break
     v.tool("input_action", name="attack", down=False, player=0)
     L(v, "Game.autoaim = false", 0)
@@ -95,19 +95,19 @@ def borough_run(v):
     if info[0] == "none": print("   no borough on this floor"); return False
     rid, origin = info[0], info[1]
     print("  borough", rid, "origin", origin)
-    L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z))" % origin, 200)
-    L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z)); Game.state.hp = Game.player.max_hp()" % rid, 400)
+    L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % origin, 200)
+    L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true }); Game.state.hp = Game.player.max_hp()" % rid, 400)
     print("   current room:", L(v, "print(Game.current_room, Game.boss.started)", 0))
     v.step(500)
     for k in range(6):
         t, kills, end = fight(v, rid, 4800)
         print("   fight", k, "ticks", t, "kills", kills, "hp", end[1], "deaths", end[2], "boss dead:", L(v, "print(Game.state.flags['boss_dead_%s'])" % rid, 0))
         if L(v, "print(Game.state.flags['boss_dead_%s'])" % rid, 0)[0].startswith("true"): break
-        L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z)); Game.state.hp = Game.player.max_hp()" % rid, 300)
+        L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true }); Game.state.hp = Game.player.max_hp()" % rid, 300)
     v.step(400)
     print("   forcefield:", L(v, "print(Game.state.flags['ff_%s'])" % rid, 0))
     # into the pit
-    L(v, "local G=Game; local r = G.floorgen.layout.rings['%s']; local p = r.pit; player.teleport(G.mx((p.x0 + p.x1) / 2), G.my(-1.1), G.mz((p.z0 + p.z1) / 2))" % rid, 60)
+    L(v, "local G=Game; local r = G.floorgen.layout.rings['%s']; local p = r.pit; player.teleport(G.mx((p.x0 + p.x1) / 2), G.my(-1.1), G.mz((p.z0 + p.z1) / 2), { wait = true })" % rid, 60)
     print("   screen after the pit:", L(v, "print(Game.screen)", 0))
     L(v, "Game.run.descend(true)", 2)
     print("next floor built in", wait_floor(v), "s")
@@ -158,7 +158,7 @@ def main():
             print("FLOOR", info[0], "cells", info[1], "path", info[2])
             rooms = [x.split(":") for x in info[2].split(",")]
             for rid, theme in rooms:
-                L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z))" % rid, 150)
+                L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 150)
                 if theme == "stairs_free": break
                 t, kills, end = fight(v, rid, 2400)
                 n = int(L(v, "print(Game.enemies.alive_count())", 0)[0]); maxagents = max(maxagents, n)
@@ -192,9 +192,11 @@ end""", 5)
         print("render:", json.dumps(st.get("render")))
         print("sim:", json.dumps({k: st["sim"].get(k) for k in ("bodies", "awake_bodies", "gravity_fields")}), "agents", L(v, "print(Game.enemies.alive_count(), #Game.floorgen.made_list)", 0)[0].replace("\t", " cells "))
         print("state hash:", v.state_hash())
+        if os.environ.get("PROBE_OUT"): open(os.environ["PROBE_OUT"] + "_live.txt", "w").write(v.stderr_tail(1000000))
     if "--no-replay" not in sys.argv:
         restore_state(snap, present)
         print("replaying the recording ...")
         r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3", "--save", "/tmp/descent_scratch.vxs"], capture_output=True, text=True, cwd=ROOT)
         print([l for l in (r.stdout + r.stderr).splitlines() if "hash" in l.lower() or "replay" in l.lower()][-4:])
+        if os.environ.get("PROBE_OUT"): open(os.environ["PROBE_OUT"] + "_replay.txt", "w").write(r.stdout + r.stderr)
 main()
