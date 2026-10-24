@@ -224,6 +224,27 @@ function K.check(plan, CG)
         end
     end
 
+    -- 14. floor 3: at least three villages (the quest needs one clue from each of three), all reachable (the gate of the city is no village)
+    if plan.P.supers == "village" then
+        local origins, seen = {}, {}
+        for _, id in ipairs(plan.order) do
+            local info = plan.cells[id]
+            if info.role == "village" then
+                local sup = CG.super_of(ctx, info.ci, info.cj)
+                if sup and sup.kind == "village" and not seen[sup.id] then seen[sup.id] = true; origins[#origins + 1] = sup end
+            end
+        end
+        S.villages = #origins
+        if #origins < 3 then bad(14, "only " .. #origins .. " villages (the quest needs 3)") end
+        for _, sup in ipairs(origins) do
+            for dj = 0, 1 do for di = 0, 1 do
+                local cid_ = "c" .. (sup.ci + di) .. "_" .. (sup.cj + dj)
+                if not dist_open[cid_] then bad(14, "village " .. sup.id .. " is not reachable at " .. cid_) end
+                if cid_ == plan.arrival then bad(14, "the arrival lies in village " .. sup.id) end
+            end end
+        end
+    end
+
     -- theme sizes: every theme fits its room
     for _, id in ipairs(plan.order) do
         local info = plan.cells[id]

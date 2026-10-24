@@ -186,7 +186,11 @@ end""", 5)
         errs = [l.strip() for l in v.stderr_tail(2000).splitlines() if "[error]" in l or "[warn" in l or "failed" in l]
         print("engine errors / warnings:", errs[-8:] if errs else "none")
         print("max agents seen at the end of a fight:", maxagents)
-        print("hook:", json.dumps(v.tool("status")["world"].get("hook")))
+        v.screenshot("/tmp/descent_soak_last.png", hud=True, settle=60)       # (the render numbers are those of the last drawn frame)
+        st = v.tool("status")
+        print("hook:", json.dumps(st["world"].get("hook")))
+        print("render:", json.dumps(st.get("render")))
+        print("sim:", json.dumps({k: st["sim"].get(k) for k in ("bodies", "awake_bodies", "gravity_fields")}), "agents", L(v, "print(Game.enemies.alive_count(), #Game.floorgen.made_list)", 0)[0].replace("\t", " cells "))
         print("state hash:", v.state_hash())
     if "--no-replay" not in sys.argv:
         restore_state(snap, present)

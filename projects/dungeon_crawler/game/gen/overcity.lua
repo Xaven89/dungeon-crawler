@@ -67,6 +67,17 @@ function OC.drop_cell(id)
     for _, n in ipairs(OC.npcs[id] or {}) do pcall(agent.remove, n.id) end
     OC.npcs[id] = nil
     for i = #OC.pubs, 1, -1 do if OC.pubs[i].cell == id then table.remove(OC.pubs, i) end end
+    -- a village goes with its origin cell: out of the list (its lights went with the cell's scope), so that the next visit makes one entry again
+    local P = G.floorgen.layout
+    for i = #((P and P.villages) or {}), 1, -1 do
+        local v = P.villages[i]
+        if v.cell == id then
+            local gone = {}
+            for _, nm in ipairs(v.lights or {}) do gone[nm] = true end
+            for k = #OC.lights, 1, -1 do if gone[OC.lights[k]] then table.remove(OC.lights, k) end end
+            table.remove(P.villages, i)
+        end
+    end
 end
 
 -- the NPC in front of the player within 3 m (E)
@@ -169,13 +180,15 @@ function OC.make_village(P, sup, origin_id)
     local plan = deco_village_plan(function(salt) return deco_rng(H, P.floor, sup.ci, sup.cj, salt or 1) end)
     local dk = G.gen.rules.dark()
     P.villages = P.villages or {}
-    local v = { id = vid, ox = ox, oz = oz, plan = plan }
+    local v = { id = vid, ox = ox, oz = oz, plan = plan, cell = origin_id, lights = {} }
+    for i = #P.villages, 1, -1 do if P.villages[i].id == vid then table.remove(P.villages, i) end end      -- (one entry per village)
     local n = 0
     local function lamp(x, z, y)
         n = n + 1
         local name = vid .. "_l" .. n
         G.torch(x, y or 3.4, z, { preset = "torch", reach = 14, far = 40, intensity = 16 * dk, name = name })
         OC.lights[#OC.lights + 1] = name
+        v.lights[#v.lights + 1] = name
         emitter.enable(name, OC.is_night())
     end
     -- the buildings
@@ -204,9 +217,9 @@ function OC.make_village(P, sup, origin_id)
         end
     end
     -- the square: lamps at the corners, the locator stones, the well's light
-    for _, l in ipairs(plan.locators) do
+    for k, l in ipairs(plan.locators) do
         lamp(ox + l[1] + ((l[1] < 32) and -1.2 or 1.2), oz + l[2] + ((l[2] < 32) and -1.2 or 1.2), 3.2)
-        button(vid .. "_stone" .. _, ox + l[1] - 0.35, 1.3, oz + l[2] - 0.35, ox + l[1] + 0.35, 1.8, oz + l[2] + 0.35, tr("oc.stone"), function() OC.locator_read(ox + l[1], oz + l[2]) end)
+        button(vid .. "_stone" .. k, ox + l[1] - 0.35, 1.3, oz + l[2] - 0.35, ox + l[1] + 0.35, 1.8, oz + l[2] + 0.35, tr("oc.stone"), function() OC.locator_read(ox + l[1], oz + l[2]) end)
     end
     -- the villager (a clue of the quest) by the well, an elder at the pub's door
     local vl = spawn_npc(origin_id, "villager", ox + 36, oz + 28, vid)
@@ -270,7 +283,6 @@ function OC.add_night(P, room)
     if not list then list = {}; G.world.populate_list[room.id] = list end
     for i = 1, 2 do
         local kind = NIGHT_KINDS[1 + floor(rng.next() * #NIGHT_KINDS) % #NIGHT_KINDS]
-        if kind == "imp" and P.floor < 3 then kind = "rat" end
         local x = room.x + 3 + rng.next() * (room.w - 6)
         local z = room.z + 3 + rng.next() * (room.d - 6)
         list[#list + 1] = { kind, x, z, 0, hp = 1.2, name = nil }
@@ -309,7 +321,6 @@ function OC.tick(t)
                 G.announcer.say_key("oc.dusk", { prio = 3 })
                 for _, id in ipairs(G.floorgen.made_list) do
                     OC.add_night(P, P.rooms[id])
-                    for _, v in ipairs(P.villages or {}) do end
                 end
                 for _, v in ipairs(P.villages or {}) do OC.guards_set(P, v, G.floorgen.cid(v.ox // 32, v.oz // 32), false) end
                 for _, name in ipairs(OC.lights) do pcall(emitter.enable, name, true) end

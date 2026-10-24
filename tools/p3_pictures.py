@@ -15,6 +15,7 @@ args_ = [a for a in sys.argv[1:] if not a.startswith("--")]
 seed = int(args_[0]) if args_ else 4242
 FLOOR = int(sys.argv[sys.argv.index("--floor") + 1]) if "--floor" in sys.argv else 1
 if "--floor" in sys.argv and args_ and args_[0] == str(FLOOR): seed = 4242
+BZ = FLOOR * 1024 + 64
 SH = os.path.expanduser("~/share/big_floors_p3" + ("" if FLOOR == 1 else "/floor%d" % FLOOR)); os.makedirs(SH, exist_ok=True)
 def L(v, code, ticks=1): return v.lua(code, ticks=ticks).get("output", [])
 with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)]) as v:
@@ -27,8 +28,8 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
     def tp(x, z, y=0.1):
         L(v, "player.teleport(Game.mx(%f), Game.my(%f), Game.mz(%f))" % (x, y, z), 260)
     def look(name, ex, ey, ez, tx, ty, tz, settle=300):
-        L(v, "local G=Game; player.teleport(G.mx(%f), G.my(0.1), G.mz(%f)); G.state.hp = G.player.max_hp()" % (ex, ez), 220)
-        v.screenshot(os.path.join(SH, name + ".png"), hud=False, settle=settle, eye=[ex, 8 + ey, 1088 + ez], target=[tx, 8 + ty, 1088 + tz], fov=85)
+        L(v, "local G=Game; player.hand_model(nil); player.model(nil); player.teleport(G.mx(%f), G.my(0.1), G.mz(%f)); G.state.hp = G.player.max_hp()" % (ex, ez), 220)    # (the player stands at the eye; his hand model is off)
+        v.screenshot(os.path.join(SH, name + ".png"), hud=False, settle=settle, eye=[ex, 8 + ey, BZ + ez], target=[tx, 8 + ty, BZ + tz], fov=85)
     # the stairwell, sealed and open
     st = L(v, "local P = Game.floorgen.layout; local r = P.rooms[P.free_list[1]]; print(r.id, r.x + r.w / 2, r.z + r.d / 2)", 0)[0].split("\t")
     sx, sz = float(st[1]), float(st[2])
@@ -62,6 +63,16 @@ print('none')""", 0)[0].split("\t")
     if bd[0] != "none":
         xm, c = float(bd[1]), float(bd[2])
         look("bathroom_door", xm, 1.7, c + 1.6, xm, 1.4, c - 3, settle=120)
+    # a side hall (lichen-lit: green on floor 1, orange on floor 2)
+    sh = L(v, """local P = Game.floorgen.layout
+for _, id in ipairs(P.order) do local r = P.rooms[id]
+  for _, d in ipairs(P.doors[id] or {}) do
+    if d.kind == 'side' and d.side == 'E' then print(id, r.ci * 32 + (r.info.room.x + r.info.room.w + 32) / 2, d.pos); return end end end
+print('none')""", 0)[0].split("\t")
+    print("side hall", sh)
+    if sh[0] != "none":
+        hx, hz = float(sh[1]), float(sh[2])
+        look("side_hall", hx - 6, 1.6, hz, hx + 6, 1.8, hz, settle=300)
     # the borough: the gate from outside and the rotunda
     b = L(v, "local P = Game.floorgen.layout; local r = P.ring_list[1]; if r then print(r.id, r.ox, r.oz, r.origin) else print('none') end", 0)[0].split("\t")
     if b[0] != "none":

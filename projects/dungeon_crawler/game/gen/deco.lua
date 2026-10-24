@@ -251,7 +251,7 @@ function deco_borough(B, cu, cv, fl)
         strip(cx - h, cz - i, cx - i, cz + i, "W"); strip(cx + i, cz - i, cx + h, cz + i, "E")
     end
     -- floor 3 (the park of the over-city): a wall of bone and rock, open to the sky
-    local pal = (fl == 3) and { "ruin_stone", "bone", "marble" } or { "dungeon_brick", "mossy", "marble" }
+    local pal = (fl == 3) and { "cavestone", "bone", "ruin_stone" } or ((fl == 2) and { "cinderblock", "cinderblock", "marble" } or { "dungeon_brick", "mossy", "marble" })
     wall(g.w1, g.gaps.w1, pal[1]); wall(g.w2, g.gaps.w2, pal[2]); wall(g.w3, g.gaps.w3, pal[3])
     -- the roof over the ring corridors and the walls (the arena keeps the courtyard's ceiling)
     local function roof(h0, h1)

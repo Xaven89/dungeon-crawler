@@ -128,19 +128,37 @@ function cellgen_make(H)
             if b and ci >= b.ci and ci < b.ci + 2 and cj >= b.cj and cj < b.cj + 2 then return { kind = "borough", ci = b.ci, cj = b.cj, id = "r" .. bi .. "_" .. bj } end
         elseif P.supers == "village" then
             local qi, qj = floor(ci / 4), floor(cj / 4)
-            local key = "v" .. qi .. "," .. qj
-            local s = ctx.blk[key]
-            if s == nil then
-                s = false
-                -- a village or the park in about half of the quadrants (the centre quadrant is the park)
-                if (qi == 1 and qj == 1) then
-                    s = { kind = "park", ci = qi * 4 + 1, cj = qj * 4 + 1, id = "park" }
-                elseif h(ctx, qi, qj, 1, 31) < 0.6 then
-                    local u, v = 2 * floor(h(ctx, qi, qj, 2, 31) * 2), 2 * floor(h(ctx, qi, qj, 3, 31) * 2)
-                    s = { kind = "village", ci = qi * 4 + u, cj = qj * 4 + v, id = "t" .. qi .. "_" .. qj }
-                end
-                ctx.blk[key] = s
+            local m = ctx.misc.villages
+            if not m then
+                -- a village or the park in about half of the quadrants (the centre quadrant is the park); at least three villages (the quest needs three): the first quadrants in row-major order that
+                -- the hash left out are made villages until there are three
+                m = {}
+                local n = 0
+                local aci, acj = CG.arrival(ctx)
+                local function has_arrival(vi, vj, u, v) return aci >= vi * 4 + u and aci < vi * 4 + u + 2 and acj >= vj * 4 + v and acj < vj * 4 + v + 2 end     -- (the gate of the city is no village)
+                for vj = 0, 2 do for vi = 0, 2 do
+                    if vi == 1 and vj == 1 then
+                        m[vi .. "," .. vj] = { kind = "park", ci = vi * 4 + 1, cj = vj * 4 + 1, id = "park" }
+                    elseif h(ctx, vi, vj, 1, 31) < 0.6 then
+                        local u, v = 2 * floor(h(ctx, vi, vj, 2, 31) * 2), 2 * floor(h(ctx, vi, vj, 3, 31) * 2)
+                        if not has_arrival(vi, vj, u, v) then
+                            m[vi .. "," .. vj] = { kind = "village", ci = vi * 4 + u, cj = vj * 4 + v, id = "t" .. vi .. "_" .. vj }
+                            n = n + 1
+                        end
+                    end
+                end end
+                for vj = 0, 2 do for vi = 0, 2 do
+                    if n < 3 and not m[vi .. "," .. vj] then
+                        local u, v = 2 * floor(h(ctx, vi, vj, 2, 31) * 2), 2 * floor(h(ctx, vi, vj, 3, 31) * 2)
+                        if not has_arrival(vi, vj, u, v) then
+                            m[vi .. "," .. vj] = { kind = "village", ci = vi * 4 + u, cj = vj * 4 + v, id = "t" .. vi .. "_" .. vj }
+                            n = n + 1
+                        end
+                    end
+                end end
+                ctx.misc.villages = m
             end
+            local s = m[qi .. "," .. qj]
             if s and ci >= s.ci and ci < s.ci + 2 and cj >= s.cj and cj < s.cj + 2 then return s end
         end
         return nil
