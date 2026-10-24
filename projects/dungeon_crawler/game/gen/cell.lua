@@ -55,7 +55,9 @@ function cellgen_make(H)
     -- ------------------------------------------------------------------------------------------ floor parameters
     -- setting: "small" (the default: floor 1-2 are 1 x 2 blocks) or "large" (2 x 2 blocks)
     function CG.params(fl, setting)
-        if fl == 4 then return nil end                      -- the transit floor is its own plan (a line graph, not this grid)
+        if fl == 4 then                                     -- the transit floor: 5 x 5 cells, three lines (gen/transit.lua: the Iron Tangle)
+            return { floor = 4, setting = setting or "small", kind = "transit", W = 5, H = 5, QW = 1, QH = 1, free_stairs = 2, loop = 0, alley_share = 0, connector_share = 0 }
+        end
         local P = { floor = fl, setting = setting or "small" }
         if fl == 3 then
             P.kind, P.W, P.H, P.QW, P.QH = "ruin", 12, 12, 3, 3          -- 3 x 3 quadrants, no blocks, roads instead of arteries
@@ -89,6 +91,7 @@ function cellgen_make(H)
 
     -- ------------------------------------------------------------------------------------------ arrival, blocks, super-cells
     function CG.arrival(ctx)
+        if ctx.P.kind == "transit" then return 2, 4 end                 -- HUB S: the platform where the first train stands
         local m = ctx.misc.arrival
         if m then return m[1], m[2] end
         local W = ctx.P.W
@@ -360,6 +363,7 @@ function cellgen_make(H)
     -- ------------------------------------------------------------------------------------------ free stairwells
     -- chosen from the hash and cheap rules only (no quadrant lookup: a region would otherwise generate quadrants all over the floor); the quadrants keep their lair, safe room and prize off these cells
     function CG.free_stairs(ctx)
+        if ctx.P.kind == "transit" then return { { 3, 1 }, { 1, 3 } } end
         local m = ctx.misc.free
         if m then return m end
         m = {}
@@ -390,6 +394,7 @@ function cellgen_make(H)
 
     -- the role of a cell (without its theme): "arrival", "safe", "guild", "lair", "ante", "stairs", "prize", "borough", "village", "park", "room", "connector"
     function CG.role(ctx, ci, cj)
+        if ctx.P.kind == "transit" then local i = transit_cell_info(ci, cj); return i and i.role end
         local key = ci .. "," .. cj
         local r = ctx.c[key]
         if r then return r end
@@ -428,6 +433,7 @@ function cellgen_make(H)
         local dd = DIRS[d]
         local ni, nj = ci + dd[1], cj + dd[2]
         if not inside(ctx, ci, cj) or not inside(ctx, ni, nj) then return nil end
+        if ctx.P.kind == "transit" then local i = transit_cell_info(ci, cj); return i and i.open[d] end
         local P = ctx.P
         -- the lair cell opens only toward its antechamber (and that edge is a tree edge)
         local ra, rb = CG.role(ctx, ci, cj), CG.role(ctx, ni, nj)
@@ -542,6 +548,12 @@ function cellgen_make(H)
         local key = "C" .. ci .. "," .. cj
         local info = ctx.c[key]
         if info then return info end
+        if ctx.P.kind == "transit" then
+            info = transit_cell_info(ci, cj)
+            info.q = { 0, 0 }; info.mob = { kinds = { "goblin", "bandit", "imp", "rat" } }
+            ctx.c[key] = info
+            return info
+        end
         local role = CG.role(ctx, ci, cj)
         local Q = CG.quadrant(ctx, floor(ci / 4), floor(cj / 4))
         info = { ci = ci, cj = cj, role = role, q = { Q.qi, Q.qj }, mob = Q.mob, open = CG.openings(ctx, ci, cj) }

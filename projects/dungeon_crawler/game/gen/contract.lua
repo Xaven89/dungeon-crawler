@@ -10,7 +10,54 @@ local floor, max, min = math.floor, math.max, math.min
 
 K.SAFE_STEPS = 6         -- the plan says 3; two safe rooms per 4x4 tree quadrant (k-center) give 5 almost always and 6 at worst (stats.safe_max records the real maximum); a third safe room would crowd the floor
 
+-- the transit floor (floor 4): its own short contract (item 17 is the sweep of the cars)
+function K.check_transit(plan, CG)
+    local ctx = plan.ctx
+    local V, S = {}, {}
+    local function bad(item, text) V[#V + 1] = { item = item, text = text } end
+    local dist = CG.bfs(plan, { plan.arrival })
+    local nn, nr = 0, 0
+    for id in pairs(plan.nodes) do nn = nn + 1; if dist[id] then nr = nr + 1 end end
+    S.nodes, S.reached = nn, nr
+    if nn ~= nr then bad(1, "not connected: " .. (nn - nr) .. " cells unreachable") end
+    local nst = 0
+    for _, id in ipairs(plan.stairs) do if dist[id] then nst = nst + 1 end end
+    S.stairs = nst
+    if nst < 2 then bad(2, "only " .. nst .. " stairwells reached") end
+    local dsafe = CG.bfs(plan, plan.safe)
+    local smax = 0
+    for _, id in ipairs(plan.order) do
+        local d = dsafe[id]
+        if not d then bad(3, "no safe room reachable from " .. id) else smax = max(smax, d); if d > K.SAFE_STEPS then bad(3, id .. " is " .. d .. " steps from a safe room") end end
+    end
+    S.safe_max = smax
+    -- every door has a partner with the same position, the doors of a cell are on its room's walls
+    for _, id in ipairs(plan.order) do
+        local info = plan.cells[id]
+        for side, kind in pairs(info.open) do
+            local dd = ({ E = { 1, 0, "W" }, W = { -1, 0, "E" }, S = { 0, 1, "N" }, N = { 0, -1, "S" } })[side]
+            local nb = plan.cells["c" .. (info.ci + dd[1]) .. "_" .. (info.cj + dd[2])]
+            if not nb then bad(4, id .. ": a door " .. side .. " into nothing")
+            elseif nb.open[dd[3]] ~= kind or nb.door[dd[3]] ~= info.door[side] then bad(4, id .. ": the door " .. side .. " does not meet its partner (" .. tostring(nb.open[dd[3]]) .. " " .. tostring(nb.door[dd[3]]) .. " vs " .. kind .. " " .. info.door[side] .. ")") end
+        end
+    end
+    -- 17. the cars: every waypoint and every stop in carved air, the whole sweep (the engine's yaw rule at top speed) in carved air; Blue and Yellow never share a level
+    local lines = transit_lines()
+    S.lines = #lines
+    for _, line in ipairs(lines) do
+        for i, p in ipairs(line.points) do if not transit_carved(p[1], p[2], line.level) then bad(17, line.name .. ": waypoint " .. i .. " is in rock") end end
+        for _, t in ipairs(line.stops) do
+            local p = line.points[t[1]]
+            if not p then bad(17, line.name .. ": a stop on a missing waypoint") end
+        end
+        for _, b in ipairs(transit_sweep(line)) do bad(17, b) end
+    end
+    if lines[2].level == lines[3].level then bad(17, "Yellow and Blue share a level") end
+    return { violations = V, stats = S }
+end
+
 function K.check(plan, CG)
+    if plan.P.kind == "transit" then return K.check_transit(plan, CG) end
     local ctx, P = plan.ctx, plan.P
     local V, S = {}, {}
     local function bad(item, text) V[#V + 1] = { item = item, text = text } end

@@ -9,7 +9,7 @@ QUICK=0; [ "$1" = "--quick" ] && QUICK=1
 fail=0
 ./voxelith --check-project projects/dungeon_crawler 2>&1 | grep -q "^0 error(s)" || { echo "check-project FAILED"; fail=1; }
 N=300; [ $QUICK = 1 ] && N=60
-python3 tools/plan_check.py $N --floors 1,2,3,5,6,7,8 | tee /tmp/precommit_plan.txt | grep -E "^violations: 0$" >/dev/null || { echo "plan_check FAILED"; tail -12 /tmp/precommit_plan.txt; fail=1; }
+python3 tools/plan_check.py $N --floors 1,2,3,4,5,6,7,8 | tee /tmp/precommit_plan.txt | grep -E "^violations: 0$" >/dev/null || { echo "plan_check FAILED"; tail -12 /tmp/precommit_plan.txt; fail=1; }
 tools/p1_sync.sh
 SEEDS="1 2"; [ $QUICK = 1 ] && SEEDS="1"
 for f in 1 2 3 5; do
