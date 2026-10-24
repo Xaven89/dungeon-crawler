@@ -3,6 +3,7 @@
 --   dts     THE DTs         a countdown illness: after 4, 7 and 10 minutes on the floor every monster is a stage worse (marked, harder hitting, faster; the last stage hatches rats when it dies)
 --   muted   QUIET FLOOR     in some rooms spells and abilities do nothing
 --   crowd   CROWD PLEASER   a third more enemies, double the spectacle
+--   third_rail THIRD RAIL   (floor 4 only, always) the bed of every track is live: standing in it (not on a car's deck, not on a platform) costs 8 health every half second
 Game = Game or {}
 local G = Game
 G.gen = G.gen or {}
@@ -10,7 +11,8 @@ local R = {}
 G.gen.rules = R
 local floor, max, min = math.floor, math.max, math.min
 
-R.ALL = { "night", "dts", "muted", "crowd" }
+R.ALL = { "night", "dts", "muted", "crowd", "third_rail" }
+R.POOL = { "night", "dts", "muted", "crowd" }        -- what a floor draws from (third_rail is the transit floor's own)
 R.cur = {}            -- id -> true, for the floor in the world
 R.muted_rooms = {}
 
@@ -18,10 +20,11 @@ function R.choose(seed, floor_n)
     if floor_n <= 1 then return {} end
     local r = G.gen.layout.make_rng(seed, floor_n, 31337)
     local pool = {}
-    for _, id in ipairs(R.ALL) do pool[#pool + 1] = id end
+    for _, id in ipairs(R.POOL) do pool[#pool + 1] = id end
     r.shuffle(pool)
     local out = { pool[1] }
     if floor_n >= 3 and r.next() < 0.45 then out[2] = pool[2] end
+    if floor_n == 4 then out = { "third_rail", pool[1] } end
     return out
 end
 
@@ -55,7 +58,21 @@ function R.stage_next()
     return (R.t0 or 0) + STAGE_AT[(R.stage or 0) + 1]
 end
 
+-- the third rail: every 30 ticks, a player in the bed of a track (below the floor of its level) is hurt
+function R.tick_third_rail(t)
+    if t % 30 ~= 0 or not G.state.class or G.screen or G.player.dead then return end
+    local px, py, pz = player.pos()
+    local lx, ly, lz = G.to_local(px, py, pz)
+    local lvl = (ly > 4) and 1 or 0
+    if transit_on_bed(lx, lz, lvl) and ly < lvl * 8 - 0.08 then
+        G.player.hurt(8, "the third rail", { pierce = true })
+        if not R.rail_warned then R.rail_warned = true; G.announcer.say_key("rule.third_rail.zap", { prio = 2 }) end
+        G.sfx.play("firebolt", px, py, pz, 0.5, 1.6)
+    end
+end
+
 function R.tick(t)
+    if R.cur.third_rail then R.tick_third_rail(t) end
     if not R.cur.dts or not G.state or not G.state.class or G.screen == "loading" then return end
     local nxt = R.stage_next()
     if nxt and t >= nxt then

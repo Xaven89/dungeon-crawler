@@ -261,3 +261,22 @@ function transit_crowd_spots(info)
     end
     return out
 end
+
+-- is the point (x, z) of floor metres within the bed of a track (2.1 m of the polyline of a line of this level)
+function transit_on_bed(x, z, level)
+    for _, line in ipairs(transit_lines()) do
+        if line.level == level then
+            local pts, n = line.points, #line.points
+            local last = line.closed and n or n - 1
+            for i = 1, last do
+                local a, b = pts[i], pts[i % n + 1]
+                local dx, dz = b[1] - a[1], b[2] - a[2]
+                local len2 = dx * dx + dz * dz
+                local t = (len2 > 0) and math.max(0, math.min(1, ((x - a[1]) * dx + (z - a[2]) * dz) / len2)) or 0
+                local qx, qz = a[1] + dx * t - x, a[2] + dz * t - z
+                if qx * qx + qz * qz < 2.1 * 2.1 then return true end
+            end
+        end
+    end
+    return false
+end

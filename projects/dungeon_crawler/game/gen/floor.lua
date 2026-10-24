@@ -429,6 +429,14 @@ function F.teardown_all()
         for i = #F.made_list, 1, -1 do F.drop_cell(F.made_list[i]) end
         G.gen.track.teardown("floor" .. P.floor)
     end
+    if P and body.list then                       -- the sleeping debris of a floor (pieces of what was destroyed) goes with it: by id, inside the old floor's band
+        local ids = {}
+        for _, b in ipairs(body.list()) do
+            if b.owner == "debris" and floor((b.z - 64) / 1024) == P.floor then ids[#ids + 1] = b.id end
+        end
+        table.sort(ids)
+        for _, id in ipairs(ids) do pcall(body.remove, id) end
+    end
     F.made, F.made_list, F.queue = {}, {}, {}
     F.grounded = {}
     F.pci, F.pcj = nil, nil

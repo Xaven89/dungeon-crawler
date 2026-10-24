@@ -199,6 +199,7 @@ rule.night.name,NACHTSCHICHT
 rule.dts.name,DER ENTZUG
 rule.muted.name,RUHIGE EBENE
 rule.crowd.name,PUBLIKUMSLIEBLING
+rule.third_rail.name,DRITTE SCHIENE
 rule.muted.popup,DER RAUM SCHLUCKT DEINEN ZAUBER
 boss.meter,PRUEFUNG
 run.newseed,"Ein neuer Seed ist eine neue Welt: Spiel schliessen und tools/play.sh new [SEED] starten"
