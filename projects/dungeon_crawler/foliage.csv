@@ -3,4 +3,4 @@
 grass,grass,3,0.61,2,3,3,8,3,0.25,1.5,tuft,tuft-dry,tuft-dark,5,1,1,31,flower-red;flower-yellow;flower-white,0.36,1,40,0.45,0.7,0.8,0.55,0,0.5,0.75,0.5,tuft-dry,-,-,-,-,-,0
 # The dungeon: moss on the cave stone and the mossy walls' tops (the grotto, the flooded halls, the side halls beside them), dead grass in the cracks of the flagstone and the cobbles (a few thin tufts, low and dry)
 moss,cavestone;mossy,1,0.55,1,1,6,2,3,0.32,1.3,moss,moss-light,moss-dark,4,1,1,0,-,0.3,0.2,0,0,0,0,1,0,0,0.7,0,-,-,-,-,-,0
-crack,flagstone;cobble;ruin_stone,1,0.7,1,2,3,3,2,0.2,1,crack-grass,crack-grass,crack-grass-dark,4,1,0,0,-,0.3,0.8,0,0,0,0,1,0.1,0,0.8,0,-,-,0,-,1,0,0,0.7,0,0.7,0.35,24,0
+crack,flagstone;cobble;ruin_stone,1,0.04,1,2,3,3,2,0.2,1,crack-grass,crack-grass,crack-grass-dark,4,1,0,0,-,0.3,0.8,0,0,0,0,1,0.1,0,0.8,0,-,-,0,-,1,0,0,0.7,0,0.7,0.35,24,0

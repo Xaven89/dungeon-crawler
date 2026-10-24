@@ -14,6 +14,7 @@ def opt(n, d): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else d
 seed = int(args_[0]) if args_ and args_[0].isdigit() else 4242
 FLOOR = int(opt("--floor", "1")); tag = opt("--tag", "")
 BZ = FLOOR * 1024 + 64
+YB = 25.0625 if FLOOR == 3 else 8.0
 SH = os.path.expanduser("~/share/big_floors_p6d/halls"); os.makedirs(SH, exist_ok=True)
 def L(v, code, ticks=1): return v.lua(code, ticks=ticks).get("output", [])
 with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed)]) as v:
@@ -52,10 +53,10 @@ end print('none')""" % (kind, kind, skip), 0)[0].split("\t")
             return ci * 32 + c + vv, cj * 32 + u0 - u
         ex, ez = XZ(1.5, 0); tx, tz = XZ(ln - 2, 0)
         L(v, "local G=Game; player.teleport(G.mx(%f), G.my(0.1), G.mz(%f), { wait = true })" % (ex, ez), 120)
-        v.screenshot(os.path.join(SH, "%s%s_f%d_%s.png" % (tag, kind, FLOOR, rid)), hud=False, settle=40, eye=[ex, 8 + 1.7, BZ + ez], target=[tx, 8 + 1.5, BZ + tz], fov=80)
+        v.screenshot(os.path.join(SH, "%s%s_f%d_%s.png" % (tag, kind, FLOOR, rid)), hud=False, settle=40, eye=[ex, YB + 1.7, BZ + ez], target=[tx, YB + 1.5, BZ + tz], fov=80)
         ex2, ez2 = XZ(ln * 0.5, 0)
         L(v, "local G=Game; player.teleport(G.mx(%f), G.my(0.1), G.mz(%f), { wait = true })" % (ex2, ez2), 120)
-        v.screenshot(os.path.join(SH, "%s%s_f%d_%s_mid.png" % (tag, kind, FLOOR, rid)), hud=False, settle=40, eye=[ex2, 8 + 1.7, BZ + ez2], target=[tx, 8 + 1.5, BZ + tz], fov=80)
+        v.screenshot(os.path.join(SH, "%s%s_f%d_%s_mid.png" % (tag, kind, FLOOR, rid)), hud=False, settle=40, eye=[ex2, YB + 1.7, BZ + ez2], target=[tx, YB + 1.5, BZ + tz], fov=80)
     # an artery street: a cell on a block border
     o = L(v, """local P = Game.floorgen.layout
 for _, id in ipairs(P.order) do local r = P.rooms[id]; local i = r.info
@@ -66,6 +67,6 @@ for _, id in ipairs(P.order) do local r = P.rooms[id]; local i = r.info
         L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % o[0], 300)
         ex, ez = ci * 32 + 32 - w / 2, cj * 32 + 2
         L(v, "local G=Game; player.teleport(G.mx(%f), G.my(0.1), G.mz(%f), { wait = true })" % (ex, ez), 120)
-        v.screenshot(os.path.join(SH, "%sstreet_f%d_%s.png" % (tag, FLOOR, o[0])), hud=False, settle=40, eye=[ex, 8 + 1.7, BZ + ez], target=[ex, 8 + 1.8, BZ + ez + 20], fov=80)
-        v.screenshot(os.path.join(SH, "%sstreet_f%d_%s_side.png" % (tag, FLOOR, o[0])), hud=False, settle=10, eye=[ex + 1.2, 8 + 2.0, BZ + ez + 4], target=[ex - 2, 8 + 1.6, BZ + ez + 14], fov=80)
+        v.screenshot(os.path.join(SH, "%sstreet_f%d_%s.png" % (tag, FLOOR, o[0])), hud=False, settle=40, eye=[ex, YB + 1.7, BZ + ez], target=[ex, YB + 1.8, BZ + ez + 20], fov=80)
+        v.screenshot(os.path.join(SH, "%sstreet_f%d_%s_side.png" % (tag, FLOOR, o[0])), hud=False, settle=10, eye=[ex + 1.2, YB + 2.0, BZ + ez + 4], target=[ex - 2, YB + 1.6, BZ + ez + 14], fov=80)
     st = v.tool("status"); print("hook", json.dumps(st["world"].get("hook")))
