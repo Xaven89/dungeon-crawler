@@ -16,7 +16,8 @@ import argparse
 ap = argparse.ArgumentParser(); ap.add_argument("seeds", nargs="*", type=int); ap.add_argument("--floor", type=int, default=1)
 ns = ap.parse_args()
 seeds, fl = ns.seeds or [1, 2, 3], ns.floor
-Y0, Y1 = 100, 330
+YF = 401 if fl == 3 else 128
+Y0, Y1 = (396, 560) if fl == 3 else (100, 330)
 PLAN = """
 local CG = cellgen_make(cellgen_hash_from(worldgen.hash))
 local ctx = CG.new(0, %d, 'small')
@@ -36,11 +37,12 @@ def flood(v, lo_m, hi_m, frm_m):
     bz = (fl * 32 + 2) * 32.0
     lo = [int(lo_m[0] * 16), Y0, int((bz + lo_m[1]) * 16)]
     hi = [int(hi_m[0] * 16) - 1, Y1, int((bz + hi_m[1]) * 16) - 1]
-    return v.tool("flood_region", min=lo, max=hi, **{"from": [int(frm_m[0] * 16), 128, int((bz + frm_m[1]) * 16)]}), lo, hi
+    return v.tool("flood_region", min=lo, max=hi, **{"from": [int(frm_m[0] * 16), YF, int((bz + frm_m[1]) * 16)]}), lo, hi
 
 def shrunk(lo, hi, W, H, keep=""):
     """a box (metres, x0 z0 / x1 z1) minus the 4.5 m next to every block border line it touches (the artery strips are checked by the artery door check), except on the sides in `keep`"""
     lo, hi = list(lo), list(hi)
+    if fl == 3: return lo, hi                      # (the open-air floor has no artery strips)
     if lo[0] % 256 == 0 and "W" not in keep: lo[0] += 4.5
     if hi[0] % 256 == 0 and "E" not in keep: hi[0] -= 4.5
     if lo[1] % 256 == 0 and "N" not in keep: lo[1] += 4.5
@@ -68,9 +70,9 @@ for seed in seeds:
         # the boroughs: origin cell of every 2 x 2 super-cell; the fortress (a static spiral of rings, super-cell metres 10 .. 54) is checked by its own flood of the whole courtyard
         origins = set()
         for (ci, cj), c in cells.items():
-            if c["theme"] == "borough":
+            if c["theme"] in ("borough", "park", "village"):
                 origins.add((ci - (1 if c["sides"]["W"][0] == "internal" else 0), cj - (1 if c["sides"]["N"][0] == "internal" else 0)))
-        forts = [(oi * 32 + 10, oj * 32 + 10, oi * 32 + 54, oj * 32 + 54) for oi, oj in sorted(origins)]
+        forts = [(oi * 32 + 10, oj * 32 + 10, oi * 32 + 54, oj * 32 + 54) for oi, oj in sorted(origins) if cells[(oi, oj)]["theme"] in ("borough", "park")]
         def check(label, lo_m, hi_m, frm_m, strict=False):
             global checks
             checks += 1
@@ -81,7 +83,7 @@ for seed in seeds:
             if r["unreached"] == 0: return
             bz = (fl * 32 + 2) * 32.0
             # an island that is not at floor level (+-4 voxels) is decoration (the top of a sarcophagus, a shelf, a crate stack) or a pit (lava, the stairwell): not a place the walker must reach
-            real = [(isl["cells"], (isl["min"][0] / 16, isl["min"][2] / 16 - bz, isl["max"][0] / 16, isl["max"][2] / 16 - bz)) for isl in r["islands"] if abs(isl["seed"][1] - 128) <= 4 and isl["cells"] > 40]
+            real = [(isl["cells"], (isl["min"][0] / 16, isl["min"][2] / 16 - bz, isl["max"][0] / 16, isl["max"][2] / 16 - bz)) for isl in r["islands"] if abs(isl["seed"][1] - YF) <= 4 and isl["cells"] > 40]
             # (a box that cuts a fortress cuts its rings: the courtyard check covers them)
             if not strict: real = [x for x in real if not any(x[1][0] >= f[0] - 1 and x[1][1] >= f[1] - 1 and x[1][2] <= f[2] + 1 and x[1][3] <= f[3] + 1 for f in forts)]
             if real or (r.get("islands_cut") and not r["islands"]): problems.append("%s: %d unreached, islands %s" % (label, r["unreached"], real[:3]))

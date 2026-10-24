@@ -5,7 +5,7 @@ equips better gear, takes the stairs. It records the session (--record) and repl
 usage: tools/p2_playthrough.py [SEED] [class] [floors] [--no-replay] [--project P] [--borough]
   --borough: on floor 1 the bot goes to the nearest borough, kills its boss in the rotunda and takes ITS stairwell (the forcefield falls with the boss); the other floors use the free stairwells.
   The floor clock of the bot is 24000 ticks (400 s) so that every threshold (30 / 80 / 95 / 100 %) can be reached; the stairs are waited for if the clock has not opened them."""
-import os, subprocess, sys, time, json
+import os, subprocess, sys, time, json, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
@@ -22,6 +22,7 @@ floors = int(args[2]) if len(args) > 2 else 3
 project = sys.argv[sys.argv.index("--project") + 1] if "--project" in sys.argv else "projects/dungeon_crawler"
 log = "/tmp/descent_big_%d.log" % seed
 if os.path.exists(log): os.remove(log)
+if os.path.isdir(log + ".clip"): shutil.rmtree(log + ".clip")      # (the engine does not clear an old clip: a stale store_0.json of an earlier run made the replay start from the wrong state)
 
 def L(v, code, ticks=1):
     return v.lua(code, ticks=ticks).get("output", [])
@@ -113,7 +114,27 @@ def borough_run(v):
     L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
     return True
 
+# The game's persisted state (project.store: `.state/store.json`, with the events and prefab registries) is NOT part of a recording: a replay starts from whatever is in the project folder NOW.
+# After a live run that is the state at its END (class, achievements, flags), which makes on_start and the awards of the replay differ from the live run's (ENGINE_FEEDBACK Phase 20):
+# the bot saves the project's state folders before it starts and puts them back before the replay.
+STATE_DIRS = [".state", ".events", ".prefabs"]
+def snapshot_state():
+    snap = os.path.join("/tmp", "descent_state_snapshot_%d" % os.getpid())
+    if os.path.exists(snap): shutil.rmtree(snap)
+    os.makedirs(snap)
+    present = []
+    for d in STATE_DIRS:
+        src = os.path.join(ROOT, project, d)
+        if os.path.isdir(src): shutil.copytree(src, os.path.join(snap, d)); present.append(d)
+    return snap, present
+def restore_state(snap, present):
+    for d in STATE_DIRS:
+        dst = os.path.join(ROOT, project, d)
+        if os.path.isdir(dst): shutil.rmtree(dst)
+        if d in present: shutil.copytree(os.path.join(snap, d), dst)
+
 def main():
+    snap, present = snapshot_state()
     maxagents = 0
     with Voxelith(["--project", project, "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed), "--record", log]) as v:
         v.step(400)
@@ -161,6 +182,7 @@ end""", 5)
         print("hook:", json.dumps(v.tool("status")["world"].get("hook")))
         print("state hash:", v.state_hash())
     if "--no-replay" not in sys.argv:
+        restore_state(snap, present)
         print("replaying the recording ...")
         r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3", "--save", "/tmp/descent_scratch.vxs"], capture_output=True, text=True, cwd=ROOT)
         print([l for l in (r.stdout + r.stderr).splitlines() if "hash" in l.lower() or "replay" in l.lower()][-4:])
