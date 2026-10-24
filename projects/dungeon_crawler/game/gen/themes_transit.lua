@@ -56,6 +56,7 @@ F.register("station", {
                 G.torch(ox + p[1], 6.0, oz + p[2], { preset = "torch", reach = 12, far = 28, intensity = 14 * dk, name = room.id .. "_xl" .. k })
                 G.torch(ox + p[1], 13.0, oz + p[2], { preset = "torch", reach = 12, far = 28, intensity = 14 * dk, name = room.id .. "_xu" .. k })
             end
+        if room.info.abyss then
             G.torch(ox + 22, 6.5, oz + 22, { preset = "campfire", color = { 0.9, 0.2, 0.15 }, reach = 12, far = 28, name = room.id .. "_pit" })
             local abyss = events.button{ name = room.id .. "_abyss", box = { G.wx(ox + 21.6), G.wy(8.5), G.wz(oz + 18.85), G.wx(ox + 22.4) - 1, G.wy(9.0), G.wz(oz + 18.95) - 1 }, prompt = tr("transit.abyss_prompt"), on = "neon_red", off = "gold", press_ticks = 8 }
             events.on(abyss, "pressed", function()
@@ -63,6 +64,7 @@ F.register("station", {
                 G.sfx.play("rumble", ox + 22, 9, oz + 22, 0.8, 0.5)
             end)
             G.traps.add_interact(room.id .. "_abyss", ox + 22, 9.2, oz + 18.6, tr("transit.abyss_prompt"), 2.6)
+        end
         end
     end,
 })

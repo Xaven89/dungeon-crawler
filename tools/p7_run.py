@@ -29,7 +29,7 @@ with Voxelith(["--project", project, "--threads", "3", "--save", "/tmp/descent_s
     L(v, "Game.contracts.sign(nil)", 2); v.step(60)
     L(v, "Game.run.begin_floor(4)", 2); v.step(500); L(v, "Game.contracts.sign(nil)", 2); v.step(30)
     L(v, "Game.state.flags.god = true; Game.floorgen.ENEMY_CAP = 0; Game.run.cur().floor_ticks = 24000", 0)
-    L(v, "local G = Game; player.hand_model(nil); player.teleport(G.mx(80), G.my(0.2), G.mz(144), { wait = true })", 30)
+    L(v, "local G = Game; player.hand_model(nil); player.teleport(G.mx(112), G.my(0.2), G.mz(208), { wait = true })", 30)
     def where():
         return L(v, "local G = Game; local cx, cy, cz = G.gen.trains.where('red'); local px, py, pz = player.pos(); print(string.format('car %.0f,%.0f player %.0f,%.0f,%.0f d %.2f moving %s', cx - G.mx(0), cz - G.mz(0), px - G.mx(0), py, pz - G.mz(0), math.sqrt((px - cx)^2 + (pz - cz)^2), tostring(events.state(G.gen.trains.cars.red.id).moving)))", 0)[0]
     # ride: through the stop at W (about 40 s after the start) up to HUB N (stop 3), then step off
@@ -38,11 +38,11 @@ with Voxelith(["--project", project, "--threads", "3", "--save", "/tmp/descent_s
         v.step(60)
         w = L(v, "local G = Game; local cx, cy, cz = G.gen.trains.where('red'); print(math.floor(cx - G.mx(0)), math.floor(cz - G.mz(0)))", 0)[0].split("\t")
         if s % 15 == 0: print("t+%3d" % s, where())
-        if abs(int(w[0]) - 80) < 2 and abs(int(w[1]) - 16) < 2 and s > 20:
+        if abs(int(w[0]) - 112) < 2 and abs(int(w[1]) - 16) < 2 and s > 20:
             arrived_n = True; break
     print("arrived at HUB N:", arrived_n, where())
     v.step(120)
-    L(v, "local G = Game; player.teleport(G.mx(70), G.my(0.2), G.mz(10.5), { wait = true })", 60)          # steps off onto the platform of HUB N
+    L(v, "local G = Game; player.teleport(G.mx(102), G.my(0.2), G.mz(10.5), { wait = true })", 60)          # steps off onto the platform of HUB N
     print("on the platform:", where())
     # the stairwell: the clock opens it, the player goes in
     L(v, "local G = Game; local F = G.floorgen; G.run.cur().fclock = math.floor(F.floor_ticks() * F.AT_LATE) + 60", 60)

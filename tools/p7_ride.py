@@ -35,7 +35,7 @@ with Voxelith(["--project", project, "--threads", "3", "--save", "/tmp/descent_s
     L(v, "Game.run.begin_floor(4)", 2); v.step(500); L(v, "Game.contracts.sign(nil)", 2); v.step(30)
     L(v, "Game.state.flags.god = true; Game.floorgen.ENEMY_CAP = 0; Game.run.cur().floor_ticks = 1000000", 0)
     print("cars:", L(v, "for n, c in pairs(Game.gen.trains.cars) do print(n, events.state(c.id).open and 'moving' or 'stopped') end", 0))
-    L(v, "local G = Game; player.hand_model(nil); player.teleport(G.mx(80), G.my(0.2), G.mz(144), { wait = true })", 30)
+    L(v, "local G = Game; player.hand_model(nil); player.teleport(G.mx(112), G.my(0.2), G.mz(208), { wait = true })", 30)
     for s in range(secs):
         o = L(v, "local G = Game; local cx, cy, cz = G.gen.trains.where('red'); local px, py, pz = player.pos(); local st = events.state(G.gen.trains.cars.red.id); print(string.format('%.2f %.2f %.2f | %.2f %.2f %.2f | d %.2f %.2f %.2f | %s', cx, cy, cz, px, py, pz, px - cx, py - cy, pz - cz, tostring(st.moving)))", 0)
         if s % 2 == 0: print("t+%2d s" % s, o[0])

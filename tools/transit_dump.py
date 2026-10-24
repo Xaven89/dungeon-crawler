@@ -8,8 +8,8 @@ from voxelith_client import Voxelith
 with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3"]) as v:
     v.step(5)
     out = v.lua("""
-for cj = 0, 4 do local row = {}
-  for ci = 0, 4 do local i = transit_cell_info(ci, cj); local o = {}
+for cj = 0, 6 do local row = {}
+  for ci = 0, 6 do local i = transit_cell_info(ci, cj); local o = {}
     for _, d in ipairs({ 'N', 'E', 'S', 'W' }) do if i.open[d] then o[#o + 1] = d .. ':' .. i.open[d]:sub(1, 3) .. i.door[d] end end
     row[#row + 1] = string.format('%s %-9s %-8s y%d %s', i.code, i.theme, i.role, i.room.y, table.concat(o, ' ')) end
   print(table.concat(row, ' | ')) end

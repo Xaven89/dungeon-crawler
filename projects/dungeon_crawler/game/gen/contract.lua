@@ -65,7 +65,34 @@ function K.check_transit(plan, CG)
         end
         for _, b in ipairs(transit_sweep(line)) do bad(17, b) end
     end
-    if lines[2].level == lines[3].level then bad(17, "Yellow and Blue share a level") end
+    -- lines of one level never come closer than 12 m to each other (the cars meet only in the X halls, which are two storeys: the verticals run at level 1, the rows at level 0)
+    for i = 1, #lines do
+        for j = i + 1, #lines do
+            local a, b = lines[i], lines[j]
+            if a.level == b.level then
+                local dmin = 1e9
+                for _, p in ipairs(a.points) do
+                    for _, q in ipairs(b.points) do dmin = min(dmin, math.sqrt((p[1] - q[1]) ^ 2 + (p[2] - q[2]) ^ 2)) end
+                end
+                -- (the waypoints are the corners of the polylines: two parallel rows or columns are 32 m apart, a closer pair is a crossing at one level)
+                local cross = false
+                for ia = 1, #a.points - 1 do
+                    for ib = 1, #b.points - 1 do
+                        local p, q, r, s = a.points[ia], a.points[ia + 1], b.points[ib], b.points[ib + 1]
+                        local d1x, d1z, d2x, d2z = q[1] - p[1], q[2] - p[2], s[1] - r[1], s[2] - r[2]
+                        local den = d1x * d2z - d1z * d2x
+                        if den ~= 0 then
+                            local t = ((r[1] - p[1]) * d2z - (r[2] - p[2]) * d2x) / den
+                            local u = ((r[1] - p[1]) * d1z - (r[2] - p[2]) * d1x) / den
+                            if t >= 0 and t <= 1 and u >= 0 and u <= 1 then cross = true end
+                        end
+                    end
+                end
+                if cross then bad(17, a.name .. " and " .. b.name .. " cross at one level") end
+                if dmin < 12 then bad(17, a.name .. " and " .. b.name .. ": waypoints " .. string.format("%.1f", dmin) .. " m apart at one level") end
+            end
+        end
+    end
     return { violations = V, stats = S }
 end
 

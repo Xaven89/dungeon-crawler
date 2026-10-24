@@ -9,7 +9,7 @@ local floor = math.floor
 
 T.cars = {}                  -- line name -> { id, body, line }
 T.pending_reset = false
-local DECK = { red = "carpet", yellow = "gold", blue = "obsidian" }
+local DECK = { red = "carpet", yellow = "gold", orange = "cinderblock", green = "mossy", blue = "obsidian", violet = "rune" }
 
 -- the cars of the floor (made when the floor is entered or loaded, in the floor's scope: taken away with it)
 function T.enter(P)

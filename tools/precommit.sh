@@ -12,7 +12,7 @@ N=300; [ $QUICK = 1 ] && N=60
 python3 tools/plan_check.py $N --floors 1,2,3,4,5,6,7,8 | tee /tmp/precommit_plan.txt | grep -E "^violations: 0$" >/dev/null || { echo "plan_check FAILED"; tail -12 /tmp/precommit_plan.txt; fail=1; }
 tools/p1_sync.sh
 SEEDS="1 2"; [ $QUICK = 1 ] && SEEDS="1"
-for f in 1 2 3 5; do
+for f in 1 2 3 4 5; do
     python3 tools/p1_validate.py $SEEDS --floor $f | tee /tmp/precommit_validate_$f.txt | grep -E "^problems: 0$" >/dev/null || { echo "p1_validate floor $f FAILED"; tail -8 /tmp/precommit_validate_$f.txt; fail=1; }
 done
 # the ground cover of the dungeon (projects/dungeon_crawler/foliage.csv): no row but the meadow's and the moss (0.6) may be denser than 0.3 (a test value must not ship)

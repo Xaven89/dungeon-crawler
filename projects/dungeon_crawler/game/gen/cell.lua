@@ -55,8 +55,8 @@ function cellgen_make(H)
     -- ------------------------------------------------------------------------------------------ floor parameters
     -- setting: "small" (the default: floor 1-2 are 1 x 2 blocks) or "large" (2 x 2 blocks)
     function CG.params(fl, setting)
-        if fl == 4 then                                     -- the transit floor: 5 x 5 cells, three lines (gen/transit.lua: the Iron Tangle)
-            return { floor = 4, setting = setting or "small", kind = "transit", W = 5, H = 5, QW = 1, QH = 1, free_stairs = 2, loop = 0, alley_share = 0, connector_share = 0 }
+        if fl == 4 then                                     -- the transit floor: 7 x 7 cells, six lines (gen/transit.lua: the Iron Tangle)
+            return { floor = 4, setting = setting or "small", kind = "transit", W = transit_const().W, H = transit_const().H, QW = 1, QH = 1, free_stairs = 2, loop = 0, alley_share = 0, connector_share = 0 }
         end
         local P = { floor = fl, setting = setting or "small" }
         if fl == 3 then
@@ -91,7 +91,7 @@ function cellgen_make(H)
 
     -- ------------------------------------------------------------------------------------------ arrival, blocks, super-cells
     function CG.arrival(ctx)
-        if ctx.P.kind == "transit" then return 2, 4 end                 -- HUB S: the platform where the first train stands
+        if ctx.P.kind == "transit" then return ctx.P.W // 2, ctx.P.H - 1 end                 -- HUB S: the platform where the first train stands
         local m = ctx.misc.arrival
         if m then return m[1], m[2] end
         local W = ctx.P.W
@@ -363,7 +363,7 @@ function cellgen_make(H)
     -- ------------------------------------------------------------------------------------------ free stairwells
     -- chosen from the hash and cheap rules only (no quadrant lookup: a region would otherwise generate quadrants all over the floor); the quadrants keep their lair, safe room and prize off these cells
     function CG.free_stairs(ctx)
-        if ctx.P.kind == "transit" then return { { 3, 1 }, { 1, 3 } } end
+        if ctx.P.kind == "transit" then return { { 1, 1 }, { ctx.P.W - 2, ctx.P.H - 2 } } end
         local m = ctx.misc.free
         if m then return m end
         m = {}

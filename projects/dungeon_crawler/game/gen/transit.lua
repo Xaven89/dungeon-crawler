@@ -1,22 +1,27 @@
--- gen/transit: the Iron Tangle (floor 4), pure global functions (hook_globals): the plan of a transit floor (5 x 5 cells, three lines, 11 stations), the tracks of its trains and the sweep check.
--- Design: ~/share/floor4-design.md (reviewed). No Game, no file locals: cell.lua asks `transit_cell` for the cells, shell / transit_region draw them, the game builds the trains from `transit_lines`.
+-- gen/transit: the Iron Tangle (floor 4), pure global functions (hook_globals): the plan of a transit floor (7 x 7 cells, six lines, 17 stations), the tracks of its cars and the sweep check.
+-- Design: ~/share/floor4-design.md (reviewed; the 7 x 7 map is its question 3 answered: "a data change in the plan"). No Game, no file locals: cell.lua asks `transit_cell_info` for the cells,
+-- shell / transit_region draw them, the game builds the cars from `transit_lines`.
 --
---     c0        c1        c2        c3        c4
---  r0 corner    tunnel    HUB N     tunnel    corner       RED   = the ring (closed track along the 16 border cells), one car, stops at the four hubs (25 s)
---  r1 tunnel    den       B1 (+8 m) stairs    tunnel       YELLOW= row 2, Y1 - X - Y3 (open track, to and fro, level 0)
---  r2 HUB W     Y1        X         Y3        HUB E        BLUE  = column 2, B1 - X - B3 (open track, to and fro, 8 m ABOVE yellow along its whole length, X is a two-storey hall)
---  r3 tunnel    stairs    B3 (+8 m) den       tunnel       hubs are the safe rooms (platform, crystal, shop); the arrival is HUB S; the stairwells (stairs_free) are the cells (3,1) and (1,3)
---  r4 corner    tunnel    HUB S     tunnel    corner
--- Coordinates: metres in the floor's local frame (a cell is 32 m: floor x = ci * 32 + cell x); a level is 8 m (level 1 = Blue); the deck of every car is the first air voxel above the floor of its level.
+--      c0   c1   c2   c3   c4   c5   c6
+--  r0  c    -    T    H    T    -    c       RED    = the ring (closed track along the 24 border cells), one car, stops at the four hubs (25 s); T = a ring tunnel with the stair up to Blue / Violet
+--  r1  |    s    B    d    B    d    |       YELLOW = row 2, ORANGE = row 3, GREEN = row 4: open tracks at level 0 (Y stations at both ends, X halls where they cross the vertical lines)
+--  r2  |    Y    X    m    X    Y    |       BLUE = column 2, VIOLET = column 4: open tracks at level 1 (+8 m), B stations at both ends; X is a two-storey hall (m: a tunnel with a door to a den)
+--  r3  H    Y    X    X    X    Y    H       the centre X (3,3) is THE ABYSS (Orange stops there, the pit is in its deck); hubs are the safe rooms; the arrival is HUB SOUTH
+--  r4  |    Y    X    m    X    Y    |       dens (d) at (3,1) (5,1) (1,5) (3,5); the stairwells (stairs_free) are the cells (1,1) and (5,5)
+--  r5  |    d    B    d    B    s    |
+--  r6  c    -    T    H    T    -    c
+-- Coordinates: metres in the floor's local frame (a cell is 32 m: floor x = ci * 32 + cell x); a level is 8 m (level 1 = Blue, Violet); the deck of every car is the first air voxel above the floor of its level.
 
 function transit_spec()
     if transit_spec_memo then return transit_spec_memo end
     transit_spec_memo = {
-        "c-H-c",
-        "|dBs|",
-        "HYXYH",
-        "|sBd|",
-        "c-H-c",
+        "c-THT-c",
+        "|sBdBd|",
+        "|YXmXY|",
+        "HYXXXYH",
+        "|YXmXY|",
+        "|dBdBs|",
+        "c-THT-c",
     }
     return transit_spec_memo
 end
@@ -24,7 +29,7 @@ end
 -- the constants (a function: the hook sees functions only): the size of the floor, the height of the Blue level above the floor, the car
 function transit_const()
     if transit_const_memo then return transit_const_memo end
-    transit_const_memo = { W = 5, H = 5, level_m = 8, car = { len = 14, width = 3.6, thickness = 0.25, speed = 5, accel = 1.5 } }
+    transit_const_memo = { W = 7, H = 7, level_m = 8, car = { len = 14, width = 3.6, thickness = 0.25, speed = 5, accel = 1.5 } }
     return transit_const_memo
 end
 
@@ -42,29 +47,40 @@ function transit_hall_widths() return { tunnel = 8, wide = 12, concourse = 6, se
 function transit_open(ci, cj)
     local c = transit_code(ci, cj)
     local o = {}
+    local W, H = transit_const().W, transit_const().H
     local function put(side, kind, pos) o[side] = { kind, pos } end
     if c == "c" then
         -- the ring: the corner cell joins its two ring neighbours
         if ci == 0 then put("E", "tunnel", 16) else put("W", "tunnel", 16) end
         if cj == 0 then put("S", "tunnel", 16) else put("N", "tunnel", 16) end
-    elseif c == "-" then put("E", "tunnel", 16); put("W", "tunnel", 16)
+    elseif c == "-" or c == "T" or c == "m" then
+        put("E", "tunnel", 16); put("W", "tunnel", 16)
+        if c == "T" then put(cj == 0 and "S" or "N", "stair", 16)            -- the stair up to the Blue / Violet station beside the ring
+        elseif c == "m" then put(cj == 2 and "N" or "S", "service", 16) end   -- the door to the den
     elseif c == "|" then put("N", "tunnel", 16); put("S", "tunnel", 16)
     elseif c == "H" then
-        if cj == 0 or cj == 4 then                       -- N, S hubs: along x
+        if cj == 0 or cj == H - 1 then                   -- N, S hubs: along x
             put("E", "tunnel", 16); put("W", "tunnel", 16)
-            put(cj == 0 and "S" or "N", "stair", 16)        -- the stair up to B1 / B3
         else                                             -- W, E hubs: along z
             put("N", "tunnel", 16); put("S", "tunnel", 16)
-            put(ci == 0 and "E" or "W", "concourse", 9)     -- the concourse to Y1 / Y3 (z = 9: the north platform)
+            put(ci == 0 and "E" or "W", "concourse", 9)     -- the concourse to the Y station beside it (z = 9: the north platform)
         end
-    elseif c == "Y" then                                 -- Y1 (1,2), Y3 (3,2): along x
-        if ci == 1 then put("W", "concourse", 9); put("E", "tunnel", 16) else put("E", "concourse", 9); put("W", "tunnel", 16) end
+    elseif c == "Y" then                                 -- the ends of Yellow, Orange, Green: along x
+        if ci == 1 then
+            if cj == 3 then put("W", "concourse", 9) end
+            put("E", "tunnel", 16)
+        else
+            if cj == 3 then put("E", "concourse", 9) end
+            put("W", "tunnel", 16)
+        end
         put("N", "service", 16); put("S", "service", 16)
-    elseif c == "B" then                                 -- B1 (2,1), B3 (2,3): along z, level 1
+    elseif c == "B" then                                 -- the ends of Blue (column 2) and Violet (column 4): along z, level 1
         if cj == 1 then put("N", "stair", 16); put("S", "wide", 16) else put("S", "stair", 16); put("N", "wide", 16) end
-    elseif c == "X" then put("E", "tunnel", 16); put("W", "tunnel", 16); put("N", "wide", 16); put("S", "wide", 16)
-    elseif c == "d" or c == "s" then                     -- dens (1,1) (3,3) and stairs (3,1) (1,3): one door toward the Yellow station beside them
-        if cj == 1 then put("S", "service", 16) else put("N", "service", 16) end
+    elseif c == "X" then
+        put("E", "tunnel", 16); put("W", "tunnel", 16)
+        if ci == 2 or ci == 4 then put("N", "wide", 16); put("S", "wide", 16) end
+    elseif c == "d" or c == "s" then                     -- dens and stairs: one door toward the neighbour on the inner side
+        put(cj == 1 and "S" or "N", "service", 16)
     end
     return o
 end
@@ -73,24 +89,30 @@ end
 function transit_cell_info(ci, cj)
     local c = transit_code(ci, cj)
     if not c then return nil end
+    local W = transit_const().W
     local o = transit_open(ci, cj)
     local info = { ci = ci, cj = cj, code = c, open = {}, door = {}, deg = 0, level = 0 }
     for side, kd in pairs(o) do info.open[side] = kd[1]; info.door[side] = kd[2]; info.deg = info.deg + 1 end
     local ax = "x"
-    if c == "|" or c == "B" or ((c == "H") and (cj == 2)) then ax = "z" end
+    if c == "|" or c == "B" or ((c == "H") and (ci == 0 or ci == W - 1)) then ax = "z" end
     info.axis = ax
     if c == "c" then info.role, info.theme, info.room = "connector", "corner", { x = 2, z = 2, w = 28, d = 28, h = 8, y = 0 }
-    elseif c == "-" or c == "|" then
+    elseif c == "-" or c == "|" or c == "T" or c == "m" then
         info.role, info.theme = "connector", "tunnel"
         info.room = (ax == "x") and { x = 0, z = 12, w = 32, d = 8, h = 6, y = 0 } or { x = 12, z = 0, w = 8, d = 32, h = 6, y = 0 }
     elseif c == "H" then
-        info.role, info.theme = (ci == 2 and cj == 4) and "arrival" or "safe", "hub"
+        info.role, info.theme = (ci == W // 2 and cj == transit_const().H - 1) and "arrival" or "safe", "hub"
         info.room = (ax == "x") and { x = 0, z = 6, w = 32, d = 20, h = 7, y = 0 } or { x = 6, z = 0, w = 20, d = 32, h = 7, y = 0 }
         info.line = "red"
-    elseif c == "Y" then info.role, info.theme, info.room, info.line = "connector", "station", { x = 0, z = 6, w = 32, d = 20, h = 7, y = 0 }, "yellow"
+    elseif c == "Y" then
+        info.role, info.theme, info.room = "connector", "station", { x = 0, z = 6, w = 32, d = 20, h = 7, y = 0 }
+        info.line = ({ [2] = "yellow", [3] = "orange", [4] = "green" })[cj]
     elseif c == "B" then
-        info.role, info.theme, info.room, info.line, info.level = "connector", "station", { x = 6, z = 0, w = 20, d = 32, h = 7, y = transit_const().level_m }, "blue", 1
-    elseif c == "X" then info.role, info.theme, info.room, info.line = "connector", "station", { x = 4, z = 4, w = 24, d = 24, h = 14, y = 0 }, "cross"
+        info.role, info.theme, info.room, info.level = "connector", "station", { x = 6, z = 0, w = 20, d = 32, h = 7, y = transit_const().level_m }, 1
+        info.line = (ci == 2) and "blue" or "violet"
+    elseif c == "X" then
+        info.role, info.theme, info.room, info.line = "connector", "station", { x = 4, z = 4, w = 24, d = 24, h = 14, y = 0 }, "cross"
+        info.abyss = (ci == W // 2 and cj == transit_const().H // 2)
     elseif c == "d" then info.role, info.theme, info.room = "room", "den", { x = 6, z = 6, w = 20, d = 20, h = 7, y = 0 }
     elseif c == "s" then info.role, info.theme, info.room = "stairs", "stairs_free", { x = 9, z = 9, w = 14, d = 14, h = 6, y = 0 } end
     return info
@@ -101,6 +123,8 @@ end
 -- west, north, east, south; the corners are arcs of radius 12 m in 12 steps of 7.5 degrees laid so that they start and end on the centre lines of the cells.
 function transit_lines()
     if transit_lines_memo then return transit_lines_memo end
+    local C = transit_const()
+    local WM, HM = C.W * 32, C.H * 32                    -- the floor in metres
     local red, stops = {}, {}
     local function pt(x, z) red[#red + 1] = { x, z } end
     local function arc(cx, cz, a0, a1)               -- degrees, points from a0 to a1 (both included)
@@ -108,18 +132,28 @@ function transit_lines()
         for k = 0, n do local a = (a0 + (a1 - a0) * k / n) * math.pi / 180; pt(cx + 12 * math.cos(a), cz + 12 * math.sin(a)) end
     end
     local function stop() stops[#stops + 1] = { #red, 25 } end
-    pt(80, 144); stop()                                 -- HUB S
-    arc(28, 132, 90, 180)                               -- the SW corner: from (28, 144) to (16, 132)
-    pt(16, 80); stop()                                  -- HUB W
+    pt(WM / 2, HM - 16); stop()                         -- HUB S
+    arc(28, HM - 28, 90, 180)                           -- the SW corner: from (28, HM - 16) to (16, HM - 28)
+    pt(16, HM / 2); stop()                              -- HUB W
     arc(28, 28, 180, 270)                               -- the NW corner: from (16, 28) to (28, 16)
-    pt(80, 16); stop()                                  -- HUB N
-    arc(132, 28, 270, 360)                              -- the NE corner: from (132, 16) to (144, 28)
-    pt(144, 80); stop()                                 -- HUB E
-    arc(132, 132, 0, 90)                                -- the SE corner: from (144, 132) to (132, 144)
+    pt(WM / 2, 16); stop()                              -- HUB N
+    arc(WM - 28, 28, 270, 360)                          -- the NE corner: from (WM - 28, 16) to (WM - 16, 28)
+    pt(WM - 16, HM / 2); stop()                         -- HUB E
+    arc(WM - 28, HM - 28, 0, 90)                        -- the SE corner: from (WM - 16, HM - 28) to (WM - 28, HM - 16)
+    local sp = C.car.speed
+    local function open_line(name, level, pts)
+        local st = {}
+        for i = 1, #pts do st[i] = { i, 20 } end
+        return { name = name, closed = false, level = level, points = pts, stops = st, speed = sp }
+    end
+    -- rows 2 / 3 / 4 at level 0 (the Y stations at columns 1 and 5, the X halls at columns 2 and 4, Orange also the Abyss at column 3), columns 2 / 4 at level 1 (the B stations at rows 1 and 5 stop 9 m from the cell border)
     transit_lines_memo = {
-        { name = "red", closed = true, level = 0, points = red, stops = stops, speed = transit_const().car.speed },
-        { name = "yellow", closed = false, level = 0, points = { { 48, 80 }, { 80, 80 }, { 112, 80 } }, stops = { { 1, 20 }, { 2, 20 }, { 3, 20 } }, speed = transit_const().car.speed },
-        { name = "blue", closed = false, level = 1, points = { { 80, 55 }, { 80, 80 }, { 80, 105 } }, stops = { { 1, 20 }, { 2, 20 }, { 3, 20 } }, speed = transit_const().car.speed },
+        { name = "red", closed = true, level = 0, points = red, stops = stops, speed = sp },
+        open_line("yellow", 0, { { 48, 80 }, { 80, 80 }, { 144, 80 }, { 176, 80 } }),
+        open_line("orange", 0, { { 48, 112 }, { 80, 112 }, { 112, 112 }, { 144, 112 }, { 176, 112 } }),
+        open_line("green", 0, { { 48, 144 }, { 80, 144 }, { 144, 144 }, { 176, 144 } }),
+        open_line("blue", 1, { { 80, 55 }, { 80, 80 }, { 80, 112 }, { 80, 144 }, { 80, 169 } }),
+        open_line("violet", 1, { { 144, 55 }, { 144, 80 }, { 144, 112 }, { 144, 144 }, { 144, 169 } }),
     }
     return transit_lines_memo
 end
@@ -128,7 +162,10 @@ end
 function transit_carved(x, z, level)
     local ci, cj = math.floor(x / 32), math.floor(z / 32)
     if x < 0 or z < 0 or ci > transit_const().W - 1 or cj > transit_const().H - 1 then return false end
-    local info = transit_cell_info(ci, cj)
+    transit_carved_memo = transit_carved_memo or {}                 -- (the cells are constants: this table is the sweep's own, never handed out)
+    local key = ci * 16 + cj
+    local info = transit_carved_memo[key]
+    if info == nil then info = transit_cell_info(ci, cj) or false; transit_carved_memo[key] = info end
     if not info then return false end
     local lx, lz = x - ci * 32, z - cj * 32
     local r = info.room
@@ -208,10 +245,15 @@ end
 
 function transit_station_text(info)
     local c = info.code
-    if c == "H" then return "HUB " .. (info.cj == 0 and "NORTH" or (info.cj == 4 and "SOUTH" or (info.ci == 0 and "WEST" or "EAST"))) end
-    if c == "Y" then return (info.ci == 1) and "YELLOW 1" or "YELLOW 3" end
-    if c == "B" then return (info.cj == 1) and "BLUE 1" or "BLUE 3" end
-    if c == "X" then return "THE ABYSS" end
+    local C = transit_const()
+    local function up(n) return n:upper() end
+    if c == "H" then return "HUB " .. (info.cj == 0 and "NORTH" or (info.cj == C.H - 1 and "SOUTH" or (info.ci == 0 and "WEST" or "EAST"))) end
+    if c == "Y" then return up(info.line) .. ((info.ci == 1) and " WEST" or " EAST") end
+    if c == "B" then return up(info.line) .. ((info.cj == 1) and " NORTH" or " SOUTH") end
+    if c == "X" then
+        if info.abyss then return "THE ABYSS" end
+        return up(info.ci == 2 and "blue" or "violet") .. "-" .. up(({ [2] = "yellow", [3] = "orange", [4] = "green" })[info.cj])
+    end
     return nil
 end
 
@@ -221,7 +263,7 @@ function transit_checkpoint(info)
         local f = transit_hub_fixtures(info)
         return f.wake.x, f.wake.z
     end
-    if info.code == "-" then return 16, 13 end
+    if info.code == "-" or info.code == "T" or info.code == "m" then return 16, 13 end
     if info.code == "|" then return 13, 16 end
     return nil
 end

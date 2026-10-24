@@ -28,16 +28,16 @@ for cj = 0, P.H - 1 do for ci = 0, P.W - 1 do
   local r = c.room
   local o = {}
   for _, d in ipairs({'E','S','W','N'}) do o[#o + 1] = tostring(c.open[d]) .. ':' .. tostring(c.door and c.door[d]) end
-  print('C', ci, cj, c.role, tostring(c.theme), r and r.x or -1, r and r.z or -1, r and r.w or -1, r and r.d or -1, table.concat(o, ' '))
+  print('C', ci, cj, c.role, tostring(c.theme), r and r.x or -1, r and r.z or -1, r and r.w or -1, r and r.d or -1, table.concat(o, ' '), r and r.y or 0)
 end end
 """ % (fl, fl)
 
-def flood(v, lo_m, hi_m, frm_m):
+def flood(v, lo_m, hi_m, frm_m, yv=0.0):
     """boxes in metres relative to the floor's origin (x = 0, z = floor band start) -> the engine's answer"""
     bz = (fl * 32 + 2) * 32.0
     lo = [int(lo_m[0] * 16), Y0, int((bz + lo_m[1]) * 16)]
     hi = [int(hi_m[0] * 16) - 1, Y1, int((bz + hi_m[1]) * 16) - 1]
-    return v.tool("flood_region", min=lo, max=hi, **{"from": [int(frm_m[0] * 16), YF, int((bz + frm_m[1]) * 16)]}), lo, hi
+    return v.tool("flood_region", min=lo, max=hi, **{"from": [int(frm_m[0] * 16), YF + int(yv * 16), int((bz + frm_m[1]) * 16)]}), lo, hi
 
 def shrunk(lo, hi, W, H, keep=""):
     """a box (metres, x0 z0 / x1 z1) minus the 4.5 m next to every block border line it touches (the artery strips are checked by the artery door check), except on the sides in `keep`"""
@@ -65,7 +65,7 @@ for seed in seeds:
             for d, tok in zip("ESWN", p[9].split(" ")):
                 k, dr = tok.split(":")
                 sides[d] = (None if k == "nil" else k, None if dr == "nil" else float(dr))
-            cells[(ci, cj)] = dict(role=p[3], theme=p[4], room=[float(x) for x in p[5:9]], sides=sides)
+            cells[(ci, cj)] = dict(role=p[3], theme=p[4], room=[float(x) for x in p[5:9]], sides=sides, y=float(p[10]) if len(p) > 10 else 0.0)
         problems = []
         checks = 0
         # the boroughs: origin cell of every 2 x 2 super-cell; the fortress (a static spiral of rings, super-cell metres 10 .. 54) is checked by its own flood of the whole courtyard
@@ -74,10 +74,10 @@ for seed in seeds:
             if c["theme"] in ("borough", "park", "village"):
                 origins.add((ci - (1 if c["sides"]["W"][0] == "internal" else 0), cj - (1 if c["sides"]["N"][0] == "internal" else 0)))
         forts = [(oi * 32 + 10, oj * 32 + 10, oi * 32 + 54, oj * 32 + 54) for oi, oj in sorted(origins) if cells[(oi, oj)]["theme"] in ("borough", "park")]
-        def check(label, lo_m, hi_m, frm_m, strict=False):
+        def check(label, lo_m, hi_m, frm_m, strict=False, yv=0.0):
             global checks
             checks += 1
-            try: r, lo, hi = flood(v, lo_m, hi_m, frm_m)
+            try: r, lo, hi = flood(v, lo_m, hi_m, frm_m, yv)
             except Exception as e: problems.append("%s: %s (from %.1f, %.1f, theme %s)" % (label, str(e)[:60], frm_m[0], frm_m[1], cells.get((int(frm_m[0] // 32), int(frm_m[1] // 32)), {}).get("theme"))); return
             if r["unknown_columns"]: problems.append("%s: %d unknown columns" % (label, r["unknown_columns"])); return
             if r["standable"] == 0: problems.append("%s: nothing standable" % label); return
@@ -91,12 +91,12 @@ for seed in seeds:
         for (ci, cj), c in sorted(cells.items(), key=lambda kv: (kv[0][1], kv[0][0])):
             rm = c["room"]
             if rm[2] < 0: continue
-            def inside_door(d, dr):
+            def inside_door(d, dr, cc=(ci, cj), rr=rm):
                 """a spot 1.5 m inside the room at its door on side d (the doors are kept free by every theme)"""
-                if d == "E": return (ci * 32 + rm[0] + rm[2] - 1.5, cj * 32 + dr)
-                if d == "W": return (ci * 32 + rm[0] + 1.5, cj * 32 + dr)
-                if d == "S": return (ci * 32 + dr, cj * 32 + rm[1] + rm[3] - 1.5)
-                return (ci * 32 + dr, cj * 32 + rm[1] + 1.5)
+                if d == "E": return (cc[0] * 32 + rr[0] + rr[2] - 1.5, cc[1] * 32 + dr)
+                if d == "W": return (cc[0] * 32 + rr[0] + 1.5, cc[1] * 32 + dr)
+                if d == "S": return (cc[0] * 32 + dr, cc[1] * 32 + rr[1] + rr[3] - 1.5)
+                return (cc[0] * 32 + dr, cc[1] * 32 + rr[1] + 1.5)
             for d, (dx, dz) in (("E", (1, 0)), ("S", (0, 1))):
                 kind, dr = c["sides"][d]
                 if kind in (None, "artery"): continue
@@ -105,7 +105,11 @@ for seed in seeds:
                 if (ni, nj) not in cells: continue
                 x0, z0 = ci * 32, cj * 32
                 lo, hi = shrunk((x0, z0), (x0 + 32 * (1 + dx), z0 + 32 * (1 + dz)), W, H)
-                check("c%d_%d -%s- c%d_%d (%s)" % (ci, cj, d, ni, nj, kind), lo, hi, inside_door(d, dr))
+                frm, yv = inside_door(d, dr), c["y"]
+                if fl == 4 and kind == "stair" and c["y"] > 0:       # (the stair corridor of a Blue / Violet station: the walker starts in the ring tunnel at level 0 on its other side)
+                    nb = cells[(ni, nj)]
+                    frm, yv = inside_door("N" if d == "S" else "W", dr, (ni, nj), nb["room"]), nb["y"]
+                check("c%d_%d -%s- c%d_%d (%s)" % (ci, cj, d, ni, nj, kind), lo, hi, frm, yv=yv)
             for d in "ESWN":
                 kind, dr = c["sides"][d]
                 if kind != "artery": continue

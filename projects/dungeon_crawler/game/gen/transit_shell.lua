@@ -6,7 +6,7 @@ function transit_region(rx, rz, wh, run)
     local fl = (rz - 1) // 32
     if fl ~= 4 then return {} end
     local ci, cj = rx, rz - fl * 32 - 2
-    if ci < 0 or cj < 0 or ci > 4 or cj > 4 then return {} end
+    if ci < 0 or cj < 0 or ci > transit_const().W - 1 or cj > transit_const().H - 1 then return {} end
     local info = transit_cell_info(ci, cj)
     local X0, Z0 = rx * 512, rz * 512
     local YF = 128
@@ -14,6 +14,7 @@ function transit_region(rx, rz, wh, run)
     local B = deco_builder(ops, X0, Z0, YF)
     local code, room, lv = info.code, info.room, info.level
     local yl = lv * transit_const().level_m              -- the floor level of this cell's room
+    local yd = transit_const().level_m                   -- the upper deck of an X hall (the level of Blue / Violet)
     local floor, max, min = math.floor, math.max, math.min
     local function F(x0, y0, z0, x1, y1, z1, mat)
         B.fill(max(0, x0), y0, max(0, z0), min(32, x1), y1, min(32, z1), mat)
@@ -48,14 +49,18 @@ function transit_region(rx, rz, wh, run)
         carve(rx0, rz0, rx1, rz1, 0, top)                         -- the hall: two storeys, 14 m
         floor_mat(rx0, rz0, rx1, rz1, 0, "marble")
         -- the upper deck (Blue, +8 m): a slab 1 m thick over the whole hall except the stair strip along the north wall (z 4 .. 7)
-        F(rx0, yl - 1, rz0 + 3, rx1, yl, rz1, "dungeon_brick"); floor_mat(rx0, rz0 + 3, rx1, rz1, yl, "marble")
-        for k = 0, 23 do F(rx0 + k, 0, rz0, rx0 + k + 1, (k + 1) * yl / 24, rz0 + 3, "marble") end     -- the stair: 24 steps eastward along the north wall, up to the deck
-        F(rx0, yl, rz0 + 3, rx1 - 1, yl + 1.0, rz0 + 3.1, "metal")                                          -- the rail along the stair's opening
+        -- (the deck covers the stair's strip over its first 12 m, where the steps are low enough to walk under: a walker that enters by a Blue / Violet door lands on the deck, never in the opening)
+        F(rx0, yd - 1, rz0 + 3, rx1, yd, rz1, "dungeon_brick"); floor_mat(rx0, rz0 + 3, rx1, rz1, yd, "marble")
+        F(rx0, yd - 1, rz0, rx0 + 12, yd, rz0 + 3, "dungeon_brick"); floor_mat(rx0, rz0, rx0 + 12, rz0 + 3, yd, "marble")
+        for k = 0, 23 do F(rx0 + k, 0, rz0, rx0 + k + 1, (k + 1) * yd / 24, rz0 + 3, "marble") end     -- the stair: 24 steps eastward along the north wall, up to the deck
+        F(rx0 + 12, yd, rz0 + 3, rx1 - 1, yd + 1.0, rz0 + 3.1, "metal"); F(rx0 + 12, yd, rz0, rx0 + 12.1, yd + 1.0, rz0 + 3.1, "metal"); F(rx0 + 12, yd, rz0, rx1 - 1, yd + 1.0, rz0 + 0.1, "metal")     -- the rail along the stair's opening
         -- the pit: a round hole in the deck, a guard ring and the glow of the Abyss
-        for _, p in ipairs({ { 22, 22 } }) do B.pillar(p[1], p[2], 2.6, yl - 1, yl, nil); B.ring(p[1], p[2], 2.6, 3.0, yl, yl + 1.0, "metal") end
-        F(21.6, yl + 0.5, 18.85, 22.4, yl + 1.0, 18.95, "gold")                                      -- the plaque on the rail of the pit: THE ABYSS (a button of the game)
+        if info.abyss then
+            for _, p in ipairs({ { 22, 22 } }) do B.pillar(p[1], p[2], 2.6, yd - 1, yd, nil); B.ring(p[1], p[2], 2.6, 3.0, yd, yd + 1.0, "metal") end
+            F(21.6, yd + 0.5, 18.85, 22.4, yd + 1.0, 18.95, "gold")                                      -- the plaque on the rail of the pit: THE ABYSS (a button of the game)
+        end
         -- the columns that carry the deck (the cars and the Yellow platform stay clear: the columns stand at the corners)
-        for _, p in ipairs({ { 6, 9 }, { 26, 9 }, { 6, 23 }, { 26, 23 } }) do B.pillar(p[1], p[2], 0.6, 0, yl, "metal") end
+        for _, p in ipairs({ { 6, 9 }, { 26, 9 }, { 6, 23 }, { 26, 23 } }) do B.pillar(p[1], p[2], 0.6, 0, yd, "metal") end
     elseif code == "c" then
         carve(rx0, rz0, rx1, rz1, 0, room.h)
         floor_mat(rx0, rz0, rx1, rz1, 0, "dungeon_brick")                  -- (plain brick floors in the tunnels: the ground cover rows are for the flagstone rooms)
@@ -143,9 +148,9 @@ function transit_region(rx, rz, wh, run)
     local function lamp(x, z, y)
         F(x - 0.15, y, z - 0.15, x + 0.15, y + 0.12, z + 0.15, "lantern")
     end
-    if code == "-" or code == "|" then
+    if code == "-" or code == "|" or code == "T" or code == "m" then
         for t = 4, 28, 8 do
-            if code == "-" then lamp(t, 16, yl + room.h - 0.12); F(t - 0.1, yl + room.h - 0.5, rz0, t + 0.1, yl + room.h, rz1, "metal")
+            if code ~= "|" then lamp(t, 16, yl + room.h - 0.12); F(t - 0.1, yl + room.h - 0.5, rz0, t + 0.1, yl + room.h, rz1, "metal")
             else lamp(16, t, yl + room.h - 0.12); F(rx0, yl + room.h - 0.5, t - 0.1, rx1, yl + room.h, t + 0.1, "metal") end
         end
     elseif code == "H" or code == "Y" or code == "B" then
@@ -165,7 +170,7 @@ function transit_region(rx, rz, wh, run)
     elseif code == "c" then
         for _, p in ipairs({ { 8, 8 }, { 24, 8 }, { 8, 24 }, { 24, 24 }, { 16, 16 } }) do lamp(p[1], p[2], room.h - 0.12) end
     elseif code == "X" then
-        for _, p in ipairs({ { 10, 10 }, { 22, 10 }, { 10, 22 }, { 22, 22 } }) do lamp(p[1], p[2], 7.6); lamp(p[1], p[2], yl + 5.5) end
+        for _, p in ipairs({ { 10, 10 }, { 22, 10 }, { 10, 22 }, { 22, 22 } }) do lamp(p[1], p[2], 6.85); lamp(p[1], p[2], yd + 5.5) end
     end
 
     -- ------------------------------------------------------------------------------------------ the hubs' fixtures and the signs of the stations

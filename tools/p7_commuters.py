@@ -21,18 +21,18 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
     L(v, "Game.contracts.sign(nil)", 2); v.step(60)
     L(v, "Game.run.begin_floor(4)", 2); v.step(500); L(v, "Game.contracts.sign(nil)", 2); v.step(30)
     L(v, "Game.state.flags.god = true; Game.run.cur().floor_ticks = 1000000; Game.state.hp = 99999", 0)
-    L(v, "local G = Game; player.hand_model(nil); player.teleport(G.mx(38), G.my(0.2), G.mz(73 + 0), { wait = true })", 200)
+    L(v, "local G = Game; player.hand_model(nil); player.teleport(G.mx(38), G.my(0.2), G.mz(105), { wait = true })", 200)
     shots = 0
     L(v, 'Game.gen.trains.dbg = true', 0)
     for s in range(secs):
-        o = L(v, """local G = Game; local T = G.gen.trains; local c = T.cars.yellow; local st = events.state(c.id); local x, y, z = T.where('yellow'); local px, py, pz = player.pos()
-local rid = {}; for _, r in ipairs(T.riders.yellow or {}) do rid[#rid + 1] = r.inst.kind .. '>' .. r.dest end
-local crowd = 0; for id, i in pairs(G.enemies.list) do if i.room == 'c1_2' and not i.dead and not i.riding then crowd = crowd + 1 end end
+        o = L(v, """local G = Game; local T = G.gen.trains; local c = T.cars.orange; local st = events.state(c.id); local x, y, z = T.where('orange'); local px, py, pz = player.pos()
+local rid = {}; for _, r in ipairs(T.riders.orange or {}) do rid[#rid + 1] = r.inst.kind .. '>' .. r.dest end
+local crowd = 0; for id, i in pairs(G.enemies.list) do if i.room == 'c1_3' and not i.dead and not i.riding then crowd = crowd + 1 end end
 print(string.format('car %.0f,%.0f moving=%s | player %.0f,%.0f,%.0f | crowd at Y1: %d | riders: %s', x - G.mx(0), z - G.mz(0), tostring(st.moving), px - G.mx(0), py, pz - G.mz(0), crowd, table.concat(rid, ' ')))""", 0)
         if s % 3 == 0: print("t+%3d" % s, o[0])
         if shots == 0 and 'goblin' in o[0] + 'bandit' + 'imp' + 'rat' and 'riders: ' in o[0] and o[0].split('riders: ')[1].strip() and 'moving=false' in o[0].replace('moving=nil', 'moving=false'):
             cx, cz = [float(t) for t in o[0].split('car ')[1].split(' ')[0].split(',')]
-            L(v, "local G = Game; local x, y, z = G.gen.trains.where('yellow'); player.hand_model(nil); player.teleport(x - 4.5, y + 0.4, z - 1.0)", 30)
+            L(v, "local G = Game; local x, y, z = G.gen.trains.where('orange'); player.hand_model(nil); player.teleport(x - 4.5, y + 0.4, z - 1.0)", 30)
             v.screenshot(os.path.join(SH, "commuters_on_deck.png"), hud=False, settle=20, eye=[cx - 12, 8 + 3.0, BZ + cz - 4], target=[cx, 8 + 1.2, BZ + cz], fov=70)
             shots = 1
         v.step(60)
