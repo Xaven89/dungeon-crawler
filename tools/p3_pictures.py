@@ -33,8 +33,9 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
     look("stairs_open_inside", sx - 2.6, 1.7, sz, sx + 2.6, -1.8, sz)
     # a graffiti wall and a bathroom door: found by the same hash the game uses
     g = L(v, """local CG, H = Game.floorgen.cg(); local P = Game.floorgen.layout
+local PLAIN = { hall = true, crypt = true, library = true, depot = true, grotto = true, flooded = true, furnace = true, ballroom = true, warlord = true, captive = true, prize = true }
 for _, id in ipairs(P.order) do local r = P.rooms[id]
-  if r.cellrole == 'room' and H(0, P.floor * 1000 + 720, r.ci, r.cj, 1) < 0.22 then local d = {}; for _, dd in ipairs(P.doors[id] or {}) do d[dd.side] = true end; print(id, r.x, r.z, r.w, r.d, tostring(d.N), tostring(d.S), tostring(d.W), tostring(d.E)); break end end""", 0)
+  if PLAIN[r.theme] and deco_rng(H, P.floor, r.ci, r.cj, 4).next() < 0.22 then local d = {}; for _, dd in ipairs(P.doors[id] or {}) do d[dd.side] = true end; print(id, r.x, r.z, r.w, r.d, tostring(d.N), tostring(d.S), tostring(d.W), tostring(d.E)); break end end""", 0)
     print("graffiti room", g)
     if g:
         p = g[0].split("\t")

@@ -238,7 +238,6 @@ function F.make_cell(id)
         cell_lights(P, room)
         if P.rings then for _, ring in ipairs(P.ring_list) do if ring.origin == id then F.make_ring(P, ring) end end end
         if room.theme == 'stairs_free' then F.pit_cover(room, F.stairs_open(id)) end
-        F.cell_signs(P, room)
     end)
     if not ok then print("floor: cell " .. id .. " failed: " .. tostring(err)) end
     G.traps.cell = nil
@@ -457,6 +456,7 @@ function F.is_safe(room) return SAFE[room.theme] == true and not F.safe_closed()
 
 -- the sealed pit of a free stairwell: a glowing slab over the round hole until the stairs exist (edits, saved: the state is re-applied whenever the cell comes alive)
 function F.pit_cover(room, open)
+    if G.nocover then return end
     local cx, cz = room.x + room.w / 2, room.z + room.d / 2
     local key = "cov_" .. room.id
     local flags = G.state.flags
@@ -625,42 +625,6 @@ function F.early_penalty()
     sh.followers = floor(sh.followers * 0.95)
     G.state.flags.forced_contract = "stasis"
     G.announcer.say_key("stairs.early", { prio = 2 })
-end
-
-local GRAFFITI = { "THE FLOOR IS LAVA (IT IS NOT)", "I WAS HERE. NOBODY ELSE WAS", "DO NOT FEED THE MANAGER", "EXIT -> (NOT THIS WAY)", "UNION OF CONTESTANTS LOCAL 7", "SPONSOR ME", "THE CRATES LIE",
-               "GLEE IS WATCHING", "PLEASE STAND CLEAR OF THE CEILING", "ASK ABOUT OUR VENDING MACHINES", "FOUND A SAFE ROOM. LOST IT", "NO REFUNDS" }
--- hashed text on a wall of some rooms and the block names at the corners of the arteries (voxel text, written once: the edit is in the world's save)
-function F.cell_signs(P, room)
-    local _, H = F.cg()
-    local signs = G.state.signs
-    if not signs then signs = {}; G.state.signs = signs end
-    local key = P.floor .. room.id
-    if signs[key] then return end
-    signs[key] = true
-    local x0, z0 = room.ci * 32, room.cj * 32
-    -- the name of the block at the corners of the arteries (the plaza signs: on the wall that borders the artery strip, facing it)
-    if P.plan.ctx.P.kind == "grid" and (room.ci % 8 == 0 or room.ci % 8 == 7) and (room.cj % 8 == 0 or room.cj % 8 == 7) then
-        local bi, bj = room.ci // 8, room.cj // 8
-        local txt = "BLOCK " .. string.char(65 + bi) .. (bj + 1)
-        local len = #txt * 6 * 0.0625
-        if room.cj % 8 == 0 then G.text(x0 + 16 + len / 2, 2.4, z0 + 4, txt, { facing = "-z", material = "gold", size = 1, depth = 1 })
-        else G.text(x0 + 16 - len / 2, 2.4, z0 + 28, txt, { facing = "+z", material = "gold", size = 1, depth = 1 }) end
-    end
-    if room.cellrole == "room" and H(0, P.floor * 1000 + 720, room.ci, room.cj, 1) < 0.22 then
-        local txt = GRAFFITI[1 + floor(H(0, P.floor * 1000 + 721, room.ci, room.cj, 1) * #GRAFFITI) % #GRAFFITI]
-        local doors = P.doors[room.id] or {}
-        local used = {}
-        for _, d in ipairs(doors) do used[d.side] = true end
-        local side
-        for _, sd in ipairs({ "N", "S", "W", "E" }) do if not used[sd] then side = sd; break end end
-        if side then
-            local len = #txt * 6 * 0.0625                                    -- 5 x 7 font at 1 voxel: about 6 voxels a letter
-            if side == "N" then G.text(room.x + room.w / 2 - len / 2, 1.7, room.z + 0.05, txt, { facing = "+z", material = "neon_red", size = 1, depth = 1 })
-            elseif side == "S" then G.text(room.x + room.w / 2 + len / 2, 1.7, room.z + room.d - 0.05, txt, { facing = "-z", material = "neon_red", size = 1, depth = 1 })
-            elseif side == "W" then G.text(room.x + 0.05, 1.7, room.z + room.d / 2 + len / 2, txt, { facing = "+x", material = "neon_red", size = 1, depth = 1 })
-            else G.text(room.x + room.w - 0.05, 1.7, room.z + room.d / 2 - len / 2, txt, { facing = "-x", material = "neon_red", size = 1, depth = 1 }) end
-        end
-    end
 end
 
 -- an enemy inside a safe room is sent out for a minute and a half

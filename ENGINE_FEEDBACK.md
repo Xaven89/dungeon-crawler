@@ -360,3 +360,11 @@ what I tried: `player.teleport` to a checkpoint on a hook floor in `on_start` of
 - ## `save_world` needs `--save FILE` even when the project has `save = world.vxs`
 kind: unclear docs        severity: annoying. `saved in memory only (no --save file / project save)` for a project whose project.cfg names a save file; the MCP server did not take it from there. workaround: pass `--save projects/X/world.vxs`.
 - Observation: `status.sim.bodies` was 191 awake bodies on a floor with about 15 cells alive (loot, gore and the floating orbs): not a problem yet, worth watching in P5.
+
+## Phase 20: voxel text written when a cell comes alive makes a replay differ
+kind: bug (probably the known edit-versus-chunk-residency path of Phase 17)        severity: hurts
+what I tried: P3 signs: `edit.text` (graffiti on a wall, block names at the corners of the arteries) called from the game's things when a cell comes alive, once per cell (a flag in the state), the chunks around the player being resident or still streaming in.
+expected: a recording of the bot's run replays to its hash (the same script, the same inputs).
+happened: three floors of seed 4242 with the bot (30,298 ticks): live `4d5fa8dc601c5f96` vs replay `7049d73de07e2a39`, every time, and the replay repeats itself. With `Game.nosigns = true` set from the bot's first Lua call (so the game does not call `edit.text` at all) the same run replays to its hash (19,897 ticks, `6410a585925d320e`). The same game with the text drawn by the region hook (a 5 x 7 font in `deco_text`, one box per run of pixels) replays to its hash (21,099 ticks, `60a7292e6a9ff3cf`).
+workaround: static text in the hook (gen/deco.lua `deco_text`). Everything else the game edits at run time (chest lids, forcefield slab, sponsor boxes, pit covers) did not break the replay in these runs; text is the only thing that did. A text edit may touch a chunk that is not resident yet in one run and is in the other; if the engine defers it, the deferred queue may differ between live and replay.
+repro: `tools/p2_playthrough.py 4242 janitor 3 --borough` at commit 03ca8e2 (plaza signs came with a8d9de7) on binary 8a61da1.

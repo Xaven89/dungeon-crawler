@@ -68,6 +68,13 @@ function shell_region(rx, rz, wh)
         if cj == H and ci >= -1 and ci <= W then artery_side("N") end
     end
 
+    -- the name of the block at the corners of the arteries: gold text on the wall next to the strip, facing it
+    if in_cell and (ci % 8 == 0 or ci % 8 == 7) and (cj % 8 == 0 or cj % 8 == 7) then
+        local Bt = { vbox = function(x0, y0, z0, x1, y1, z1, mat) ops[#ops + 1] = { kind = "box", lo = { X0 + x0, YF + y0, Z0 + z0 }, hi = { X0 + x1, YF + y1, Z0 + z1 }, material = mat } end }
+        local txt = "BLOCK " .. string.char(65 + ci // 8) .. (cj // 8 + 1)
+        local len = deco_text_len(txt)
+        if cj % 8 == 0 then deco_text(Bt, 16 + len / 2, 2.4, 4, txt, "-z", "gold") else deco_text(Bt, 16 - len / 2, 2.4, 28, txt, "+z", "gold") end
+    end
     if in_cell then
         local info = CG.cell(ctx, ci, cj)
         info_open, info_door = info.open, info.door

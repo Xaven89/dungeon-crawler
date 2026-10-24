@@ -255,6 +255,72 @@ function deco_borough(B, cu, cv)
     B.ring(cx - ox, cz - oz, 7.5, 8.2, 0, 0.1, "gold")
 end
 
+-- ---------------------------------------------------------------------------------------------- voxel text for the hook (the engine's edit.text is a world edit: edits made when a cell comes alive made a replay differ)
+-- a 5 x 7 font, one voxel a pixel; `facing` is the way the text looks (the way a reader stands), the line starts at (x, z) and its bottom is at y (cell metres); B.vbox takes voxels
+function deco_text(B, x, y, z, text, facing, mat)
+    local F5 = {
+        A = { "01110", "10001", "10001", "11111", "10001", "10001", "10001" }, B = { "11110", "10001", "10001", "11110", "10001", "10001", "11110" },
+        C = { "01110", "10001", "10000", "10000", "10000", "10001", "01110" }, D = { "11110", "10001", "10001", "10001", "10001", "10001", "11110" },
+        E = { "11111", "10000", "10000", "11110", "10000", "10000", "11111" }, F = { "11111", "10000", "10000", "11110", "10000", "10000", "10000" },
+        G = { "01110", "10001", "10000", "10111", "10001", "10001", "01111" }, H = { "10001", "10001", "10001", "11111", "10001", "10001", "10001" },
+        I = { "01110", "00100", "00100", "00100", "00100", "00100", "01110" }, J = { "00111", "00010", "00010", "00010", "00010", "10010", "01100" },
+        K = { "10001", "10010", "10100", "11000", "10100", "10010", "10001" }, L = { "10000", "10000", "10000", "10000", "10000", "10000", "11111" },
+        M = { "10001", "11011", "10101", "10101", "10001", "10001", "10001" }, N = { "10001", "11001", "10101", "10011", "10001", "10001", "10001" },
+        O = { "01110", "10001", "10001", "10001", "10001", "10001", "01110" }, P = { "11110", "10001", "10001", "11110", "10000", "10000", "10000" },
+        Q = { "01110", "10001", "10001", "10001", "10101", "10010", "01101" }, R = { "11110", "10001", "10001", "11110", "10100", "10010", "10001" },
+        S = { "01111", "10000", "10000", "01110", "00001", "00001", "11110" }, T = { "11111", "00100", "00100", "00100", "00100", "00100", "00100" },
+        U = { "10001", "10001", "10001", "10001", "10001", "10001", "01110" }, V = { "10001", "10001", "10001", "10001", "10001", "01010", "00100" },
+        W = { "10001", "10001", "10001", "10101", "10101", "11011", "10001" }, X = { "10001", "10001", "01010", "00100", "01010", "10001", "10001" },
+        Y = { "10001", "10001", "01010", "00100", "00100", "00100", "00100" }, Z = { "11111", "00001", "00010", "00100", "01000", "10000", "11111" },
+        ["0"] = { "01110", "10001", "10011", "10101", "11001", "10001", "01110" }, ["1"] = { "00100", "01100", "00100", "00100", "00100", "00100", "01110" },
+        ["2"] = { "01110", "10001", "00001", "00110", "01000", "10000", "11111" }, ["3"] = { "11110", "00001", "00001", "01110", "00001", "00001", "11110" },
+        ["4"] = { "00010", "00110", "01010", "10010", "11111", "00010", "00010" }, ["5"] = { "11111", "10000", "11110", "00001", "00001", "10001", "01110" },
+        ["6"] = { "00110", "01000", "10000", "11110", "10001", "10001", "01110" }, ["7"] = { "11111", "00001", "00010", "00100", "01000", "01000", "01000" },
+        ["8"] = { "01110", "10001", "10001", "01110", "10001", "10001", "01110" }, ["9"] = { "01110", "10001", "10001", "01111", "00001", "00010", "01100" },
+        ["."] = { "00000", "00000", "00000", "00000", "00000", "01100", "01100" }, ["-"] = { "00000", "00000", "00000", "11111", "00000", "00000", "00000" },
+        [">"] = { "10000", "01000", "00100", "00010", "00100", "01000", "10000" }, ["("] = { "00010", "00100", "01000", "01000", "01000", "00100", "00010" },
+        [")"] = { "01000", "00100", "00010", "00010", "00010", "00100", "01000" }, [":"] = { "00000", "01100", "01100", "00000", "01100", "01100", "00000" },
+    }
+    local function R(v) return math.floor(v * 16 + 0.5) end
+    local vx, vy, vz = R(x), R(y), R(z)
+    local dirx, dirz, depth_z, depth_x = 0, 0, 0, 0     -- the way the line runs; the voxel layer in front of the wall
+    if facing == "+z" then dirx = 1 elseif facing == "-z" then dirx = -1 elseif facing == "+x" then dirz = -1 else dirz = 1 end
+    local n = 0
+    for ci = 1, #text do
+        local ch = string.sub(text, ci, ci)
+        local g = F5[ch]
+        if g then
+            for row = 1, 7 do
+                local line = g[row]
+                local c = 1
+                while c <= 5 do
+                    if string.sub(line, c, c) == "1" then
+                        local c2 = c
+                        while c2 < 5 and string.sub(line, c2 + 1, c2 + 1) == "1" do c2 = c2 + 1 end
+                        -- pixels c .. c2 of the glyph at position n (0-based) along the line; row 1 is the top
+                        local u0, u1 = n * 6 + (c - 1), n * 6 + (c2 - 1)
+                        local y0 = vy + (7 - row)
+                        if dirx ~= 0 then
+                            local xa, xb = vx + dirx * u0, vx + dirx * u1
+                            local zz = (facing == "+z") and vz or (vz - 1)
+                            B.vbox(math.min(xa, xb), y0, zz, math.max(xa, xb), y0, zz, mat)
+                        else
+                            local za, zb = vz + dirz * u0, vz + dirz * u1
+                            local xx = (facing == "+x") and vx or (vx - 1)
+                            B.vbox(xx, y0, math.min(za, zb), xx, y0, math.max(za, zb), mat)
+                        end
+                        c = c2 + 1
+                    else c = c + 1 end
+                end
+            end
+        end
+        n = n + 1
+    end
+end
+
+-- the width of a line of text in metres
+function deco_text_len(text) return #text * 6 / 16 end
+
 -- ---------------------------------------------------------------------------------------------- the decoration of a room by its theme (the hook)
 function deco_room(B, theme, room, doors, mk, fl)
     local floor = math.floor
@@ -449,6 +515,21 @@ function deco_room(B, theme, room, doors, mk, fl)
         for i = 0, 7 do local a = i * math.pi / 4 + math.pi / 8; local px, pz = cx + math.cos(a) * 3.55, cz + math.sin(a) * 3.55; B.fill(px - 0.12, 0.45, pz - 0.12, px + 0.12, 0.85, pz + 0.12, "lantern") end
     elseif theme == "borough" then
         deco_borough(B, (room.x == 0) and 1 or 0, (room.z == 0) and 1 or 0)
+    end
+    -- graffiti on a wall without a door of about one room in five (not in the special rooms)
+    local PLAIN = { hall = true, crypt = true, library = true, depot = true, grotto = true, flooded = true, furnace = true, ballroom = true, warlord = true, captive = true, prize = true }
+    if PLAIN[theme] and mk(4).next() < 0.22 then
+        local LINES = { "THE FLOOR IS LAVA (IT IS NOT)", "I WAS HERE. NOBODY ELSE WAS", "DO NOT FEED THE MANAGER", "EXIT -> (NOT THIS WAY)", "UNION OF CONTESTANTS LOCAL 7", "SPONSOR ME", "THE CRATES LIE",
+                        "GLEE IS WATCHING", "PLEASE STAND CLEAR OF THE CEILING", "ASK ABOUT OUR VENDING MACHINES", "FOUND A SAFE ROOM. LOST IT", "NO REFUNDS" }
+        local txt = LINES[mk(5).int(1, #LINES)]
+        local used = {}
+        for _, d in ipairs(doors or {}) do used[d.side] = true end
+        local len = deco_text_len(txt)
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        if not used.N then deco_text(B, cx - len / 2, 1.7, room.z + 0.0, txt, "+z", "neon_red")
+        elseif not used.S then deco_text(B, cx + len / 2, 1.7, room.z + room.d, txt, "-z", "neon_red")
+        elseif not used.W then deco_text(B, room.x, 1.7, cz + len / 2, txt, "+x", "neon_red")
+        elseif not used.E then deco_text(B, room.x + room.w, 1.7, cz - len / 2, txt, "-x", "neon_red") end
     end
     for _, c in ipairs(deco_crates(theme, room, doors, mk, fl or 1)) do deco_chest(B, c.tier, c.x, c.y, c.z, c.face) end
     if theme == "depot" then
