@@ -43,7 +43,7 @@ function K.check_transit(plan, CG)
     end
     -- 15. the furniture of the stations and dens (the layout grammar, the track bed and the hub's fixtures reserved)
     local n15 = 0
-    for _, id in ipairs(plan.order) do
+    for _, id in ipairs(CG.H and plan.order or {}) do
         local info = plan.cells[id]
         local lay = transit_layout(info, function(salt) return deco_rng(CG.H, ctx.floor, info.ci, info.cj, salt or 1) end)
         if lay then
