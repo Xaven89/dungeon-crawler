@@ -105,6 +105,8 @@ Water and lava flow along the local gravity, lava and water make stone and steam
 id = body.box(x, y, z, sx, sy, sz, "wood")    id = body.ball(x, y, z, radius_voxels, "stone")
 h = hinge.add{ a = body, b = otherBody (omit: the world), anchor = {x, y, z} (m), axis = {x, y, z}, limits = {lo, hi} (degrees from the pose now), spring_to, spring_k, spring_damping, friction, breakaway, motor = {rad/s, N m} }
 hinge.set(h, {...})   s = hinge.state(h)   -- { angle (degrees), omega (rad/s), torque (N m) }    hinge.remove(h)   -- hinges between bodies (a drawbridge, a swinging sign, a gate)
+j = joint.ball{ a = body, b = otherBody (omit: the world), anchor = {x, y, z} (m), cone = 60 (deg), damping, friction }  joint.state(j) --> { angle }  joint.remove(j)   -- a ball joint (docs/HINGES.md section 10)
+c = chain.add{ anchor = {x, y, z} (m), links = 3, link = { length_voxels = 4, radius = 1, material = "metal" }, tip = { material = "glass", size = {4, 6, 4} }, cone = 60 }  -- N link bodies on ball joints from the anchor and a lantern body at the end: c.links, c.tip, c.joints, c.group; chain.remove(c.group). emitter.create{ body = c.tip, offset = {0, 0.15, 0}, ... } puts a flame and its light on the lantern
 body.grab(id [, hold_distance_m])   body.release()   body.throw([speed])   id = body.grabbed()   -- the player's hand (docs/HINGES.md): a spring with force limits; light bodies follow the view, heavy ones are dragged
 body.push(id, ix, iy, iz [, px, py, pz])   -- (with a point in metres the impulse acts there: a shove at a door's edge swings it) an impulse in N s (a 1,100 kg wooden crate needs about 5000 for a clear shove; momentum = mass x speed)  x, y, z, ok = body.pos(id)  body.remove(id)
 ```

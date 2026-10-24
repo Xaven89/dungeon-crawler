@@ -196,3 +196,22 @@ In `tickTail`: `luaTick()` -> `events.tick()` (door state machines: build / pose
 - **The solver fights you** in two places: the resting damping and forced sleep (4.1: `hinged` flag), and the kinematic partner's real inverse mass in the joint rows (4.1: zero it). Both are small, local changes.
 - **Welding exactness**: the weld at a stop is voxel-exact only because the body was built from the same model at the same rotation; a body that lost voxels (a blast) welds what is left, which is right.
 - **The player on top of a door** (standing on a trapdoor) is the cut: the slab swings away under the feet and the player falls through the hole: the trapdoor "works" for the player by accident, and a rising door lifts nobody.
+
+## 10. Ball joints and chains: `joint.ball`, `chain.add` (E13)
+A lantern on a chain that swings when the player runs into it, with its light.
+```lua
+j = joint.ball{ a = body, b = otherBody | nil (the world), anchor = {x, y, z} (m), axis = {x, y, z} (default down),
+                cone = 60 (degrees the two bodies' axes may part, 0 = free, at most 180), damping = 0 (N m s / rad), friction = 0 (N m) }
+joint.state(j) --> { angle = degrees between the two axes }      joint.remove(j)
+
+c = chain.add{ anchor = {x, y, z} (m, where the top link hangs from), body = id (hang it from a body instead of the world), links = 3 (1 .. 12),
+               link = { length_voxels = 4, radius = 1, material = "metal" },
+               tip = { material = "glass", size = {4, 6, 4} } (a lantern body at the end; false: none; `end` is a Lua keyword, so `tip`, or ["end"] ),
+               cone = 60, damping = (default: a share of what stops the whole chain), friction = 0 }
+--> { links = {ids}, tip = id, joints = {ids}, group = n, bottom = {x, y, z} }       chain.remove(group)
+emitter.create{ name = "flame", preset = "torch", body = c.tip, offset = {0, 0.15, 0} }   -- the flame and its light swing with the lantern (docs/EMITTERS.md)
+```
+- A ball joint holds two anchor points together (to the world: the anchor stays where it was made) and may limit the angle between the two bodies' axes (`cone`). The two bodies never collide with each other (jointed). **Damping** is a soft row on the relative spin, solved with the anchor constraint (`gamma = 1 / (c dt)`, as the hinge's spring row), so a chain does not swing for ever: `chain.add`'s default is 1.5 x mass x hang length x its square root (about a third of critical for a pendulum of that mass and length): a push dies away in a few swings and the chain sleeps within about seven seconds. **Friction** is a constant torque against the relative spin. Twist is not limited (a link is round).
+- `chain.add` builds N boxes on ball joints from the anchor, hangs the lantern body (a box) on the last, and makes **none of its bodies collide with each other** (a folded chain does not catch itself); they do collide with the player (it pushes them: the usual 10 N s a tick, so a few ticks of walking into a lantern swing it), with other bodies and with the world. Bodies are not saved: a script that makes the chain at its start makes it again. At most 4 chains per cell and 2 to 3 links are the game's budget (a floor stays under about 60 extra bodies; they sleep after settling and a touch wakes them).
+- The lantern's mass comes from its voxels and material (a 4 x 6 x 4 glass box is 34 kg, a link of metal 16 kg): `link = { material = "wood" }` makes a lighter chain. A swinging lantern does not occlude light (the probes see no bodies).
+- Tests: `chain.add: ...` (a pushed three-link lantern swings, settles and sleeps, bit for bit the same in two runs with another history of bodies), `joint.ball and chain.add refuse ...`, `emitters: an emitter that follows a body ...`, and the MCP smoke test (three chains, the player walks through them, the recording replays to its hash).
