@@ -192,6 +192,10 @@ end""", 5)
         print("render:", json.dumps(st.get("render")))
         print("sim:", json.dumps({k: st["sim"].get(k) for k in ("bodies", "awake_bodies", "gravity_fields")}), "agents", L(v, "print(Game.enemies.alive_count(), #Game.floorgen.made_list)", 0)[0].replace("\t", " cells "))
         print("state hash:", v.state_hash())
+        if os.environ.get("DUMP_BODIES"):
+            b = v.tool("bodies")
+            open(os.environ["DUMP_BODIES"], "w").write(json.dumps(b))
+            print("bodies:", b.get("awake"), len(b.get("bodies", [])))
         if os.environ.get("PROBE_OUT"): open(os.environ["PROBE_OUT"] + "_live.txt", "w").write(v.stderr_tail(1000000))
     if "--no-replay" not in sys.argv:
         restore_state(snap, present)
