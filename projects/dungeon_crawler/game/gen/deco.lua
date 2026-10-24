@@ -163,7 +163,7 @@ function deco_crates(theme, room, doors, mk, fl)
     elseif theme == "depot" then add("silver", room.x + room.w - 3, room.z + 1.5, "-z", 0)
     elseif theme == "prize" then
         local mimic = mk(3).int(1, 3)
-        for i = 1, 3 do add(i == 2 and "gold" or "silver", cx - 7 + (i - 1) * 5.2 + 0.2, cz - 0.4, "+z", 0.45, i == mimic) end
+        for i = 1, 3 do add(i == 2 and "gold" or "silver", cx - 4.025 + (i - 1) * 3.4, cz - 0.4, "+z", 0.45, i == mimic) end
     end
     return out
 end
@@ -363,7 +363,7 @@ function deco_room(B, theme, room, doors, mk, fl)
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
         B.fill(cx - 5, 0, cz - 2.5, cx + 5, 0.4, cz + 2.5, "dark_wood")
         B.fill(cx - 5, 0.4, cz - 2.5, cx + 5, 0.45, cz + 2.5, "carpet")
-        for _, dx in ipairs({ -5.5, 5.2 }) do B.pillar(cx + dx, cz - 3, 0.5, 0, h, "gold"); B.pillar(cx + dx, cz + 3, 0.5, 0, h, "gold") end
+        for _, dx in ipairs({ -5.5, 5.2 }) do for _, dz in ipairs({ -3, 3 }) do if not deco_near_door(room, doors, cx + dx, cz + dz, 3) then B.pillar(cx + dx, cz + dz, 0.5, 0, h, "gold") end end end
     elseif theme == "captive" then
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
         local x0, z0, x1, z1 = cx - 2, cz - 2, cx + 2, cz + 2
@@ -426,12 +426,19 @@ function deco_room(B, theme, room, doors, mk, fl)
     elseif theme == "rest" then
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
         B.fill(room.x + 1, 0, room.z + 1, room.x + room.w - 1, 0.05, room.z + room.d - 1, "carpet")
-        for i = 0, 2 do                                                              -- three cots along the west side
-            local z = room.z + 2 + i * 2.6
-            B.fill(room.x + 0.4, 0, z, room.x + 2.4, 0.4, z + 1.0, "dark_wood"); B.fill(room.x + 0.5, 0.4, z + 0.05, room.x + 2.3, 0.55, z + 0.95, "sand")
+        -- three cots along a wall without a door (the first of W, E, N, S that has none), the fountain by the middle, a screen on the opposite wall
+        local used = {}
+        for _, d in ipairs(doors or {}) do used[d.side] = true end
+        local side = "W"
+        for _, sd in ipairs({ "W", "E", "N", "S" }) do if not used[sd] then side = sd; break end end
+        for i = 0, 2 do
+            local o = 2 + i * 2.6
+            if side == "W" then B.fill(room.x + 0.4, 0, room.z + o, room.x + 2.4, 0.4, room.z + o + 1.0, "dark_wood"); B.fill(room.x + 0.5, 0.4, room.z + o + 0.05, room.x + 2.3, 0.55, room.z + o + 0.95, "sand")
+            elseif side == "E" then B.fill(room.x + room.w - 2.4, 0, room.z + o, room.x + room.w - 0.4, 0.4, room.z + o + 1.0, "dark_wood"); B.fill(room.x + room.w - 2.3, 0.4, room.z + o + 0.05, room.x + room.w - 0.5, 0.55, room.z + o + 0.95, "sand")
+            elseif side == "N" then B.fill(room.x + o, 0, room.z + 0.4, room.x + o + 1.0, 0.4, room.z + 2.4, "dark_wood"); B.fill(room.x + o + 0.05, 0.4, room.z + 0.5, room.x + o + 0.95, 0.55, room.z + 2.3, "sand")
+            else B.fill(room.x + o, 0, room.z + room.d - 2.4, room.x + o + 1.0, 0.4, room.z + room.d - 0.4, "dark_wood"); B.fill(room.x + o + 0.05, 0.4, room.z + room.d - 2.3, room.x + o + 0.95, 0.55, room.z + room.d - 0.5, "sand") end
         end
-        B.fill(cx + 1.5, 0, cz - 1.5, cx + 3.5, 0.8, cz + 0.5, "marble"); B.fill(cx + 1.7, 0.8, cz - 1.3, cx + 3.3, 0.95, cz + 0.3, "gutter_water")       -- the fountain
-        B.fill(room.x + room.w - 0.6, 1.4, room.z + 3, room.x + room.w - 0.4, 2.6, room.z + 7, "lantern")                                                   -- a screen on the east wall
+        B.fill(cx - 1, 0, cz - 1, cx + 1, 0.8, cz + 1, "marble"); B.fill(cx - 0.8, 0.8, cz - 0.8, cx + 0.8, 0.95, cz + 0.8, "gutter_water")       -- the fountain
     elseif theme == "stairs_free" then
         -- the stairwell of the books: a round hole of 3.3 m radius with a lit rim, a wide stair (0.45 m steps) down its west side to a floor 2.25 m below
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2

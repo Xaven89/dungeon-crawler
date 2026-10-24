@@ -111,7 +111,8 @@ for seed in seeds:
                 lo, hi = shrunk(lo, hi, W, H, keep=d)
                 check("c%d_%d artery door %s" % (ci, cj, d), lo, hi, inside_door(d, dr))
         for oi, oj in sorted(origins):
-            check("borough %d_%d courtyard (every ring up to the arena)" % (oi, oj), (oi * 32, oj * 32), (oi * 32 + 64, oj * 32 + 64), (oi * 32 + 20, oj * 32 + 58 - 1.5), strict=True)
+            clo, chi = shrunk((oi * 32, oj * 32), (oi * 32 + 64, oj * 32 + 64), W, H)
+            check("borough %d_%d courtyard (every ring up to the arena)" % (oi, oj), clo, chi, (oi * 32 + 20, oj * 32 + 58 - 1.5), strict=True)
         hk = v.tool("status")["world"].get("hook") or {}
         if hk.get("failed"): problems.append("the region hook failed in %d region(s) (see the log)" % hk["failed"])
         print("seed %d floor %d: %d checks, %d problems, %.0f s" % (seed, fl, checks, len(problems), time.time() - t0))

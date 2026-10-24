@@ -638,6 +638,14 @@ function F.cell_signs(P, room)
     if signs[key] then return end
     signs[key] = true
     local x0, z0 = room.ci * 32, room.cj * 32
+    -- the name of the block at the corners of the arteries (the plaza signs: on the wall that borders the artery strip, facing it)
+    if P.plan.ctx.P.kind == "grid" and (room.ci % 8 == 0 or room.ci % 8 == 7) and (room.cj % 8 == 0 or room.cj % 8 == 7) then
+        local bi, bj = room.ci // 8, room.cj // 8
+        local txt = "BLOCK " .. string.char(65 + bi) .. (bj + 1)
+        local len = #txt * 6 * 0.0625
+        if room.cj % 8 == 0 then G.text(x0 + 16 + len / 2, 2.4, z0 + 4, txt, { facing = "-z", material = "gold", size = 1, depth = 1 })
+        else G.text(x0 + 16 - len / 2, 2.4, z0 + 28, txt, { facing = "+z", material = "gold", size = 1, depth = 1 }) end
+    end
     if room.cellrole == "room" and H(0, P.floor * 1000 + 720, room.ci, room.cj, 1) < 0.22 then
         local txt = GRAFFITI[1 + floor(H(0, P.floor * 1000 + 721, room.ci, room.cj, 1) * #GRAFFITI) % #GRAFFITI]
         local doors = P.doors[room.id] or {}
