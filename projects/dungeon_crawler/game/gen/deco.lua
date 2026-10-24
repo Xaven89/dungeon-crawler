@@ -224,6 +224,51 @@ function deco_borough_geom(fl)
     return g
 end
 
+-- the moving walls of the rotunda (floors 2 and up; floor 1 is the tutorial fortress and keeps its static spiral): in each ring corridor a slab of metal across the west side and one across the east
+-- side (the way round the ring is the west or the east side). A slab rests in a trench under the floor when it is open (its top flush with the floor) and stands in the corridor when it is shut.
+-- They open and shut on the floor clock: a period of 720 ticks (12 s), each slab open for 432 of them (7.2 s), the east one half a period behind the west one, so that one of the two is always
+-- open and one wait is never longer than 3 s; the second ring is a quarter period later than the first. Super-cell local metres, 0.5 m thick, 4.9 m high (the lintel above is fixed).
+function deco_wall_plan(fl)
+    if fl < 2 then return {} end
+    local g = deco_borough_geom(fl)
+    local t = g.wall
+    local out = {}
+    local rings = { { n = "1", a = g.w2, b = g.w1 - t, ph = 0 }, { n = "2", a = g.w3, b = g.w2 - t, ph = 180 } }
+    for _, r in ipairs(rings) do
+        out[#out + 1] = { id = r.n .. "W", x0 = g.cx - r.b, x1 = g.cx - r.a, z0 = g.cz - 5.25, z1 = g.cz - 4.75, h = 4.9, period = 720, open = 432, phase = r.ph, side = "W", ring = r.n }
+        out[#out + 1] = { id = r.n .. "E", x0 = g.cx + r.a, x1 = g.cx + r.b, z0 = g.cz + 4.75, z1 = g.cz + 5.25, h = 4.9, period = 720, open = 432, phase = r.ph + 360, side = "E", ring = r.n }
+    end
+    return out
+end
+
+function deco_wall_open(w, clock) return (clock + w.phase) % w.period < w.open end
+
+-- the spiral stays solvable at every phase: walk the ring from the gap you came in by to the gap of the next wall (half a ring: about 40 m, the slab on the way) from every start tick of
+-- the period. A walker takes the first side whose slab is open for the whole crossing (60 ticks to cross, 30 for the slab to move) or waits where he stands. Returns the worst wait in ticks
+-- and the list of problems (a slab that is never open long enough, a phase from which no side opens).
+function deco_wall_check(fl)
+    local plan, bad, worst = deco_wall_plan(fl), {}, 0
+    local walk = 40 / 5 * 60          -- ticks from the gap to a slab (40 m at 5 m/s)
+    local need = 60 + 30
+    local by = {}
+    for _, w in ipairs(plan) do by[w.ring] = by[w.ring] or {}; table.insert(by[w.ring], w); if w.open < 240 or w.open > w.period - 120 then bad[#bad + 1] = w.id .. ": open " .. w.open .. " of " .. w.period end end
+    for ring, ws in pairs(by) do
+        for t0 = 0, ws[1].period - 1, 10 do
+            local best
+            for _, w in ipairs(ws) do
+                -- the wait before the slab: the first tick from which it stays open for the whole crossing
+                for step = 0, w.period do
+                    local ok = true
+                    for k = 0, need, 10 do if not deco_wall_open(w, t0 + walk + step + k) then ok = false; break end end
+                    if ok then if not best or step < best then best = step end; break end
+                end
+            end
+            if not best then bad[#bad + 1] = "ring " .. ring .. " closed from tick " .. t0 else worst = math.max(worst, best) end
+        end
+    end
+    return worst, bad
+end
+
 -- cu, cv: which cell of the 2 x 2 (0 / 1): the builder clips to the cell's own 32 x 32 m
 function deco_borough(B, cu, cv, fl)
     local g = deco_borough_geom(fl)
@@ -263,6 +308,12 @@ function deco_borough(B, cu, cv, fl)
     bb(cx - hw - 0.4, 0, cz + g.w1, cx - hw, 5.4, cz + g.w1 + 0.4, "gold"); bb(cx + hw, 0, cz + g.w1, cx + hw + 0.4, 5.4, cz + g.w1 + 0.4, "gold")
     bb(cx - hw, 5.0, cz + g.w1, cx + hw, 5.4, cz + g.w1 + 0.4, "gold")
     bb(cx - hw, 0, cz + g.w1 + 0.4, cx + hw, 0.05, cz + g.w1 + 4, "neon_red")
+    -- the moving walls (floors 2+): the slab in its trench, a lintel over the corridor with a hazard band
+    for _, w in ipairs(deco_wall_plan(fl)) do
+        bb(w.x0, -w.h, w.z0, w.x1, 0, w.z1, "obsidian")                  -- (built OPEN: the slab lies in its trench, flush with the floor; the floor clock shuts it, and the plan's flood sees open corridors)
+        bb(w.x0, w.h, w.z0, w.x1, H, w.z1, "dungeon_brick")
+        bb(w.x0, w.h, w.z0, w.x1, w.h + 0.3, w.z1, "hazard_y")
+    end
     -- the arena: a gold ring on the floor, the stairwell pit and its forcefield
     local p = g.pit
     local pitw = { x0 = p.x0 - 0.3, z0 = p.z0 - 0.3, x1 = p.x1 + 0.3, z1 = p.z1 + 0.3 }

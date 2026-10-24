@@ -2,7 +2,7 @@
 """A bot that plays a run on the BIG floors through the MCP server (P2): starts a generated run (skipping the Orientation), and on every floor follows the plan's path from the arrival to the
 nearest free stairwell (teleporting from room to room: the walking is tools/p1_walk.py's), fights the rooms on the way with the game's own functions (Game.autoaim, heal items), opens their crates,
 equips better gear, takes the stairs. It records the session (--record) and replays it at the end to check the hash; it prints the agent and light counts of every floor.
-usage: tools/p2_playthrough.py [SEED] [class] [floors] [--no-replay] [--project P] [--borough] [--park] [--first-floor N]
+usage: tools/p2_playthrough.py [SEED] [class] [floors] [--no-replay] [--project P] [--borough [--borough-floor N]] [--park] [--first-floor N]
   --borough: on floor 1 the bot goes to the nearest borough, kills its boss in the rotunda and takes ITS stairwell (the forcefield falls with the boss); the other floors use the free stairwells.
   --park: the same on floor 3 (the park boss and the stairwell behind its forcefield). --first-floor N: the run starts on floor N (2, 3, 5 ...).
   The floor clock of the bot is 24000 ticks (400 s) so that every threshold (30 / 80 / 95 / 100 %) can be reached; the stairs are waited for if the clock has not opened them."""
@@ -72,6 +72,9 @@ if G.state.hp < G.player.max_hp() * 0.45 then G.player.quick('heal') end
 print(G.enemies.alive_in('%s'), math.floor(G.state.hp), G.state.deaths)""" % (room, room, room), step)
         v.tool("input_action", name="ability", down=True, player=0)
         t += step
+        if os.environ.get("BODIES_TRACE"):
+            bl = v.tool("bodies")["bodies"]; lowc = len([x for x in bl if x["pos_m"][1] < -5])
+            if lowc != fight.last: print("   t %d: bodies below the world %d (alive in room: %s, first: %s)" % (t, lowc, out[0] if out else "?", [(x["id"], x["voxels"], [round(c) for c in x["pos_m"]]) for x in bl if x["pos_m"][1] < -5][:2])); fight.last = lowc
         if t >= 240 and t % 240 == 0:        # (the bot cannot search a room: it goes to the nearest enemy that is still alive)
             L(v, """local G=Game; local best, bd
 local px, py, pz = player.pos()
@@ -84,10 +87,21 @@ if best and bd > 6 then local dx, dz = cx - best[1], cz - best[3]; local n = mat
     end = L(v, "local G=Game; print(G.state.kills, math.floor(G.state.hp), G.state.deaths, G.state.level)", 0)[0].split("\t")
     return t, int(end[0]) - int(start[0]), end
 
+fight.last = -1
 def counts(v):
     st = v.tool("status")
     n = L(v, "print(Game.enemies.alive_count(), #Game.floorgen.made_list, Game.gen.track.count and 0 or 0)", 0)[0].split("\t")
     return "agents %s cells %s lights %s" % (n[0], n[1], json.dumps(st["render"].get("lights", {})))
+
+def body_summary(v, label):
+    if not os.environ.get("BODIES_TRACE"): return
+    st = v.tool("status")["sim"]; b = v.tool("bodies")
+    low = [x for x in b["bodies"] if x["pos_m"][1] < -5]
+    print("   BODIES %-22s total %s awake %s | listed %d, below the world %d, big (>2000 voxels) %d: %s" % (label, st["bodies"], st["awake_bodies"], len(b["bodies"]), len(low), len([x for x in b["bodies"] if x["voxels"] > 2000]),
+          [(x["id"], x["voxels"], [round(c) for c in x["pos_m"]]) for x in b["bodies"] if x["voxels"] > 2000][:4]))
+
+def below_world(v):
+    return L(v, "local E = Game.enemies; local n = 0; for id, inst in pairs(E.list) do local x, y, z = E.position(inst); if y and y < -5 then n = n + 1; if n <= 6 then print(id, inst.kind, tostring(inst.dead), inst.room, string.format('%.1f %.1f %.1f', x, y, z)) end end end; print('below', n)", 0)
 
 def borough_run(v):
     """go to the borough of the floor, kill its boss, take the stairwell behind the forcefield"""
@@ -105,6 +119,11 @@ def borough_run(v):
         if L(v, "print(Game.state.flags['boss_dead_%s'])" % rid, 0)[0].startswith("true"): break
         L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true }); Game.state.hp = Game.player.max_hp()" % rid, 300)
     v.step(400)
+    body_summary(v, "after the boss")
+    if os.environ.get("BODIES_TRACE"):
+        print("   enemies below the world:", below_world(v))
+        ag = v.tool("agents"); print("   agents tool:", json.dumps(ag)[:700])
+        print("   bodies tool keys:", [k for k in v.tool("bodies")["bodies"][0]])
     print("   forcefield:", L(v, "print(Game.state.flags['ff_%s'])" % rid, 0))
     # into the pit
     L(v, "local G=Game; local r = G.floorgen.layout.rings['%s']; local p = r.pit; player.teleport(G.mx((p.x0 + p.x1) / 2), G.my(-1.1), G.mz((p.z0 + p.z1) / 2), { wait = true })" % rid, 60)
@@ -112,6 +131,7 @@ def borough_run(v):
     L(v, "Game.run.descend(true)", 2)
     print("next floor built in", wait_floor(v), "s")
     v.step(200)
+    body_summary(v, "next floor, +200 ticks")
     L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
     return True
 
@@ -153,7 +173,7 @@ def main():
         for fl in range(1, floors + 1):
             L(v, "Game.run.cur().floor_ticks = 24000", 0)
             cur = int(L(v, "print(Game.run.cur().floor)", 0)[0])
-            if (("--borough" in sys.argv and cur == 1) or ("--park" in sys.argv and cur == 3)) and borough_run(v): continue
+            if (("--borough" in sys.argv and cur == int(sys.argv[sys.argv.index("--borough-floor") + 1] if "--borough-floor" in sys.argv else 1)) or ("--park" in sys.argv and cur == 3)) and borough_run(v): continue
             info = L(v, PATH, 0)[0].split("\t")
             print("FLOOR", info[0], "cells", info[1], "path", info[2])
             rooms = [x.split(":") for x in info[2].split(",")]

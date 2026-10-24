@@ -226,6 +226,7 @@ function F.make_cell(id)
     local room = P and P.rooms[id]
     if not room or F.made[id] then return end
     F.made[id] = true
+    F.made_tick[id] = time.tick()
     F.made_list[#F.made_list + 1] = id
     local prev = G.gen.track.scope
     G.gen.track.scope = "cell" .. P.floor .. id
@@ -266,10 +267,12 @@ function F.drop_cell(id)
     local P = F.layout
     if not F.made[id] then return end
     F.made[id] = nil
+    F.made_tick[id] = nil
     for i, v in ipairs(F.made_list) do if v == id then table.remove(F.made_list, i); break end end
     G.gen.track.teardown("cell" .. P.floor .. id)
+    for _, ring in ipairs(P.ring_list or {}) do if ring.origin == id then ring.walls = nil end end
     G.traps.drop_cell(id)
-    G.enemies.despawn_room(id)
+    F.despawn(id)
     G.world.populate_list[id] = nil
     G.gen.overcity.drop_cell(id)
 end
@@ -308,6 +311,8 @@ end
 
 -- who exists: the enemies of the cell the player is in and of the cells next to it, nearest first; a room is spawned whole only when all of it fits under the cap (the engine's 64 agents
 -- also carry the ally, the companion and a boss): otherwise it waits for the next sync
+function F.despawn(id) G.enemies.despawn_room(id) end
+
 function F.sync_enemies()
     local P = F.layout
     if not P then return end
@@ -317,20 +322,47 @@ function F.sync_enemies()
         local room = P.rooms[id]
         local d = max(math.abs(room.ci - (F.pci or -99)), math.abs(room.cj - (F.pcj or -99)))
         local list = W.populate_list[id]
-        if list and d <= 1 then near[#near + 1] = { id = id, d = d, list = list } else G.enemies.despawn_room(id) end
+        if list and d <= 1 then near[#near + 1] = { id = id, d = d, list = list } else F.despawn(id) end
     end
     for id, ring in pairs(P.rings or {}) do        -- (a ring has its own list: made with its origin cell)
         local oc = P.rooms[ring.origin]
         local list = W.populate_list[id]
         if oc and F.made[ring.origin] and list then
             local d = max(math.abs(oc.ci + 0.5 - (F.pci or -99)), math.abs(oc.cj + 0.5 - (F.pcj or -99)))
-            if d <= 1.5 then near[#near + 1] = { id = id, d = d, list = list } else G.enemies.despawn_room(id) end
+            if d <= 1.5 then near[#near + 1] = { id = id, d = d, list = list } else F.despawn(id) end
         end
     end
     table.sort(near, function(a, b) if a.d ~= b.d then return a.d < b.d end return a.id < b.id end)
     for _, n in ipairs(near) do
-        if not G.enemies.spawned[n.id] and G.enemies.alive_count() + G.enemies.owed(n.id, n.list) <= F.ENEMY_CAP then G.enemies.spawn_room(n.id, n.list) end
+        if not G.enemies.spawned[n.id] and G.enemies.alive_count() + G.enemies.owed(n.id, n.list) <= F.ENEMY_CAP and F.ground_ready(n.id, n.list) then G.enemies.spawn_room(n.id, n.list) end
     end
+end
+
+-- an enemy can be spawned only when its cell has existed for F.GROUND_TICKS ticks (0 now, see below): an agent placed over a chunk the hook has not made yet falls through the world, dies there and its body falls for ever (the borough's
+-- guards: 13 bodies of 2,900 kg below the band after the first visit). The wait is a number of TICKS, not a look at the chunks (`world.material_at` depends on how fast a thread was: a recording
+-- replayed to another hash with it); a room of a ring waits for its origin cell.
+F.GROUND_TICKS = 0          -- (0 = spawn at once: a delay of 120 or 300 ticks made the recordings of fights replay with a different ORDER OF FILE READS, ENGINE_FEEDBACK Phase 23)
+F.made_tick = {}
+function F.ground_ready(id, list)
+    local ring = F.layout.rings and F.layout.rings[id]
+    local at = F.made_tick[ring and ring.origin or id]
+    return at ~= nil and time.tick() - at >= F.GROUND_TICKS
+end
+
+-- whatever is below every floor (a fall through a hole of the band, a body that outlived its room): removed at once (the same check every 30 ticks, order free)
+F.SWEEP = false             -- OFF: removing a fallen agent by script made a recording of the floor-1 borough fight replay to another hash (ENGINE_FEEDBACK Phase 23)
+function F.sweep_void()
+    local E = G.enemies
+    local gone = {}
+    for id, inst in pairs(E.list) do
+        local x, y, z = E.position(inst)
+        if y and y < G.my(-6) then gone[#gone + 1] = id end
+    end
+    for _, id in ipairs(gone) do
+        local inst = E.list[id]
+        pcall(agent.remove, id); E.list[id] = nil; E.by_model[inst.mdl] = nil
+    end
+    return #gone
 end
 
 function F.tick(t)
@@ -354,12 +386,14 @@ function F.tick(t)
     if not (F.active and F.layout) then return end
     if t % 5 == 0 then F.update_cells(false) end
     for _ = 1, 2 do local id = table.remove(F.queue, 1); if id then F.make_cell(id) end end
+    if F.SWEEP and t % 10 == 0 then F.sweep_void() end
     if t % 30 == 0 then
         F.sync_enemies()
         F.safe_rules()
     end
     local run = G.run.cur()
     if run and G.state.class and not G.screen and not G.player.dead then run.fclock = (run.fclock or 0) + 1 end
+    if run and t % 5 == 0 then F.walls_tick(F.layout, run.fclock or 0) end
     if t % 60 == 0 then F.timer_step() end
     G.gen.overcity.tick(t)
     if t % 15 == 0 and G.state.class and not G.player.dead then
@@ -390,6 +424,7 @@ function F.teardown_all()
         G.gen.track.teardown("floor" .. P.floor)
     end
     F.made, F.made_list, F.queue = {}, {}, {}
+    F.made_tick = {}
     F.pci, F.pcj = nil, nil
 end
 
@@ -647,6 +682,30 @@ function F.lair_open_all()
     for _, id in ipairs(ids) do F.lair_open(id) end
 end
 
+-- the walls follow the floor clock (every 5 ticks): a command only when the wanted state changes
+function F.walls_tick(P, clock)
+    clock = F.walls_fixed or clock                 -- (pictures and tests hold the walls at a tick of their rhythm)
+    for _, ring in ipairs(P.ring_list or {}) do
+        if ring.walls then
+            for _, e in ipairs(ring.walls) do
+                local want = deco_wall_open(e.w, clock)
+                local st = events.state(e.id)
+                -- a slab that was in the way of somebody gives up its move: it is asked again until it is where the rhythm wants it
+                local retry = st and not st.moving and (st.open ~= want)
+                if want ~= e.open or retry then
+                    local changed = (want ~= e.open)
+                    e.open = want
+                    pcall(events.command, e.id, want and "open" or "close")
+                    if not changed then goto continue end
+                    local px, py, pz = player.pos(); local lx, _, lz = G.to_local(px, py, pz)
+                    if lx and G.dist2(lx, lz, e.x, e.z) < 36 then G.sfx.play("lever", e.x, 1.5, e.z, 0.5, want and 1.3 or 0.8) end
+                end
+                ::continue::
+            end
+        end
+    end
+end
+
 function F.ff_clear(ring)
     local p = ring.pit
     G.clear(p.x0, 0, p.z0, p.x1, 0.55, p.z1)
@@ -692,6 +751,17 @@ function F.make_ring(P, ring)
     for i = 1, F.STAGING.borough.guards do
         local a = i * 6.2832 / F.STAGING.borough.guards
         add(F.pick_kind(rng, P.floor), ox + g.cx + math.cos(a) * (g.arena - 4.8), oz + g.cz + 3 + math.sin(a) * 4)
+    end
+    -- the moving walls of the rotunda (floors 2+): the slabs of deco_wall_plan, shut as the hook built them; F.walls_tick opens and shuts them on the floor clock
+    ring.walls = nil
+    local plan = deco_wall_plan(P.floor)
+    if #plan > 0 then
+        ring.walls = {}
+        for _, w in ipairs(plan) do
+            local y0, y1 = G.wy(0), G.wy(w.h)
+            local id = events.door{ name = ring.id .. "_wall" .. w.id, box = { G.wx(ox + w.x0), y0, G.wz(oz + w.z0), G.wx(ox + w.x1) - 1, y1 - 1, G.wz(oz + w.z1) - 1 }, travel = { 0, -(y1 - y0), 0 }, speed = 3 }
+            ring.walls[#ring.walls + 1] = { id = id, w = w, open = false, x = ox + (w.x0 + w.x1) / 2, z = oz + (w.z0 + w.z1) / 2 }
+        end
     end
     -- the stairwell: under the forcefield until the boss falls
     local vol = events.volume{ name = ring.id .. "_down", box = { G.wx(p.x0), G.wy(-1.4), G.wz(p.z0), G.wx(p.x1) - 1, G.wy(-0.3), G.wz(p.z1) - 1 }, player = true, bodies = false }
