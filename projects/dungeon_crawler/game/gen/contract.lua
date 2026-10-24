@@ -203,7 +203,7 @@ function K.check(plan, CG)
     S.alleys = nalley
     for id in pairs(nodes) do if dist_open[id] and not dist_na[id] then bad(11, id .. " is only reachable through an alley"); break end end
 
-    -- 12. a bathroom door never sits on a door band: they sit at the middle of a hall between two rooms; the halls are at least 10 m between the rooms (5 m margins on both sides)
+    -- 12. a bathroom door never sits on a door band: they sit at the middle of a hall between two rooms; the halls are at least 10 m between the rooms (5 m margins on both sides) -- TODO P1: the bathroom doors are not modelled in the plan yet; the hall geometry (P1) checks them
     S.hall_gap_min = 10      -- (by the margins of the room placement; asserted here: every room is at least 5 m from its cell border)
     for _, id in ipairs(plan.order) do
         local info = plan.cells[id]

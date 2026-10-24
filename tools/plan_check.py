@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The contract of the big floors (game/gen/contract.lua) over many seeds and floors, in the engine's Lua through the MCP (no world is touched).
-usage: tools/plan_check.py [SEEDS=200] [--floors 1,2,3,5,6,7,8] [--setting small|large] [--first N] [--dump]
+usage: tools/plan_check.py [SEEDS=200] [--floors 1,2,3,5,6,7,8] [--setting small|large] [--first N] [--hash mixer|world]  (world = the engine's worldgen.hash through the adapter, as in the hook)
 Prints violations by item (with a few examples) and the statistics (largest distance to a safe room, dead ends, stairwells ...)."""
 import os, sys, time, collections
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -15,6 +15,7 @@ def opt(name, default):
     return default
 floors = [int(x) for x in opt("--floors", "1,2,3,5,6,7,8").split(",")]
 setting = opt("--setting", "small")
+maker = "Game.gen.cell.make_cellgen(Game.gen.cell.hash_from(worldgen.hash))" if opt("--hash", "mixer") == "world" else "Game.gen.cell.make_cellgen()"
 first = int(opt("--first", "1"))
 by_item, examples, stats = collections.Counter(), collections.defaultdict(list), collections.defaultdict(list)
 t0 = time.time()
@@ -24,7 +25,7 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3"]) as v:
         batch = 3 if setting == "large" else 10
         for s0 in range(first, first + seeds, batch):
             code = """
-local CG = Game.gen.cell.make_cellgen()
+local CG = %s
 for seed = %d, %d do
   local plan = CG.plan(seed, %d, '%s')
   if plan then
@@ -33,7 +34,7 @@ for seed = %d, %d do
     local s = r.stats
     print('S', seed, s.safe_max or 0, s.safe_over3 or 0, s.dead or 0, s.rooms or 0, s.stairs or 0, s.free or 0, s.alleys or 0, string.format('%%.2f', s.threat_worst or 0), s.courtyard_exits_min or -1, s.nodes or 0)
   end
-end""" % (s0, min(s0 + batch - 1, first + seeds - 1), fl, setting)
+end""" % (maker, s0, min(s0 + batch - 1, first + seeds - 1), fl, setting)
             out = v.lua(code, ticks=0)["output"]
             for line in out:
                 p = line.split("\t")

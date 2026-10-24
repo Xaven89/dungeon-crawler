@@ -7,54 +7,48 @@
 --   block     2 x 2 quadrants = 8 x 8 cells, bordered by 8 m arteries; side halls (4 m) cross the quadrant borders; alleys (3 m) are loop edges only
 --   super-cell 2 x 2 cells: the borough lair's courtyard (floors 1-2), a village or the park (floor 3): its four cells are connected inside, outside it follows the normal edges
 -- A floor is BW x BH blocks (floor 3: 3 x 3 quadrants as a ruin, no arteries, roads instead).
-Game = Game or {}
-local G = Game
-G.gen = G.gen or {}
+-- Hook-safe: ONE global function, every table and helper inside it, no file-level locals and no `Game`/`G` (the engine's `hook_globals = {"cellgen_make", "cellgen_hash_from"}` shares exactly such functions).
+-- Use inside the hook:  local CG = cellgen_make(cellgen_hash_from(worldgen.hash)); in the game: Game.gen.cell.make_cellgen() (the integer mixer below).
 
-local floor, max, min = math.floor, math.max, math.min
+function cellgen_make(H)
+    local floor, max, min = math.floor, math.max, math.min
 
--- a default hash for the game side and the tests (integer mixing, no floats before the end): the hook passes worldgen.hash instead
-local function default_hash(a, b, c, d, e)
-    local h = 0x2545F4914F6CDD1D
-    local args = { a or 0, b or 0, c or 0, d or 0, e or 0 }
-    for i = 1, 5 do
-        h = h ~ (args[i] * 0x9E3779B97F4A7C15)
-        h = (h ~ (h >> 31)) * 0xBF58476D1CE4E5B9
-        h = (h ~ (h >> 29)) * 0x94D049BB133111EB
-        h = h ~ (h >> 32)
+    -- a default hash for the game side and the tests (integer mixing, no floats before the end): the hook passes worldgen.hash instead
+    local function default_hash(a, b, c, d, e)
+        local h = 0x2545F4914F6CDD1D
+        local args = { a or 0, b or 0, c or 0, d or 0, e or 0 }
+        for i = 1, 5 do
+            h = h ~ (args[i] * 0x9E3779B97F4A7C15)
+            h = (h ~ (h >> 31)) * 0xBF58476D1CE4E5B9
+            h = (h ~ (h >> 29)) * 0x94D049BB133111EB
+            h = h ~ (h >> 32)
+        end
+        return (h & 0xFFFFFF) / 0x1000000
     end
-    return (h & 0xFFFFFF) / 0x1000000
-end
 
--- the themes: size they need (min_w, min_d, min_h), weight by floor, hazard (never a dead end), what fills them
-local THEMES = {
-    hall      = { min_w = 14, min_d = 14, weight = 3.0 },
-    furnace   = { min_w = 18, min_d = 18, weight = 2.0, hazard = true },
-    flooded   = { min_w = 18, min_d = 18, weight = 1.8, hazard = true },
-    ballroom  = { min_w = 18, min_d = 18, weight = 1.4, min_h = 7 },
-    grotto    = { min_w = 14, min_d = 14, weight = 2.0 },
-    crypt     = { min_w = 14, min_d = 14, weight = 1.8 },
-    library   = { min_w = 14, min_d = 14, weight = 1.8 },
-    depot     = { min_w = 14, min_d = 14, weight = 1.8 },
-    prize     = { min_w = 14, min_d = 14, weight = 0.9, unique = true },
-    warlord   = { min_w = 20, min_d = 18, weight = 1.0, from = 2 },
-    captive   = { min_w = 18, min_d = 18, weight = 0.9, from = 2 },
-}
-local THEME_ORDER = { "hall", "furnace", "flooded", "ballroom", "grotto", "crypt", "library", "depot", "prize", "warlord", "captive" }
+    -- the themes: size they need (min_w, min_d, min_h), weight by floor, hazard (never a dead end), what fills them
+    local THEMES = {
+        hall      = { min_w = 14, min_d = 14, weight = 3.0 },
+        furnace   = { min_w = 18, min_d = 18, weight = 2.0, hazard = true },
+        flooded   = { min_w = 18, min_d = 18, weight = 1.8, hazard = true },
+        ballroom  = { min_w = 18, min_d = 18, weight = 1.4, min_h = 7 },
+        grotto    = { min_w = 14, min_d = 14, weight = 2.0 },
+        crypt     = { min_w = 14, min_d = 14, weight = 1.8 },
+        library   = { min_w = 14, min_d = 14, weight = 1.8 },
+        depot     = { min_w = 14, min_d = 14, weight = 1.8 },
+        prize     = { min_w = 14, min_d = 14, weight = 0.9, unique = true },
+        warlord   = { min_w = 20, min_d = 18, weight = 1.0, from = 2 },
+        captive   = { min_w = 18, min_d = 18, weight = 0.9, from = 2 },
+    }
+    local THEME_ORDER = { "hall", "furnace", "flooded", "ballroom", "grotto", "crypt", "library", "depot", "prize", "warlord", "captive" }
 
--- how dangerous a monster is (relative: a rat = 1), for the threat budget of a room
-local THREAT = { rat = 1, slime = 1.3, intern = 2, goblin = 2, slime_toxic = 2.4, spitter = 2.6, bandit = 3, orc = 4, imp = 3, samurai = 5, troll = 7, cyclops = 14 }
-local RADIUS = { rat = 0.35, slime = 0.5, slime_toxic = 0.5, intern = 0.5, goblin = 0.5, spitter = 0.5, bandit = 0.5, orc = 0.55, imp = 0.5, samurai = 0.5, troll = 0.8, cyclops = 1.0 }
--- the pools by first floor: a quadrant draws 2-3 kinds from what exists on the floor
-local ROSTER = { { "rat", 1 }, { "slime", 1 }, { "intern", 1 }, { "goblin", 1 }, { "slime_toxic", 2 }, { "spitter", 2 }, { "bandit", 2 }, { "orc", 2 }, { "imp", 3 }, { "samurai", 4 }, { "troll", 4 } }
+    -- how dangerous a monster is (relative: a rat = 1), for the threat budget of a room
+    local THREAT = { rat = 1, slime = 1.3, intern = 2, goblin = 2, slime_toxic = 2.4, spitter = 2.6, bandit = 3, orc = 4, imp = 3, samurai = 5, troll = 7, cyclops = 14 }
+    local RADIUS = { rat = 0.35, slime = 0.5, slime_toxic = 0.5, intern = 0.5, goblin = 0.5, spitter = 0.5, bandit = 0.5, orc = 0.55, imp = 0.5, samurai = 0.5, troll = 0.8, cyclops = 1.0 }
+    -- the pools by first floor: a quadrant draws 2-3 kinds from what exists on the floor
+    local ROSTER = { { "rat", 1 }, { "slime", 1 }, { "intern", 1 }, { "goblin", 1 }, { "slime_toxic", 2 }, { "spitter", 2 }, { "bandit", 2 }, { "orc", 2 }, { "imp", 3 }, { "samurai", 4 }, { "troll", 4 } }
 
-local DIRS = { E = { 1, 0, "W" }, S = { 0, 1, "N" }, W = { -1, 0, "E" }, N = { 0, -1, "S" } }
-
-local M = {}
-G.gen.cell = M
-M.THEMES, M.THREAT, M.RADIUS = THEMES, THREAT, RADIUS
-
-function M.make_cellgen(H)
+    local DIRS = { E = { 1, 0, "W" }, S = { 0, 1, "N" }, W = { -1, 0, "E" }, N = { 0, -1, "S" } }
     local CG = { CELL = 32, THEMES = THEMES, THREAT = THREAT, RADIUS = RADIUS }
     H = H or default_hash
 
@@ -188,6 +182,7 @@ function M.make_cellgen(H)
         end end
         local function deg(ci, cj) local pi = tree_parent(ctx, ci, cj); return (incoming[ci .. "," .. cj] or 0) + (pi and 1 or 0) end
         local function in_super(ci, cj) return CG.super_of(ctx, ci, cj) ~= nil end
+        local function is_stair(ci, cj) for _, o in ipairs(CG.free_stairs(ctx)) do if o[1] == ci and o[2] == cj then return true end end return false end
         -- lairs and antechambers keep away from a borough: its courtyard needs its outside exits
         local function near_super(ci, cj) return in_super(ci + 1, cj) or in_super(ci - 1, cj) or in_super(ci, cj + 1) or in_super(ci, cj - 1) end
         local is_arrival = (aci >= ox and aci < ox + 4 and acj >= oz and acj < oz + 4)
@@ -195,9 +190,9 @@ function M.make_cellgen(H)
         local leaves = {}
         for v = 0, 3 do for u = 0, 3 do
             local ci, cj = ox + u, oz + v
-            if not incoming[ci .. "," .. cj] and not in_super(ci, cj) and not near_super(ci, cj) and not (ci == aci and cj == acj) and not (math.abs(ci - aci) + math.abs(cj - acj) <= 1) then
+            if not incoming[ci .. "," .. cj] and not in_super(ci, cj) and not is_stair(ci, cj) and not near_super(ci, cj) and not (ci == aci and cj == acj) and not (math.abs(ci - aci) + math.abs(cj - acj) <= 1) then
                 local pi, pj = tree_parent(ctx, ci, cj)
-                if pi and not in_super(pi, pj) and not near_super(pi, pj) and not (pi == aci and pj == acj) and not (math.abs(pi - aci) + math.abs(pj - acj) <= 1) then leaves[#leaves + 1] = { ci, cj, pi, pj } end
+                if pi and not in_super(pi, pj) and not is_stair(pi, pj) and not near_super(pi, pj) and not (pi == aci and pj == acj) and not (math.abs(pi - aci) + math.abs(pj - acj) <= 1) then leaves[#leaves + 1] = { ci, cj, pi, pj } end
             end
         end end
         if #leaves > 0 then
@@ -205,10 +200,13 @@ function M.make_cellgen(H)
             Q.lair = { pick[1], pick[2] }; Q.ante = { pick[3], pick[4] }
         end
         local function taken(ci, cj)
-            return (Q.lair and Q.lair[1] == ci and Q.lair[2] == cj) or (Q.ante and Q.ante[1] == ci and Q.ante[2] == cj) or in_super(ci, cj)
+            return (Q.lair and Q.lair[1] == ci and Q.lair[2] == cj) or (Q.ante and Q.ante[1] == ci and Q.ante[2] == cj) or in_super(ci, cj) or is_stair(ci, cj)
         end
         -- tree distances inside the quadrant from a cell: dist map and eccentricity
+        local tdcache = {}
         local function tree_dist(ci, cj)
+            local ck = ci .. "," .. cj
+            if tdcache[ck] then return tdcache[ck][1], tdcache[ck][2] end
             local dist, queue = { [ci .. "," .. cj] = 0 }, { { ci, cj } }
             local qh, ecc = 1, 0
             while qh <= #queue do
@@ -228,6 +226,7 @@ function M.make_cellgen(H)
                     if not dist[k] then dist[k] = d0 + 1; ecc = max(ecc, d0 + 1); queue[#queue + 1] = n end
                 end
             end
+            tdcache[ck] = { dist, ecc }
             return dist, ecc
         end
         -- the in-quadrant neighbours a cell could get an extra (non-tree) edge to
@@ -341,6 +340,7 @@ function M.make_cellgen(H)
     end
 
     -- ------------------------------------------------------------------------------------------ free stairwells
+    -- chosen from the hash and cheap rules only (no quadrant lookup: a region would otherwise generate quadrants all over the floor); the quadrants keep their lair, safe room and prize off these cells
     function CG.free_stairs(ctx)
         local m = ctx.misc.free
         if m then return m end
@@ -351,11 +351,8 @@ function M.make_cellgen(H)
         for i = 1, ctx.P.free_stairs do
             for t = 0, 40 do
                 local ci, cj = floor(h(ctx, i, t, 1, 61) * W), floor(h(ctx, i, t, 2, 61) * Hc)
-                local ok = not (ci == aci and cj == acj) and not CG.super_of(ctx, ci, cj)
+                local ok = math.abs(ci - aci) + math.abs(cj - acj) > 1 and not CG.super_of(ctx, ci, cj)
                 if ok then
-                    local Q = CG.quadrant(ctx, floor(ci / 4), floor(cj / 4))
-                    local function same(p) return p and p[1] == ci and p[2] == cj end
-                    if same(Q.lair) or same(Q.ante) or same(Q.safe) or same(Q.safe2) or same(Q.prize) then ok = false end
                     for _, o in ipairs(m) do if o[1] == ci and o[2] == cj then ok = false end end
                     -- a free stairwell is never in the arrival block when there is more than one block (the floor is explored, not skipped)
                     if ok and ctx.P.kind == "grid" and (ctx.P.BW * ctx.P.BH) > 1 then
@@ -747,4 +744,19 @@ function M.make_cellgen(H)
     return CG
 end
 
-return M
+-- The hash adapter: the plan calls H(seed, floor * 1000 + salt, a, b, c) with integers; worldgen.hash takes (x, z, salt) and mixes the world's seed itself.
+-- Fold without collisions over the real domain (every argument -8 .. 4087 after the offset, floor * 1000 + salt < 16384):
+--   x = (a + 8) * 4096 + (b + 8)     z = (c + 8) * 4096 + (seed % 4096)     salt = floor * 1000 + salt
+-- The run seed is the world seed (design M1 (a)): the engine adds it, `seed % 4096` only keeps the offline tests (plan_check over many seeds) apart.
+function cellgen_hash_from(wh)
+    return function(s, f, a, b, c)
+        assert(a >= -8 and a < 4088 and b >= -8 and b < 4088 and c >= -8 and c < 4088 and f >= 0 and f < 16384, "cellgen hash argument out of range")
+        return wh((a + 8) * 4096 + (b + 8), (c + 8) * 4096 + (s % 4096), f)
+    end
+end
+
+Game = Game or {}
+Game.gen = Game.gen or {}
+local probe = cellgen_make()
+Game.gen.cell = { make_cellgen = cellgen_make, hash_from = cellgen_hash_from, THEMES = probe.THEMES, THREAT = probe.THREAT, RADIUS = probe.RADIUS }
+return Game.gen.cell
