@@ -45,6 +45,8 @@ function deco_catalogue()
         tomb_a     = { cat = "tomb", model = "models/kit/graveyard_tomb_1.vxm", msize = { 12, 20, 12 }, mfront = "+z", anchor = "free", clear = 0.7 },
         tomb_b     = { cat = "tomb", model = "models/kit/graveyard_tomb_2.vxm", msize = { 11, 7, 12 }, mfront = "+z", anchor = "free", clear = 0.7 },
         tomb_c     = { cat = "tomb", model = "models/kit/graveyard_tomb_3.vxm", msize = { 16, 15, 12 }, mfront = "+z", anchor = "free", clear = 0.7 },
+        -- the lantern on a chain (E13): the hook draws the bracket at the ceiling, the game hangs the chain and its light (G.chain_lantern); none under an open sky
+        chain_lamp = { cat = "chain", w = 0.4, d = 0.4, h = 0, anchor = "free", clear = 0, blocks = false },
         -- lairs, bars
         dais       = { cat = "dais", w = 7.0, d = 3.0, h = 0.4, anchor = "far_wall", clear = 1.0, blocks = false, spots = { { "boss", 0, 2.35 } } },
         throne     = { cat = "throne", w = 1.6, d = 1.2, h = 2.6, on = "dais", clear = 0.3 },
@@ -75,6 +77,7 @@ function deco_layout_themes()
             { id = "couch", base = 0, jit = 1.5 }, { id = "drawer", base = 0, jit = 1.5 },
             { id = "table", base = 0, area = 0.5, jit = 1.2, p = 0.6 },
             { id = "chair" },
+            { id = "chain_lamp", base = 1, jit = 2 },
         } },
         library = { margin = 3.0, fill = {
             { id = "bookcase", wall = 0.2, jit = 1 },
@@ -84,6 +87,7 @@ function deco_layout_themes()
             { id = "stack_l", area = 0.8, jit = 1 },
             { id = "table", base = 1, jit = 1 },
             { id = "chair" },
+            { id = "chain_lamp", base = 1, jit = 2 },
         } },
         crypt = { margin = 2.6, fill = {
             { id = "sarcophagus", area = 3.0, jit = 2 },
@@ -109,12 +113,14 @@ function deco_layout_themes()
             { id = "bench", base = 1, jit = 2 },
             { id = "urn", base = 2, jit = 2 },
             { id = "banner", base = 2, jit = 2 },
+            { id = "chain_lamp", base = 2, jit = 2 },
         } },
         pub = { margin = 0.8, fill = {
             { id = "bar" }, { id = "shelf_wall" }, { id = "bar_stool" },
             { id = "pub_table", base = 2, jit = 1 },
             { id = "pub_stool" },
             { id = "bench", base = 1, jit = 1 },
+            { id = "chain_lamp", base = 2, jit = 2 },
         } },
         depot = { margin = 3.0, fill = {
             { id = "rack", wall = 0.14, jit = 1 },
@@ -158,7 +164,7 @@ function deco_layout(theme, room, doors, mk, fl, extra)
     local function dims(def, face) if face == "+z" or face == "-z" then return def.w, def.d end return def.d, def.w end
     local function make(id, def, cx, cz, face)
         local w, d = dims(def, face)
-        local it = { id = id, cat = def.cat, def = def, face = face, w = def.w, d = def.d, h = def.h, blocks = (def.blocks ~= false),
+        local it = { id = id, cat = def.cat, def = def, face = face, ceil = room.h, w = def.w, d = def.d, h = def.h, blocks = (def.blocks ~= false),
                      x0 = cx - w / 2, z0 = cz - d / 2, x1 = cx + w / 2, z1 = cz + d / 2 }
         local c = def.clear or 0
         it.foot = { it.x0, it.z0, it.x1, it.z1 }
@@ -319,6 +325,7 @@ function deco_layout(theme, room, doors, mk, fl, extra)
     -- 2..5. the rows of the theme, in order
     for _, row in ipairs(TH.fill) do
         local def = CAT[row.id]
+        if def and def.cat == "chain" and fl == 3 and not (extra and extra.roofed) then def = nil end
         if def then
             if def.on then
                 for _, p in ipairs(items) do
@@ -614,6 +621,10 @@ function deco_item_draw(B, it, fl)
         end
     elseif id == "sofa" then
         box(0, 0, 0, W, 0.45, D, "carpet"); box(0, 0.45, 0, W, 0.9, 0.25, "carpet"); box(0, 0.45, 0, 0.25, 0.7, D, "carpet"); box(W - 0.25, 0.45, 0, W, 0.7, D, "carpet")
+    elseif id == "chain_lamp" then
+        local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
+        B.fill(cx - 0.2, it.ceil - 0.1, cz - 0.2, cx + 0.2, it.ceil, cz + 0.2, "metal")
+        B.fill(cx - 0.05, it.ceil - 0.3, cz - 0.05, cx + 0.05, it.ceil - 0.1, cz + 0.05, "metal")
     elseif id == "bones" then
         box(0, 0, 0, 0.5, 0.15, 0.3, "bone"); box(0.1, 0.15, 0.05, 0.25, 0.3, 0.2, "bone")
     end

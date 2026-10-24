@@ -376,6 +376,15 @@ function deco_village_plan(mk)
     return out
 end
 
+-- the pub's furniture (the layout grammar, super-cell metres): the interior of the building b around the crystal, the fire, the notice and the checkpoint; shared by the hook and the game (the chain lanterns)
+function deco_pub_layout(b, mk)
+    local d = b.door
+    local inner = { x = b.x0 + 0.5, z = b.z0 + 0.5, w = b.x1 - b.x0 - 1, d = b.z1 - b.z0 - 1, h = b.h - 0.4 }
+    return deco_layout("pub", inner, { { side = d.side, pos = d.pos } }, mk, 3, { roofed = true, door_half = 1.9, door_depth = 2.6, reserve = {
+        { b.crystal.x - 1.6, b.crystal.z - 1.4, b.crystal.x + 1.6, b.crystal.z + 1.4 }, { b.fire.x - 1.8, b.fire.z - 0.9, b.fire.x + 1.8, b.fire.z + 1.2 },
+        { b.note.x - 1.2, b.note.z - 0.6, b.note.x + 1.2, b.note.z + 1.0 }, { b.cx - 1.0, b.cz + 0.5, b.cx + 1.0, b.cz + 2.5 } } }), inner
+end
+
 -- cu, cv: which cell of the 2 x 2; doors: the cell's own doors (cell metres) get a gold gate; the builder clips to the cell
 function deco_village(B, cu, cv, room, doors, mk)
     local plan = deco_village_plan(mk)
@@ -404,10 +413,7 @@ function deco_village(B, cu, cv, room, doors, mk)
             bb(b.fire.x - 1.2, 0, b.fire.z - 0.4, b.fire.x + 1.2, 2.4, b.fire.z + 0.4, "brick"); bb(b.fire.x - 0.7, 0, b.fire.z - 0.4, b.fire.x + 0.7, 1.4, b.fire.z + 0.4, nil)
             bb(b.note.x - 0.6, 1.3, b.note.z - 0.1, b.note.x + 0.6, 2.1, b.note.z + 0.15, "lantern")   -- the notice board with the note
             -- the furniture: the layout grammar's pub (a bar with its shelves and stools, tables and chairs, benches) around the fixtures above and the checkpoint in the middle
-            local inner = { x = b.x0 + 0.5, z = b.z0 + 0.5, w = b.x1 - b.x0 - 1, d = b.z1 - b.z0 - 1, h = b.h - 0.4 }
-            local lay = deco_layout("pub", inner, { { side = d.side, pos = d.pos } }, mk, 3, { door_half = 1.9, door_depth = 2.6, reserve = {
-                { b.crystal.x - 1.6, b.crystal.z - 1.4, b.crystal.x + 1.6, b.crystal.z + 1.4 }, { b.fire.x - 1.8, b.fire.z - 0.9, b.fire.x + 1.8, b.fire.z + 1.2 },
-                { b.note.x - 1.2, b.note.z - 0.6, b.note.x + 1.2, b.note.z + 1.0 }, { b.cx - 1.0, b.cz + 0.5, b.cx + 1.0, b.cz + 2.5 } } })
+            local lay = deco_pub_layout(b, mk)
             if lay then
                 local Bc = { fill = function(x0, y0, z0, x1, y1, z1, mat) bb(x0, y0, z0, x1, y1, z1, mat) end,
                              model = function(file, x, y, z, rot) if x >= ox and x < ox + 32 and z >= oz and z < oz + 32 then B.model(file, x - ox, y, z - oz, rot) end end }

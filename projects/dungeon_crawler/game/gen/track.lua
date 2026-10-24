@@ -31,6 +31,7 @@ wrap(gravity, "add", "gravity")
 wrap(emitter, "create", "emitter", function(_, def) return type(def) == "table" and def.name or nil end)
 wrap(body, "box", "body"); wrap(body, "ball", "body")
 wrap(vehicle, "spawn", "vehicle")
+wrap(chain, "add", "chain", function(r) return r and r.group end)
 wrap(prefab, "place", "prefab")
 
 local remover = {
@@ -39,6 +40,7 @@ local remover = {
     emitter = function(name) if emitter.find(name) then emitter.remove(name) end end,
     body = function(id) body.remove(id) end,
     vehicle = function(id) vehicle.remove(id) end,
+    chain = function(g) chain.remove(g) end,
     prefab = function(id) prefab.remove(id) end,
 }
 

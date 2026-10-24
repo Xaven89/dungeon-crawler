@@ -252,6 +252,7 @@ function F.make_cell(id)
                 end
             end
         end
+        F.chains(room, ctx)
         cell_lights(P, room)
         if P.rings then for _, ring in ipairs(P.ring_list) do if ring.origin == id then F.make_ring(P, ring) end end end
         if room.theme == 'stairs_free' then F.pit_cover(room, F.stairs_open(id)) end
@@ -729,6 +730,21 @@ function F.lair_cleared(P, id, tier)
         A.say_key("lair.forcefield", { prio = 1 })
     end
     G.save()
+end
+
+-- the lanterns on chains of a room (the layout grammar's `chain_lamp` items: the hook draws the ceiling brackets): at most 4 a cell, 3 links each, made when the cell comes alive and taken away with its scope
+function F.chains(room, ctx)
+    if ctx.floor == 3 then return end
+    local lay = F.furnished(room, ctx)
+    if not lay then return end
+    local ox, oz = F.off(room)
+    local n = 0
+    for _, it in ipairs(lay.items) do
+        if it.id == "chain_lamp" and n < 4 then
+            n = n + 1
+            G.chain_lantern((it.x0 + it.x1) / 2 + ox, room.h - 0.1, (it.z0 + it.z1) / 2 + oz, math.max(1.0, room.h - 0.1 - 1.75 - 0.4))
+        end
+    end
 end
 
 -- the fortress of a borough: lights, guards in the rings and the arena, the stairwell pit under its forcefield (made with the origin cell of the courtyard)

@@ -206,6 +206,11 @@ function OC.make_village(P, sup, origin_id)
             button(vid .. "_save", ox + c.x - 0.25, 1.3, oz + c.z - 0.25, ox + c.x + 0.25, 1.9, oz + c.z + 0.25, tr("oc.pub_save"), function() G.save_now() end)
             button(vid .. "_note", ox + nt.x - 0.4, 1.4, oz + nt.z - 0.1, ox + nt.x + 0.4, 1.9, oz + nt.z + 0.15, tr("oc.pub_note"), function() OC.read_note() end)
             G.world.checkpoints[v.pub.id] = { x = ox + b.cx, y = 0.1, z = oz + b.cz + 1.5 }
+            local lay, inner = deco_pub_layout(b, function(salt) return deco_rng(H, P.floor, sup.ci, sup.cj, salt or 1) end)
+            local nch = 0
+            if lay then for _, it in ipairs(lay.items) do
+                if it.id == "chain_lamp" and nch < 4 then nch = nch + 1; G.chain_lantern(ox + (it.x0 + it.x1) / 2, inner.h - 0.1, oz + (it.z0 + it.z1) / 2, math.max(1.0, inner.h - 0.1 - 1.75 - 0.4)) end
+            end end
         elseif b.kind == "store" then
             local vd = b.vend
             button(vid .. "_vend", ox + vd.x - 0.6, 1.0, oz + vd.z + 0.45, ox + vd.x + 0.6, 1.6, oz + vd.z + 0.65, tr("oc.store"), function()

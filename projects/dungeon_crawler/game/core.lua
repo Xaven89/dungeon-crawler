@@ -202,6 +202,24 @@ function G.lamp(xm, zm, y_ceil, drop, opts)
     return G.torch(xm, y_ceil - drop - 0.2, zm, { preset = opts.preset or "torch", color = opts.color or { 1.0, 0.67, 0.33 }, reach = opts.reach or 15, far = opts.far, intensity = opts.intensity, flicker = true })
 end
 
+-- a lantern on a chain from the ceiling (E13): `hang` metres of chain (links of metal), a glass lantern at the end with a flame light that rides it; the player pushes it and it swings and settles.
+-- Everything it makes is the scope's (gen/track.lua: chain.remove with the cell). Returns the chain or nil.
+function G.chain_lantern(xm, y_ceil, zm, hang, opts)
+    opts = opts or {}
+    local links = opts.links or 3
+    local len = math.max(4, math.floor(hang * 16 / links))
+    local ok, c = pcall(chain.add, { anchor = { G.mx(xm), G.my(y_ceil), G.mz(zm) }, links = links, link = { length_voxels = len, radius = 1, material = "metal" },
+                                     tip = { material = "glass", size = { 4, 6, 4 } }, cone = opts.cone or 60 })
+    if not ok or not c then return nil end
+    torch_n = torch_n + 1
+    local name = "chain_" .. torch_n
+    local col = opts.color or { 1.0, 0.67, 0.33 }
+    local m = math.max(col[1], col[2], col[3], 0.001)
+    pcall(emitter.create, { name = name, preset = "torch", body = c.tip, offset = { 0, 0.15, 0}, light = { color = { col[1] / m, col[2] / m, col[3] / m }, intensity = (opts.intensity or 11) * G.gen.rules.dark(), reach = opts.reach or 11, far = opts.far or 24, flicker = true } })
+    G.torches[#G.torches + 1] = name
+    return c
+end
+
 -- a floor brazier / standing fire bowl
 function G.brazier(xm, zm, opts)
     opts = opts or {}
