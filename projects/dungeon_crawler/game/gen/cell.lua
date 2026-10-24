@@ -384,7 +384,7 @@ function cellgen_make(H)
         elseif same(Q.lair) then r = "lair"
         elseif same(Q.ante) then r = "ante"
         elseif same(Q.safe) then r = Q.guild and "guild" or "safe"
-        elseif same(Q.safe2) then r = "safe"
+        elseif same(Q.safe2) then r = "rest"
         else
             r = nil
             for _, s in ipairs(CG.free_stairs(ctx)) do if s[1] == ci and s[2] == cj then r = "stairs" end end
@@ -457,7 +457,7 @@ function cellgen_make(H)
             return nil
         end
         -- an alley never carries the tree (a loop edge only) and never touches a safe room (they have halls)
-        if kind == "alley" and (ra == "safe" or rb == "safe" or ra == "arrival" or rb == "arrival" or ra == "guild" or rb == "guild") then kind = "loop" end
+        if kind == "alley" and (ra == "safe" or rb == "safe" or ra == "arrival" or rb == "arrival" or ra == "guild" or rb == "guild" or ra == "rest" or rb == "rest") then kind = "loop" end
         return kind
     end
 
@@ -514,7 +514,7 @@ function cellgen_make(H)
             local k = CG.edge(ctx, ci, cj, d)
             if k then
                 local r = CG.role(ctx, ci + DIRS[d][1], cj + DIRS[d][2])
-                if r == "safe" or r == "arrival" or r == "guild" then return true end
+                if r == "safe" or r == "arrival" or r == "guild" or r == "rest" then return true end
             end
         end
         return false
@@ -538,6 +538,7 @@ function cellgen_make(H)
         local theme
         local w, d
         if role == "arrival" or role == "safe" then theme, w, d = "safe", 20, 20
+        elseif role == "rest" then theme, w, d = "rest", 12, 12
         elseif role == "guild" then theme, w, d = "guild", 16, 16
         elseif role == "lair" then theme, w, d = "arena", 22, 20
         elseif role == "ante" then theme, w, d = "ante", 18, 14
@@ -705,7 +706,7 @@ function cellgen_make(H)
         for _, s in ipairs(CG.free_stairs(ctx)) do plan.stairs[#plan.stairs + 1] = cid(s[1], s[2]) end
         for _, id in ipairs(plan.order) do
             local r = plan.cells[id].role
-            if r == "arrival" or r == "safe" or r == "guild" then plan.safe[#plan.safe + 1] = id end
+            if r == "arrival" or r == "safe" or r == "guild" or r == "rest" then plan.safe[#plan.safe + 1] = id end
         end
         return plan
     end
@@ -725,7 +726,7 @@ function cellgen_make(H)
     end
 
     -- ------------------------------------------------------------------------------------------ ASCII dumps
-    local ROLE_CH = { arrival = "@", safe = "S", guild = "G", lair = "L", ante = "a", stairs = "$", prize = "P", borough = "B", village = "V", park = "K", room = ".", connector = "c" }
+    local ROLE_CH = { arrival = "@", safe = "S", guild = "G", rest = "r", lair = "L", ante = "a", stairs = "$", prize = "P", borough = "B", village = "V", park = "K", room = ".", connector = "c" }
     -- c0, r0 .. c1, r1 (cells, inclusive): each cell 4 columns x 2 rows, walls drawn, openings: ' ' hall, ':' alley, '=' side hall, '#' artery door at the border
     function CG.ascii(plan, c0, r0, c1, r1)
         local ctx = plan.ctx

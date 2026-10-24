@@ -1,0 +1,374 @@
+-- gen/deco: what a big floor's rooms look like inside, as pure global functions (hook_globals): the region hook calls `deco_room(B, ...)` with a builder B for the static decoration (pools, pillars, shelves,
+-- the safe room's fixtures ...) and the game calls the same `deco_*_plan` functions for the things that must stand where the voxels are (enemies keep clear of the pillars, the crystal button sits on the crystal).
+-- No file locals and no Game: everything a function needs is a parameter or a global function below. Coordinates: metres, local to the CELL (0 .. 32), y above the floor (the game adds the cell's origin).
+--
+--   B.fill(x0, y0, z0, x1, y1, z1, material)   half open box; no material: air          B.sphere(cx, cy, cz, r, material)
+--   B.pillar(cx, cz, r, y0, y1, material)      a round column                          B.ring(cx, cz, r0, r1, y0, y1, material)
+--   room = { x, z, w, d, h }, doors = { { side = "E" | "S" | "W" | "N", pos = z or x }, ... }, mk() = a fresh stream of the room's own random numbers (next(), int(a, b)), the same in the hook and the game
+
+-- (mk(salt) = a fresh stream: 1 the plans, 3 the crates, 2 the population)
+-- the room's own random numbers: a hashed counter (the hash is cellgen_hash_from(worldgen.hash) in both places), `salt` < 100 keeps the streams of a cell apart
+function deco_rng(H, fl, ci, cj, salt)
+    local k = 0
+    local r = {}
+    function r.next() k = k + 1; return H(0, fl * 1000 + 600 + salt, ci, cj, k) end
+    function r.int(a, b) return a + math.floor(r.next() * (b - a + 1)) end
+    return r
+end
+
+-- is the point within r metres of a door (the door's point on the room's wall)
+function deco_near_door(room, doors, x, z, r)
+    for _, d in ipairs(doors or {}) do
+        local dx, dz
+        if d.side == "E" then dx, dz = room.x + room.w, d.pos elseif d.side == "W" then dx, dz = room.x, d.pos
+        elseif d.side == "S" then dx, dz = d.pos, room.z + room.d else dx, dz = d.pos, room.z end
+        local ex, ez = x - dx, z - dz
+        if math.sqrt(ex * ex + ez * ez) < r then return true end
+    end
+    return false
+end
+
+function deco_inner(room, m) return room.x + m, room.z + m, room.x + room.w - m, room.z + room.d - m end
+
+-- ---------------------------------------------------------------------------------------------- the plans (shared with the game's things)
+function deco_hall_plan(room, mk)
+    local r = mk()
+    local pillars = {}
+    local nx, nz = math.floor(room.w / 8), math.floor(room.d / 8)
+    for i = 1, nx do for j = 1, nz do
+        if r.next() < 0.7 then pillars[#pillars + 1] = { room.x + room.w * i / (nx + 1), room.z + room.d * j / (nz + 1) } end
+    end end
+    return pillars
+end
+
+function deco_grotto_plan(room, mk)
+    local r = mk()
+    local x0, z0, x1, z1 = deco_inner(room, 4)
+    local items = {}
+    for i = 1, math.floor(room.w * room.d / 45) do
+        local it = { x = x0 + r.next() * (x1 - x0), z = z0 + r.next() * (z1 - z0), kind = (r.next() < 0.5) and "stalagmite" or "mushroom", i = i }
+        it.a, it.b, it.c = r.next(), r.next(), r.next()
+        items[#items + 1] = it
+    end
+    return items
+end
+
+function deco_crypt_plan(room, mk)
+    local r = mk()
+    local x0, z0, x1, z1 = deco_inner(room, 4.5)
+    local boxes, bones = {}, {}
+    local x = x0
+    while x <= x1 - 1.2 do
+        local z = z0
+        while z <= z1 - 2.4 do boxes[#boxes + 1] = { x, z, x + 1.2, z + 2.4, r.next() < 0.3 }; z = z + 4.6 end
+        x = x + 3.6
+    end
+    for i = 1, math.floor(room.w * room.d / 90) do bones[#bones + 1] = { x0 + r.next() * (x1 - x0), z0 + r.next() * (z1 - z0) } end
+    return boxes, bones
+end
+
+function deco_library_plan(room, mk)
+    local r = mk()
+    local x0, z0, x1, z1 = deco_inner(room, 4.5)
+    local shelves = {}
+    local x = x0
+    while x <= x1 - 0.8 do
+        local z = z0
+        while z < z1 - 1 do
+            local len = math.min(2 + 2 * r.int(0, 3), z1 - z)
+            if r.next() < 0.78 then shelves[#shelves + 1] = { x, z, x + 0.8, z + len } end
+            z = z + len + 1.6
+        end
+        x = x + 3.6
+    end
+    return shelves
+end
+
+function deco_depot_plan(room, mk)
+    local r = mk()
+    local x0, z0, x1, z1 = deco_inner(room, 4)
+    local stacks = {}
+    for i = 1, math.floor(room.w * room.d / 45) do
+        stacks[#stacks + 1] = { x0 + r.next() * (x1 - x0 - 1.4), z0 + r.next() * (z1 - z0 - 1.4), r.int(1, 3) }
+    end
+    local barrels = {}
+    for c = 1, 2 do
+        local bx, bz = x0 + 1 + r.next() * (x1 - x0 - 2), z0 + 1 + r.next() * (z1 - z0 - 2)
+        for k = 0, 2 do barrels[#barrels + 1] = { bx + (k % 2) * 0.9, bz + math.floor(k / 2) * 0.9 } end
+    end
+    return stacks, barrels
+end
+
+-- the safe room's fixtures in canonical offsets (u east, v south, 0 .. 16, the room's corner nearest the origin of the 16 x 16 square in the middle of the 20 x 20 room), mirrored so that none stands in a doorway
+function deco_safe_plan(room, doors, stairs)
+    local FIX = {
+        fireplace = { 5, 0, 11, 1.8, must = true }, crystal = { 12, 0.6, 14.2, 2.8, must = true }, vending = { 13.4, 3, 16, 6, must = true },
+        shelf_a = { 0, 2, 1.8, 5 }, shelf_b = { 0, 12.5, 1.8, 15.5 }, sofa = { 2, 12.2, 6.5, 14 }, table = { 8, 12.6, 10, 14 }, bed = { 2, 7, 4.4, 9.2 },
+    }
+    local ox, oz = room.x + (room.w - 16) / 2, room.z + (room.d - 16) / 2
+    local function rect(mx, mz, r)
+        return { ox + (mx and 16 - r[3] or r[1]), oz + (mz and 16 - r[4] or r[2]), ox + (mx and 16 - r[1] or r[3]), oz + (mz and 16 - r[2] or r[4]) }
+    end
+    local zones = {}
+    for _, d in ipairs(doors or {}) do
+        if d.side == "E" then zones[#zones + 1] = { room.x + room.w - 3, d.pos - 2.8, room.x + room.w, d.pos + 2.8 }
+        elseif d.side == "W" then zones[#zones + 1] = { room.x, d.pos - 2.8, room.x + 3, d.pos + 2.8 }
+        elseif d.side == "S" then zones[#zones + 1] = { d.pos - 2.8, room.z + room.d - 3, d.pos + 2.8, room.z + room.d }
+        else zones[#zones + 1] = { d.pos - 2.8, room.z, d.pos + 2.8, room.z + 3 } end
+    end
+    local function hit(a, b) return a[1] < b[3] and b[1] < a[3] and a[2] < b[4] and b[2] < a[4] end
+    local best
+    local names = { "fireplace", "crystal", "vending", "shelf_a", "shelf_b", "sofa", "table", "bed" }
+    for _, f in ipairs({ { false, false }, { true, false }, { false, true }, { true, true } }) do
+        local blocked, dropped = 0, {}
+        for _, name in ipairs(names) do
+            local r = FIX[name]
+            local w = rect(f[1], f[2], r)
+            for _, z in ipairs(zones) do if hit(w, z) then if r.must then blocked = blocked + 10 else dropped[name] = true; blocked = blocked + 1 end break end end
+        end
+        if not best or blocked < best.blocked then best = { mx = f[1], mz = f[2], dropped = dropped, blocked = blocked } end
+        if blocked == 0 then break end
+    end
+    best.ox, best.oz = ox, oz
+    function best.X(u) return ox + (best.mx and 16 - u or u) end
+    function best.Z(v) return oz + (best.mz and 16 - v or v) end
+    function best.face(f)
+        if best.mx then f = ({ ["+x"] = "-x", ["-x"] = "+x" })[f] or f end
+        if best.mz then f = ({ ["+z"] = "-z", ["-z"] = "+z" })[f] or f end
+        return f
+    end
+    return best
+end
+
+-- the loot crates of a room: { tier, x, z, face, y [, mimic] } in cell metres (the voxels come from the hook, the buttons from the game's things)
+function deco_crates(theme, room, doors, mk, fl)
+    local out = {}
+    local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+    local function add(tier, x, z, face, y, mimic) out[#out + 1] = { tier = tier, x = x, z = z, face = face, y = y or 0, mimic = mimic } end
+    if theme == "hall" then
+        if mk(3).next() < 0.5 then add(fl >= 3 and "silver" or "bronze", room.x + 3, room.z + 3, "+z", 0) end
+    elseif theme == "warlord" then
+        local door_s = false
+        for _, d in ipairs(doors or {}) do if d.side == "S" and math.abs(d.pos - cx) < 5.5 then door_s = true end end
+        if door_s then add("gold", room.x + 2.5, room.z + room.d - 2, "-z", 0) else add("gold", cx - 0.6, room.z + room.d - 2, "-z", 0.45) end
+    elseif theme == "furnace" then add(fl >= 3 and "gold" or "silver", cx - 0.6, cz - 0.4, "+z", 0)
+    elseif theme == "flooded" then add("silver", cx - 0.6, cz - 0.4, "+z", 0)
+    elseif theme == "ballroom" then
+        local door_n = false
+        for _, d in ipairs(doors or {}) do if d.side == "N" then door_n = true end end
+        add("silver", room.x + room.w - 4.5, room.z + 0.8, "-z", door_n and 0 or 1.08)
+    elseif theme == "grotto" then add("bronze", room.x + room.w - 3, room.z + room.d - 3, "-z", 0)
+    elseif theme == "crypt" then add("bronze", room.x + room.w - 2.6, room.z + 1.5, "-x", 0)
+    elseif theme == "library" then add("bronze", room.x + 2.6, room.z + 1.5, "+x", 0)
+    elseif theme == "depot" then add("silver", room.x + room.w - 3, room.z + 1.5, "-z", 0)
+    elseif theme == "prize" then
+        local mimic = mk(3).int(1, 3)
+        for i = 1, 3 do add(i == 2 and "gold" or "silver", cx - 7 + (i - 1) * 5.2 + 0.2, cz - 0.4, "+z", 0.45, i == mimic) end
+    end
+    return out
+end
+
+-- a chest as voxels (what traps.lua draws on a floor that is built by script): x, y, z in cell metres; B.vbox takes voxels relative to the cell's origin and the floor
+function deco_chest(B, tier, x, y, z, face)
+    local function R(v) return math.floor(v * 16 + 0.5) end
+    local ox, oy, oz = R(x), R(y), R(z)
+    local alongx = (face == "+z" or face == "-z")
+    local lx_, lz_ = alongx and 20 or 12, alongx and 12 or 20
+    local function bx(x0, y0, z0, x1, y1, z1, mat) B.vbox(ox + x0, oy + y0, oz + z0, ox + x1, oy + y1, oz + z1, mat) end
+    bx(0, 0, 0, lx_ - 1, 8, lz_ - 1, "chest_wood")
+    bx(0, 9, 0, lx_ - 1, 10, lz_ - 1, "chest_wood"); bx(1, 11, 1, lx_ - 2, 11, lz_ - 2, "chest_wood")
+    if alongx then bx(3, 0, 0, 4, 10, lz_ - 1, "metal"); bx(lx_ - 5, 0, 0, lx_ - 4, 10, lz_ - 1, "metal")
+    else bx(0, 0, 3, lx_ - 1, 10, 4, "metal"); bx(0, 0, lz_ - 5, lx_ - 1, 10, lz_ - 4, "metal") end
+    local glow = ({ bronze = "lantern", silver = "rune", gold = "lantern", platinum = "neon" })[tier] or "lantern"
+    if face == "+z" then bx(9, 6, lz_, 10, 7, lz_, glow) elseif face == "-z" then bx(9, 6, -1, 10, 7, -1, glow)
+    elseif face == "+x" then bx(lx_, 6, 9, lx_, 7, 10, glow) else bx(-1, 6, 9, -1, 7, 10, glow) end
+end
+
+function deco_barrel(B, x, y, z)
+    local function R(v) return math.floor(v * 16 + 0.5) end
+    local cx, cy, cz = R(x), R(y), R(z)
+    B.vbox(cx - 4, cy, cz - 4, cx + 4, cy + 13, cz + 4, "dark_wood")
+    B.vbox(cx - 5, cy + 2, cz - 4, cx + 5, cy + 3, cz + 4, "metal"); B.vbox(cx - 4, cy + 2, cz - 5, cx + 4, cy + 3, cz + 5, "metal")
+    B.vbox(cx - 5, cy + 10, cz - 4, cx + 5, cy + 11, cz + 4, "metal"); B.vbox(cx - 4, cy + 10, cz - 5, cx + 4, cy + 11, cz + 5, "metal")
+    B.vbox(cx - 2, cy + 14, cz - 2, cx + 2, cy + 14, cz + 2, "hazard_y")
+end
+
+-- ---------------------------------------------------------------------------------------------- the decoration of a room by its theme (the hook)
+function deco_room(B, theme, room, doors, mk, fl)
+    local floor = math.floor
+    local function pool(fluid, depth, surface_y)
+        local x0, z0, x1, z1 = deco_inner(room, 4)
+        B.fill(x0, -depth, z0, x1, 0, z1)
+        B.fill(x0 - 0.25, -depth, z0, x0, 0, z1, "obsidian"); B.fill(x1, -depth, z0, x1 + 0.25, 0, z1, "obsidian")
+        B.fill(x0, -depth, z0 - 0.25, x1, 0, z0, "obsidian"); B.fill(x0, -depth, z1, x1, 0, z1 + 0.25, "obsidian")
+        B.fill(x0, -depth - 0.3, z0, x1, -depth, z1, "obsidian")
+        B.fill(x0, -depth, z0, x1, surface_y, z1, fluid)
+        local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
+        B.fill(cx - 1.2, -depth, cz - 1.2, cx + 1.2, 0.0, cz + 1.2, "obsidian")
+        local sx = (x1 - x0) >= (z1 - z0)
+        local n = floor(((sx and (x1 - x0) or (z1 - z0)) / 2 - 1.2) / 1.7)
+        for i = 1, math.max(1, n) do
+            local d = 1.2 + i * 1.7 - 0.5
+            if sx then B.fill(cx - d - 0.45, -depth, cz - 0.45, cx - d + 0.45, 0, cz + 0.45, "obsidian") else B.fill(cx - 0.45, -depth, cz - d - 0.45, cx + 0.45, 0, cz - d + 0.45, "obsidian") end
+        end
+    end
+    local h = room.h
+    if theme == "hall" or theme == "ante" or theme == "guild" then
+        if room.w >= room.d then B.fill(room.x + 1, 0, room.z + room.d / 2 - 2, room.x + room.w - 1, 0.05, room.z + room.d / 2 + 2, "carpet")
+        else B.fill(room.x + room.w / 2 - 2, 0, room.z + 1, room.x + room.w / 2 + 2, 0.05, room.z + room.d - 1, "carpet") end
+        for _, p in ipairs(deco_hall_plan(room, mk)) do
+            if not deco_near_door(room, doors, p[1], p[2], 3) then B.pillar(p[1], p[2], 0.7, 0, h, "marble") end
+        end
+        for x = room.x + 3, room.x + room.w - 3, 6 do B.fill(x, h - 0.8, room.z, x + 0.5, h, room.z + room.d, "dark_wood") end
+    elseif theme == "warlord" then
+        local cx = room.x + room.w / 2
+        local door_s = false
+        for _, d in ipairs(doors or {}) do if d.side == "S" and math.abs(d.pos - cx) < 5.5 then door_s = true end end
+        if not door_s then B.fill(cx - 3, 0, room.z + room.d - 6, cx + 3, 0.4, room.z + room.d - 1, "dark_wood"); B.fill(cx - 3, 0.4, room.z + room.d - 6, cx + 3, 0.45, room.z + room.d - 1, "carpet") end
+        for _, dx in ipairs({ -8, 8 }) do for k = 1, 2 do B.pillar(cx + dx, room.z + room.d * k / 3, 0.8, 0, h, "dungeon_brick") end end
+        for i = 1, 3 do B.fill(room.x + room.w * i / 4 - 0.6, 3.2, room.z + 0.05, room.x + room.w * i / 4 + 0.6, 6, room.z + 0.2, "neon_red") end
+    elseif theme == "furnace" then
+        pool("lava", 3, -0.45)
+        for x = room.x + 3, room.x + room.w - 3, 4 do B.fill(x, h - 0.9, room.z, x + 0.5, h, room.z + room.d, "dark_wood") end
+        B.fill(room.x, h - 1.8, room.z + 1.2, room.x + room.w, h - 1.1, room.z + 1.9, "metal")
+        for _, c in ipairs({ { room.x + 2, room.z + 2 }, { room.x + room.w - 2, room.z + 2 }, { room.x + 2, room.z + room.d - 2 }, { room.x + room.w - 2, room.z + room.d - 2 } }) do
+            if not deco_near_door(room, doors, c[1], c[2], 4.5) then B.pillar(c[1], c[2], 1.1, 0, h - 1, "metal"); B.fill(c[1] - 0.3, 1.5, c[2] - 0.3, c[1] + 0.3, 2.1, c[2] + 0.3, "lantern") end
+        end
+    elseif theme == "flooded" then
+        pool("gutter_water", 1.0, -0.2)
+        for z = room.z + 3, room.z + room.d - 2, 7 do B.fill(room.x, h - 1.4, z, room.x + room.w, h - 0.8, z + 0.6, "metal") end
+        for _, p in ipairs({ { 0.3, 0.3 }, { 0.7, 0.7 } }) do
+            local x, z = room.x + room.w * p[1], room.z + room.d * p[2]
+            B.fill(x, -0.2, z, x + 0.25, h - 1.4, z + 0.25, "toxic"); B.fill(x - 0.2, h - 2.0, z - 0.2, x + 0.45, h - 1.2, z + 0.45, "metal")
+        end
+    elseif theme == "ballroom" then
+        for ix = 0, floor(room.w / 2) - 1 do for iz = 0, floor(room.d / 2) - 1 do
+            if (ix + iz) % 2 == 0 then B.fill(room.x + ix * 2, -0.5, room.z + iz * 2, room.x + ix * 2 + 2, 0, room.z + iz * 2 + 2, "obsidian") end
+        end end
+        local door_n = false
+        for _, d in ipairs(doors or {}) do if d.side == "N" then door_n = true end end
+        if not door_n then
+            B.fill(room.x + 3, 0, room.z, room.x + room.w - 3, 1.0, room.z + 3, "dark_wood"); B.fill(room.x + 3, 1.0, room.z, room.x + room.w - 3, 1.08, room.z + 3, "carpet")
+        end
+        local H = h + 2
+        for i = 1, floor(room.w / 9) do
+            local x, z = room.x + room.w * (i - 0.5) / floor(room.w / 9), room.z + room.d / 2
+            B.fill(x - 0.08, H - 3, z - 0.08, x + 0.08, H, z + 0.08, "metal"); B.fill(x - 0.7, H - 3.2, z - 0.7, x + 0.7, H - 3.0, z + 0.7, "gold")
+            for _, d in ipairs({ { -0.7, -0.7 }, { 0.7, -0.7 }, { -0.7, 0.7 }, { 0.7, 0.7 } }) do B.fill(x + d[1] - 0.1, H - 3.0, z + d[2] - 0.1, x + d[1] + 0.1, H - 2.55, z + d[2] + 0.1, "lantern") end
+        end
+    elseif theme == "grotto" then
+        local ytop = h - 0.2
+        for _, it in ipairs(deco_grotto_plan(room, mk)) do
+            local x, z = it.x, it.z
+            if it.kind == "stalagmite" then
+                local hh = 1.2 + it.a * 2.2
+                for k = 0, 6 do local hw = 0.5 - k * 0.06; B.fill(x - hw, k * hh / 7, z - hw, x + hw, (k + 1) * hh / 7, z + hw, "cavestone") end
+            else
+                local hh, rr = 0.8 + it.a * 1.6, 0.3 + it.b * 0.45
+                B.fill(x - 0.12, 0, z - 0.12, x + 0.12, hh, z + 0.12, "bone")
+                B.sphere(x, hh, z, rr, (it.i % 2 == 0) and "glowcap" or "rune")
+            end
+            if it.c < 0.45 then
+                local hh = 0.8 + it.b * 1.6
+                for k = 0, 5 do local hw = 0.45 - k * 0.07; B.fill(x + 1.3 - hw, ytop - (k + 1) * hh / 6, z - hw, x + 1.3 + hw, ytop - k * hh / 6, z + hw, "cavestone") end
+            end
+        end
+    elseif theme == "crypt" then
+        local boxes, bones = deco_crypt_plan(room, mk)
+        for _, b in ipairs(boxes) do
+            local x, z = b[1], b[2]
+            B.fill(x, 0, z, x + 1.2, 0.8, z + 2.4, "marble")
+            B.fill(x - 0.1, 0.8, z - 0.1, x + 1.3, 1.0, z + 2.5, "marble")
+            if b[5] then B.fill(x + 0.25, 1.0, z + 0.3, x + 0.95, 1.1, z + 2.1, "bone") end
+        end
+        for _, b in ipairs(bones) do B.fill(b[1], 0, b[2], b[1] + 0.5, 0.15, b[2] + 0.3, "bone"); B.fill(b[1] + 0.1, 0.15, b[2] + 0.05, b[1] + 0.25, 0.3, b[2] + 0.2, "bone") end
+    elseif theme == "library" then
+        for _, sh in ipairs(deco_library_plan(room, mk)) do
+            local x, z, len = sh[1], sh[2], sh[4] - sh[2]
+            B.fill(x, 0, z, x + 0.8, 3.2, z + len, "dark_wood")
+            for k = 0, 3 do
+                local y = 0.35 + k * 0.75
+                for b = 0, floor(len / 0.5) - 1 do
+                    B.fill(x - 0.04, y, z + b * 0.5 + 0.05, x + 0.84, y + 0.55, z + b * 0.5 + 0.42, ((b + k) % 3 == 0) and "chest_wood" or "dark_wood")
+                end
+            end
+        end
+    elseif theme == "depot" then
+        for _, st in ipairs(deco_depot_plan(room, mk)) do
+            for k = 0, st[3] - 1 do B.fill(st[1] + k * 0.1, k * 1.2, st[2], st[1] + 1.3 + k * 0.1, (k + 1) * 1.2, st[2] + 1.3, "dark_wood") end
+        end
+    elseif theme == "prize" then
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        B.fill(cx - 5, 0, cz - 2.5, cx + 5, 0.4, cz + 2.5, "dark_wood")
+        B.fill(cx - 5, 0.4, cz - 2.5, cx + 5, 0.45, cz + 2.5, "carpet")
+        for _, dx in ipairs({ -5.5, 5.2 }) do B.pillar(cx + dx, cz - 3, 0.5, 0, h, "gold"); B.pillar(cx + dx, cz + 3, 0.5, 0, h, "gold") end
+    elseif theme == "captive" then
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        local x0, z0, x1, z1 = cx - 2, cz - 2, cx + 2, cz + 2
+        B.fill(x0, 0, z0, x1, 0.15, z1, "metal")
+        for t = 0, 8 do
+            local u = t * 0.5
+            B.fill(x0 + u, 0, z0, x0 + u + 0.12, 3.2, z0 + 0.12, "metal"); B.fill(x0 + u, 0, z1 - 0.12, x0 + u + 0.12, 3.2, z1, "metal")
+            B.fill(x0, 0, z0 + u, x0 + 0.12, 3.2, z0 + u + 0.12, "metal"); B.fill(x1 - 0.12, 0, z0 + u, x1, 3.2, z0 + u + 0.12, "metal")
+        end
+        B.fill(x0, 3.2, z0, x1, 3.4, z1, "metal")
+        B.fill(x0 + 1.5, 0.9, z1 - 0.2, x0 + 1.9, 1.3, z1 + 0.1, "gold")
+    elseif theme == "arena" then
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        B.ring(cx, cz, 7.5, 8.2, 0, 0.1, "gold")
+        for i = 0, 7 do
+            local a = i * math.pi / 4 + math.pi / 8
+            local px, pz = cx + math.cos(a) * 9.5, cz + math.sin(a) * 8
+            if not deco_near_door(room, doors, px, pz, 3.5) then B.pillar(px, pz, 0.7, 0, h, "marble") end
+        end
+    elseif theme == "safe" then
+        local plan = deco_safe_plan(room, doors, false)
+        local X, Z = plan.X, plan.Z
+        local function F(u0, y0, v0, u1, y1, v1, mat) B.fill(math.min(X(u0), X(u1)), y0, math.min(Z(v0), Z(v1)), math.max(X(u0), X(u1)), y1, math.max(Z(v0), Z(v1)), mat) end
+        local function C(u0, y0, v0, u1, y1, v1) F(u0, y0, v0, u1, y1, v1, nil) end
+        F(4, 0, 4, 12, 0.05, 12, "carpet"); F(3.9, 0, 3.9, 12.1, 0.05, 4, "gold"); F(3.9, 0, 12, 12.1, 0.05, 12.1, "gold")
+        F(5, 0, 0, 11, 3.0, 1.2, "brick"); C(6, 0, 0, 10, 1.8, 1.2); F(6, 0, 0, 10, 0.2, 1, "obsidian"); F(4.4, 3.0, 0, 11.6, 3.4, 1.6, "marble")
+        for _, e in ipairs({ { "shelf_a", 2 }, { "shelf_b", 12.5 } }) do
+            if not plan.dropped[e[1]] then
+                local dv = e[2]
+                F(0, 0, dv, 1.2, 3.6, dv + 3, "dark_wood")
+                local sh = 0.4
+                while sh <= 3.2 do
+                    F(1.2, sh, dv + 0.1, 1.6, sh + 0.05, dv + 2.9, "dark_wood")
+                    for b = 0, 9 do local bz = dv + 0.15 + b * 0.27; F(1.2, sh + 0.05, bz, 1.55, sh + 0.55, bz + 0.23, (b % 2 == 0) and "chest_wood" or "dark_wood") end
+                    sh = sh + 0.7
+                end
+            end
+        end
+        if not plan.dropped.sofa then
+            F(2, 0, 12.2, 6.5, 0.5, 14, "carpet"); F(2, 0.5, 13.4, 6.5, 1.3, 14, "carpet")
+            F(2, 0.5, 12.2, 2.5, 0.9, 14, "carpet"); F(6, 0.5, 12.2, 6.5, 0.9, 14, "carpet")
+        end
+        if not plan.dropped.table then F(8, 0, 12.6, 10, 0.6, 14, "dark_wood") end
+        F(14, 0, 3, 16, 3.3, 6, "metal"); F(13.6, 0.8, 3.2, 14, 2.6, 5.8, "lantern"); F(13.55, 0.9, 5.1, 13.7, 1.2, 5.6, "gold")
+        F(13.55, 2.0, 3.4, 13.7, 2.4, 4.7, "neon_red")
+        F(12, 0, 0.6, 14.2, 0.9, 2.8, "marble"); B.sphere(X(13.1), 1.6, Z(1.7), 0.62, "rune")
+        if not plan.dropped.bed then F(2, 0, 7, 4.4, 0.4, 9.2, "dark_wood"); F(2.2, 0.4, 7.2, 4.2, 0.6, 9, "sand") end
+    elseif theme == "rest" then
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        B.fill(room.x + 1, 0, room.z + 1, room.x + room.w - 1, 0.05, room.z + room.d - 1, "carpet")
+        for i = 0, 2 do                                                              -- three cots along the west side
+            local z = room.z + 2 + i * 2.6
+            B.fill(room.x + 0.4, 0, z, room.x + 2.4, 0.4, z + 1.0, "dark_wood"); B.fill(room.x + 0.5, 0.4, z + 0.05, room.x + 2.3, 0.55, z + 0.95, "sand")
+        end
+        B.fill(cx + 1.5, 0, cz - 1.5, cx + 3.5, 0.8, cz + 0.5, "marble"); B.fill(cx + 1.7, 0.8, cz - 1.3, cx + 3.3, 0.95, cz + 0.3, "gutter_water")       -- the fountain
+        B.fill(room.x + room.w - 0.6, 1.4, room.z + 3, room.x + room.w - 0.4, 2.6, room.z + 7, "lantern")                                                   -- a screen on the east wall
+    elseif theme == "stairs_free" then
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        B.fill(cx - 2, -1.5, cz - 2, cx + 2, 0, cz + 2)                                                   -- the stairwell: a pit of 4 x 4 m, 1.5 m deep (the game's descend volume sits in it)
+        B.fill(cx - 2.3, 0, cz - 2.3, cx - 2, 0.5, cz + 2.3, "marble"); B.fill(cx + 2, 0, cz - 2.3, cx + 2.3, 0.5, cz + 2.3, "marble")
+        B.fill(cx - 2, 0, cz - 2.3, cx + 2, 0.5, cz - 2, "marble"); B.fill(cx - 2, 0, cz + 2, cx + 2, 0.5, cz + 2.3, "marble")
+        B.fill(cx - 2, -1.55, cz - 2, cx + 2, -1.5, cz + 2, "gold")
+        for _, d in ipairs({ { -1.6, -1.6 }, { 1.6, -1.6 }, { -1.6, 1.6 }, { 1.6, 1.6 } }) do B.fill(cx + d[1] - 0.15, -1.5, cz + d[2] - 0.15, cx + d[1] + 0.15, 0.4, cz + d[2] + 0.15, "lantern") end
+    end
+    for _, c in ipairs(deco_crates(theme, room, doors, mk, fl or 1)) do deco_chest(B, c.tier, c.x, c.y, c.z, c.face) end
+    if theme == "depot" then
+        local _, barrels = deco_depot_plan(room, mk)
+        for _, b in ipairs(barrels) do deco_barrel(B, b[1], 0, b[2]) end
+    end
+end

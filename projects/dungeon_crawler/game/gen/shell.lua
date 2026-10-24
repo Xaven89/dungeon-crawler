@@ -14,10 +14,12 @@ function shell_region(rx, rz, wh)
     local P = CG.params(fl, "small")
     if not P or P.kind ~= "grid" or ci < -1 or cj < -1 or ci > P.W or cj > P.H then return {} end
     local ctx = CG.new(0, fl, "small")
+    local H_ = cellgen_hash_from(wh)
+    local info_open, info_door
     local W, H = P.W, P.H
     local X0, Z0 = rx * 512, rz * 512
     local ops = {}
-    local YF, YB, YT = 128, 96, 345               -- floor surface (first air voxel), bottom and top of the brick mass
+    local YF, YB, YT = 128, 64, 360               -- floor surface (first air voxel), bottom and top of the brick mass
     local function R(v) return math.floor(v * V + 0.5) end
     -- an axis box in metres local to the cell (x0, x1, z0, z1 half open), y in voxels (y0, y1 inclusive); clipped to the cell
     local function box(x0, x1, z0, z1, y0, y1, mat)
@@ -31,8 +33,12 @@ function shell_region(rx, rz, wh)
     local OPP = { E = "W", W = "E", S = "N", N = "S" }
     local function inside(a, b) return a >= 0 and b >= 0 and a < W and b < H end
     local in_cell = inside(ci, cj)
-    -- the brick mass
-    box(0, 32, 0, 32, YB, YT, "dungeon_brick")
+    local deco
+    local WALL = { flooded = "mossy", grotto = "cavestone", library = "dark_wood", safe = "dark_wood", rest = "dark_wood" }
+    -- the mass: the cell's whole volume in the wall material of its theme (everything below is carved out of it)
+    local mass_mat = "dungeon_brick"
+    if in_cell then local th = CG.cell(ctx, ci, cj).theme; mass_mat = WALL[th] or "dungeon_brick" end
+    box(0, 32, 0, 32, YB, YT, mass_mat)
     local lights = {}
     local function light(x, z, y) lights[#lights + 1] = { x, z, y } end
     local floors = {}                              -- floor material boxes, placed after the carving
@@ -64,26 +70,20 @@ function shell_region(rx, rz, wh)
 
     if in_cell then
         local info = CG.cell(ctx, ci, cj)
+        info_open, info_door = info.open, info.door
         local r = info.room
         local theme = info.theme
         local hall_w = { tree = 6, loop = 6, side = 4, alley = 3, artery = 6 }
         local hall_h = { tree = 80, loop = 80, side = 80, alley = 48, artery = 80 }
         if r then
-            local hv = r.h * V
+            local hv = (r.h + ((theme == "ballroom") and 2 or 0)) * V
             carve(r.x, r.x + r.w, r.z, r.z + r.d, hv)
-            local fm = "flagstone"
-            if theme == "safe" or theme == "guild" then fm = "carpet" elseif theme == "arena" then fm = "obsidian"
-            elseif theme == "stairs_free" then fm = "marble" elseif theme == "furnace" then fm = "obsidian" elseif theme == "library" then fm = "dark_wood"
-            elseif theme == "crypt" then fm = "cavestone" elseif theme == "grotto" then fm = "mossy" elseif theme == "ballroom" then fm = "marble" end
-            floor_mat(r.x, r.x + r.w, r.z, r.z + r.d, fm)
+            local FLOOR = { warlord = "obsidian", ballroom = "marble", grotto = "cavestone", library = "dark_wood", safe = "dark_wood", rest = "dark_wood", prize = "marble", arena = "marble",
+                            stairs_free = "marble" }
+            floor_mat(r.x, r.x + r.w, r.z, r.z + r.d, FLOOR[theme] or "flagstone")
             -- ceiling lights: a grid of 8 m
             for x = r.x + 4, r.x + r.w - 2, 8 do for z = r.z + 4, r.z + r.d - 2, 8 do light(x, z, YF + hv - 1) end end
-            -- the free stairwell: a lit column and a ring on the floor (the game puts the stairs there)
-            if theme == "stairs_free" then
-                local cx, cz = r.x + r.w / 2, r.z + r.d / 2
-                box(cx - 2, cx + 2, cz - 2, cz + 2, YF, YF + 7, "marble")                       -- a dais (a step of 0.5 m) ...
-                box(cx - 1, cx + 1, cz - 1, cz + 1, YF + 8, YF + r.h * V - 1, "gold")           -- ... and a pillar to the ceiling (no top to stand on)
-            end
+            deco = { theme = (theme == "borough") and "hall" or theme, room = r }
         end
         -- the halls: from one metre inside the room to the cell border, and the jog to the neighbour's door
         for _, d in ipairs({ "E", "S", "W", "N" }) do
@@ -118,6 +118,41 @@ function shell_region(rx, rz, wh)
         end
     end
     for _, f in ipairs(floors) do box(f[1], f[2], f[3], f[4], YF - 2, YF - 1, f[5]) end
+    if deco then
+        local B = {}
+        local function yv(y) return YF + R(y) end
+        local function rows(cx, cz, r, y0, y1, mat, r0)
+            local RV, R0 = R(r), R(r0 or 0)
+            for dz = -RV, RV do
+                local w1 = math.floor(math.sqrt(RV * RV - dz * dz) + 0.5)
+                local lo, hi = X0 + R(cx) - w1, X0 + R(cx) + w1
+                local z = Z0 + R(cz) + dz
+                if math.abs(dz) >= R0 then
+                    ops[#ops + 1] = { kind = "box", lo = { lo, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
+                else
+                    local w0 = math.floor(math.sqrt(R0 * R0 - dz * dz) + 0.5)
+                    ops[#ops + 1] = { kind = "box", lo = { lo, yv(y0), z }, hi = { X0 + R(cx) - w0 - 1, yv(y1) - 1, z }, material = mat }
+                    ops[#ops + 1] = { kind = "box", lo = { X0 + R(cx) + w0 + 1, yv(y0), z }, hi = { hi, yv(y1) - 1, z }, material = mat }
+                end
+            end
+        end
+        function B.fill(x0, y0, z0, x1, y1, z1, mat)
+            local ax, az, bx, bz = X0 + R(x0), Z0 + R(z0), X0 + R(x1) - 1, Z0 + R(z1) - 1
+            local ay, by = yv(y0), yv(y1) - 1
+            if bx < ax or bz < az or by < ay then return end
+            ops[#ops + 1] = { kind = mat and "box" or "clear", lo = { ax, ay, az }, hi = { bx, by, bz }, material = mat }
+        end
+        function B.vbox(x0, y0, z0, x1, y1, z1, mat) ops[#ops + 1] = { kind = "box", lo = { X0 + x0, YF + y0, Z0 + z0 }, hi = { X0 + x1, YF + y1, Z0 + z1 }, material = mat } end
+        function B.sphere(cx, cy, cz, r, mat) ops[#ops + 1] = { kind = "sphere", c = { X0 + R(cx), yv(cy), Z0 + R(cz) }, r = R(r), material = mat } end
+        function B.pillar(cx, cz, r, y0, y1, mat) rows(cx, cz, r, y0, y1, mat, 0) end
+        function B.ring(cx, cz, r0, r1, y0, y1, mat) rows(cx, cz, r1, y0, y1, mat, r0) end
+        local doors = {}
+        for _, d in ipairs({ "E", "S", "W", "N" }) do
+            local k = info_open and info_open[d]
+            if k and k ~= "internal" and info_door and info_door[d] then doors[#doors + 1] = { side = d, pos = info_door[d] } end
+        end
+        deco_room(B, deco.theme, deco.room, doors, function(salt) return deco_rng(H_, fl, ci, cj, salt or 1) end, fl)
+    end
     for _, l in ipairs(lights) do box(l[1] - 0.0625, l[1] + 0.0625, l[2] - 0.0625, l[2] + 0.0625, l[3], l[3], "lantern") end
     return ops
 end

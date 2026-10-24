@@ -207,7 +207,7 @@ function K.check(plan, CG)
     S.hall_gap_min = 10      -- (by the margins of the room placement; asserted here: every room is at least 5 m from its cell border)
     for _, id in ipairs(plan.order) do
         local info = plan.cells[id]
-        if info.room then
+        if info.room and not CG.super_of(ctx, info.ci, info.cj) then          -- (a super-cell's quarter rooms touch each other inside: their outside margins are 6 m by construction)
             local r = info.room
             if r.x < 5 or r.z < 5 or r.x + r.w > 27 or r.z + r.d > 27 then bad(12, id .. " room " .. r.x .. "," .. r.z .. "," .. r.w .. "x" .. r.d .. " is closer than 5 m to its cell border") end
         end
