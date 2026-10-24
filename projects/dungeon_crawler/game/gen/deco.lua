@@ -224,12 +224,12 @@ function deco_borough_geom(fl)
     return g
 end
 
--- the moving walls of the rotunda (floors 2 and up; floor 1 is the tutorial fortress and keeps its static spiral): in each ring corridor a slab of metal across the west side and one across the east
+-- the moving walls of the rotunda (floors 2 and 3; floor 1 is the tutorial fortress and keeps its static spiral): in each ring corridor a slab of metal across the west side and one across the east
 -- side (the way round the ring is the west or the east side). A slab rests in a trench under the floor when it is open (its top flush with the floor) and stands in the corridor when it is shut.
 -- They open and shut on the floor clock: a period of 720 ticks (12 s), each slab open for 432 of them (7.2 s), the east one half a period behind the west one, so that one of the two is always
 -- open and one wait is never longer than 3 s; the second ring is a quarter period later than the first. Super-cell local metres, 0.5 m thick, 4.9 m high (the lintel above is fixed).
 function deco_wall_plan(fl)
-    if fl < 2 then return {} end
+    if fl < 2 or fl > 3 then return {} end                     -- (fortresses stand on floors 1 and 2 (boroughs) and 3 (the park); floors 5+ have none)
     local g = deco_borough_geom(fl)
     local t = g.wall
     local out = {}

@@ -25,7 +25,8 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
     if FLOOR != 1:
         L(v, "Game.run.begin_floor(%d)" % FLOOR, 2); v.step(400); L(v, "Game.contracts.sign(nil)", 2); v.step(60)
     L(v, "Game.run.cur().floor_ticks = 100000; Game.state.flags.god = true", 0)
-    r = L(v, "local P = Game.floorgen.layout; local r = P.ring_list[1]; print(r.id, r.origin, r.ox, r.oz)", 0)[0].split("\t")
+    r = L(v, "local P = Game.floorgen.layout; local r = P.ring_list[1]; if not r then print('none') return end; print(r.id, r.origin, r.ox, r.oz)", 0)[0].split("\t")
+    if r[0] == "none": print("floor %d has no fortress (boroughs: floors 1 and 2, the park: floor 3): no moving walls there" % FLOOR); sys.exit(0)
     rid, origin, ox, oz = r[0], r[1], float(r[2]), float(r[3])
     L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % origin, 200)
     v.step(120)
