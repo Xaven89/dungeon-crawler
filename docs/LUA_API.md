@@ -109,6 +109,11 @@ body.push(id, ix, iy, iz [, px, py, pz])   -- (with a point in metres the impuls
 ```
 Light materials (wood) float, heavy ones (stone, metal) sink.
 
+## worldgen: the generator's hash
+```lua
+worldgen.hash(x, z [, salt])   -- 0..1: the generator's pure hash of the integer position, the salt and the world's seed; the same values as inside the region hook (docs/WORLD_GEN.md), so a script and its on_region agree on a cell without a copy of the hash. Read-only
+```
+
 ## Scatter (trees, bushes, rocks by rule)
 ```lua
 n, footprints, stats = scatter{ models = {{"models/oak.vxm", 4}, "models/bush.vxm"}, box = {x0, z0, x1, z1}, spacing = 112, density = 0.5, on = {"grass"}, slope_max = 0.7, avoid = {...}, clearings = {scale = 400, threshold = 0.35}, seed = 7 }
@@ -258,7 +263,7 @@ ui.button(label, x, y, w, h) -> clicked      ui.mouse() -> {x, y, down, clicked}
 `camera.mode("first" | "third" | "top")` switches and returns the mode (no argument: just returns it); `camera.set{ distance, lift, zoom, pitch (deg), yaw (deg), pan_speed, fov }`; `camera.focus(x, y, z)`. Render and input only: the simulation does not depend on it, except that the top camera flies the player along (a level that wants a strategy view calls `camera.mode("top")` in `on_start`).
 
 ## Vehicles, agents, navigation
-`vehicle.spawn / drive / enter / exit / info / list / seated / remove` (docs/VEHICLES.md), `agent.spawn{..., creature = "horse"} (whose feet sound like footsteps.csv says) / walk / follow / wander / stop / speed / info / list / remove`, the callback `on_agent(id, what)`, `nav.path / nav.floor` (docs/AGENTS.md). In a networked session these act for the host's player (`vehicle.enter`, `body.grab`) because the script runs identically on every peer.
+`vehicle.spawn / drive / enter / exit / info / list / seated / remove` (docs/VEHICLES.md), `agent.spawn{..., creature = "horse"} (whose feet sound like footsteps.csv says) / walk / follow / wander / stop / speed / info / list / remove`, the callback `on_agent(id, what)`, `nav.path / nav.floor / nav.flood` (docs/AGENTS.md; `flood` says which standable cells of a box a walker reaches, in islands: the check that a built floor is walkable). In a networked session these act for the host's player (`vehicle.enter`, `body.grab`) because the script runs identically on every peer.
 
 
 ### Custom input actions (docs/INPUT.md)
