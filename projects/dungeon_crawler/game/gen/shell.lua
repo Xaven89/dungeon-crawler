@@ -36,17 +36,19 @@ function shell_region(rx, rz, wh)
     local deco
     local WALL = { flooded = "mossy", grotto = "cavestone", library = "dark_wood", safe = "dark_wood", rest = "dark_wood" }
     -- the mass: the cell's whole volume in the wall material of its theme (everything below is carved out of it)
-    local mass_mat = "dungeon_brick"
-    if in_cell then local th = CG.cell(ctx, ci, cj).theme; mass_mat = WALL[th] or "dungeon_brick" end
+    local base_wall = (fl == 2) and "cinderblock" or "dungeon_brick"          -- floor 2: the orange city is cinderblock
+    local mass_mat = base_wall
+    if in_cell then local th = CG.cell(ctx, ci, cj).theme; mass_mat = WALL[th] or base_wall end
     box(0, 32, 0, 32, YB, YT, mass_mat)
     local lights = {}
-    local function light(x, z, y) lights[#lights + 1] = { x, z, y } end
+    local function light(x, z, y, mat) lights[#lights + 1] = { x, z, y, mat } end
+    local LM = (fl == 2) and "lichen_orange" or "lantern"                 -- the ceiling lights: yellow lanterns, on floor 2 orange lichen (the side halls are lichen-lit on both: green, orange)
     local floors = {}                              -- floor material boxes, placed after the carving
     local function floor_mat(x0, x1, z0, z1, mat) floors[#floors + 1] = { x0, x1, z0, z1, mat } end
 
     -- the arteries: 4 m strips along every side that lies on a block border (and the rim ring's half)
     local function artery_side(d)
-        local len = 4
+        local len = (fl == 2) and 3 or 4                           -- (floor 2: narrower arteries, 6 m)
         if d == "E" then carve(32 - len, 32, 0, 32, 144); floor_mat(32 - len, 32, 0, 32, "flagstone")
         elseif d == "W" then carve(0, len, 0, 32, 144); floor_mat(0, len, 0, 32, "flagstone")
         elseif d == "S" then carve(0, 32, 32 - len, 32, 144); floor_mat(0, 32, 32 - len, 32, "flagstone")
@@ -128,8 +130,9 @@ function shell_region(rx, rz, wh)
                 end
                 -- a light in the middle of every hall's half
                 if kind ~= "alley" then
-                    if d == "E" then light(r.x + r.w + (32 - r.x - r.w) / 2, c, YF + hh - 1) elseif d == "W" then light(r.x / 2, c, YF + hh - 1)
-                    elseif d == "S" then light(c, r.z + r.d + (32 - r.z - r.d) / 2, YF + hh - 1) else light(c, r.z / 2, YF + hh - 1) end
+                    local lm = (kind == "side") and ((fl == 2) and "lichen_orange" or "lichen_green") or nil
+                    if d == "E" then light(r.x + r.w + (32 - r.x - r.w) / 2, c, YF + hh - 1, lm) elseif d == "W" then light(r.x / 2, c, YF + hh - 1, lm)
+                    elseif d == "S" then light(c, r.z + r.d + (32 - r.z - r.d) / 2, YF + hh - 1, lm) else light(c, r.z / 2, YF + hh - 1, lm) end
                 end
             end
         end
@@ -171,6 +174,6 @@ function shell_region(rx, rz, wh)
         end
         deco_room(B, deco.theme, deco.room, doors, function(salt) return deco_rng(H_, fl, ci, cj, salt or 1) end, fl)
     end
-    for _, l in ipairs(lights) do box(l[1] - 0.0625, l[1] + 0.0625, l[2] - 0.0625, l[2] + 0.0625, l[3], l[3], "lantern") end
+    for _, l in ipairs(lights) do box(l[1] - 0.0625, l[1] + 0.0625, l[2] - 0.0625, l[2] + 0.0625, l[3], l[3], l[4] or LM) end
     return ops
 end

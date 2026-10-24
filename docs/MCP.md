@@ -16,7 +16,7 @@ A packaged build (`cpack`) has `./voxelith --mcp ...` (the launcher sets the lib
 - **Replayable.** Start with `--record session.log` and every call that changes something (`lua`, `run_script`, `look_from`, `step`, `undo`, `save_world`) is in the log: `voxelith --replay session.log` ends with the hash `state_hash` reported.
   The log also holds the Lua code you ran (`lua_adhoc`). `state_hash` values are only comparable between sessions started with the same options (`--seed`, `--world`, `--project`, ...).
 - **A clean world, no persistence.** The session starts from the generated world (or the project's level script); it does **not** read or write the project's save file or prefab registry unless you pass `--save file.vxs`
-  (then it loads that file and writes it at exit; `save_world` writes it earlier). A session that builds and blasts never changes the developer's own demo save.
+  (then it loads that file and writes it at exit; `save_world` writes it earlier). A project's own `save =` file is neither read nor written by a session (it starts from the generated world); an explicit `save_world` is the request to write it: the first `save_world` of a session on a project with a `save =` and no `--save` writes the chunks the session holds to that file (they replace its records of the same chunks, its other chunks stay) and the exit save writes there too. A session that builds and blasts never changes the developer's own demo save.
 - **Headless.** The renderer draws offscreen; `screenshot` returns a PNG (960x540 unless `--render WxH`; no crosshair, daylight unless `time_of_day` says otherwise).
 - **After a long jump** (`eye:` / `tp:` / `look_from` hundreds of metres away) the world around the new place streams in over the next ticks (about 16 columns per tick, the whole 144 m radius needs roughly 400): `step` that many ticks before a `screenshot`, or the picture shows flat pale slabs where chunks are not there yet (`status.world.loaded_radius_m` and `deferred_edit_chunks` tell).
 - **Units and axes.** Lua edits are in voxels (16 per metre, 1 voxel = 6.25 cm); bodies, gravity and positions in `status` / `screenshot` / `raycast` / `look_from` are metres. y is up; `turn` is positive to the right; `pitch` is positive upward.
@@ -28,7 +28,7 @@ A packaged build (`cpack`) has `./voxelith --mcp ...` (the launcher sets the lib
 ## Tools
 | tool | what it does |
 |---|---|
-| `status` | tick, `render` { gpu_ms, cpu_ms, lights { authored, authored_drawn, budget, probe_lights, probe_lights_cut } } (the last frame that was drawn: take a `screenshot` first to measure a scene), player (feet / eye / up / forward, walk or fly), world (chunks, bricks, pool; `hook` { regions_computed, regions_kept, failed, placements, total_ms, mean_ms, max_ms, last_ms, recent_max_ms } when the level script has an `on_region`: its cost on the main thread per region, the last 128 for `recent_max_ms`), sim (bodies, awake, burning voxels, liquid cells, gravity fields) |
+| `status` | tick, `render` { gpu_ms, cpu_ms, lights { authored, authored_drawn, budget, probe_lights, probe_lights_cut } } (**all of `render` - gpu_ms, cpu_ms and the lights - describes the last frame that was drawn, 0 until there was one: a headless session takes a `screenshot` first** to measure a scene), player (feet / eye / up / forward, walk or fly), world (chunks, bricks, pool; `hook` { regions_computed, regions_kept, failed, placements, total_ms, mean_ms, max_ms, last_ms, recent_max_ms } when the level script has an `on_region`: its cost on the main thread per region, the last 128 for `recent_max_ms`), sim (bodies, awake, burning voxels, liquid cells, gravity fields) |
 | `step {ticks}` | advance the simulation (60 ticks = 1 s); fire spreads, water flows, bodies fall, Lua timers and `on_tick` run |
 | `lua {code, ticks=1}` | run Lua (the level API, `docs/LUA_API.md`): a single expression returns its value, `print` output is returned, errors come back with the line. Edits apply on the tick(s) that follow |
 | `run_script {script, max_ticks}` | the player's control language: `idle:60,turn:90,fwd:120,dig:14,boom:40,tp:2` (`read_docs script`) |
@@ -99,7 +99,7 @@ A packaged build (`cpack`) has `./voxelith --mcp ...` (the launcher sets the lib
 | `list_materials` | the material table (id, name, liquid, transparent, anchor, flammability, density) |
 | `state_hash` | the simulation hash (what a replay ends with); takes a second or two |
 | `log {lines}` | the engine's recent log lines: Lua prints, warnings and errors |
-| `save_world` | save the edited chunks (an action in the log) |
+| `save_world` | save the edited chunks (an action in the log); in a session on a project with a `save =` (and no `--save`) the first call also starts writing that file (see above) |
 | `read_docs {topic}` | `mcp`, `lua_api`, `script`, `guide` |
 | `check_project {dir}` | validate a project directory (the report of `--check-project`, with a dry run of its level script) |
 

@@ -175,6 +175,7 @@ player.forward()             -- dx, dy, dz: the unit vector the player looks alo
 -- Players of a networked session (docs/NETWORK.md): ids are 0-based, 0 is the host; every call above and below takes an optional id (default 0), and the state is the same on every peer.
 player.count(); player.present(i); player.name(i); player.eye(i); player.nearest(x, y, z)  -- { id =, distance = } of the nearest player in the world, or nil
 player.teleport(x, y, z, i)  -- one player: only the machine that plays it moves it (without an id: every machine's own player, as before)
+player.teleport(x, y, z, { wait = true [, player = i] })  -- a place whose ground has not been made yet (a far teleport, a hook-built floor): the player stands still there, no fall, until the chunk under its feet is resident (the streamer adopts columns at a fixed tick: the same on every peer; let go after 30 s with a log line). `status.player.held_for_column` says it is waiting. Without `wait` the player falls from the target at once, into rock if its column is not there
 player.me()                  -- on_hud only: the id of the player this machine plays (it differs between machines, so the simulation must not use it)
 -- vehicle.enter(id, i), vehicle.exit(i), vehicle.seated(i), body.grab(id, dist, i), body.release(i), body.throw(speed, i), body.grabbed(i) act for player i
 time.tick()  time.seconds()   -- the tick being run (the same number on_tick(t) and the timers see)

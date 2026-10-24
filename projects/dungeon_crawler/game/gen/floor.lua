@@ -73,7 +73,7 @@ function F.build_plan(fl)
     end
     -- the borough lairs (floors 1-2): a ring = the fortress of the courtyard; its arena is a room of its own (id "r<block column>_<block row>") that overlaps the four quarter rooms
     P.rings, P.ring_list = {}, {}
-    local g = deco_borough_geom()
+    local g = deco_borough_geom(fl)
     for bj = 0, (plan.P.BH or 0) - 1 do
         for bi = 0, (plan.P.BW or 0) - 1 do
             local b = CG.borough(plan.ctx, bi, bj)
@@ -576,10 +576,10 @@ function F.make_ring(P, ring)
     local dk = G.gen.rules.dark()
     local room = P.rooms[ring.id]
     local _, H = F.cg()
-    for k, d in ipairs({ { 18.9, 0 }, { -18.9, 0 }, { 0, 18.9 }, { 0, -18.9 }, { 13.9, 0 }, { -13.9, 0 }, { 0, 13.9 }, { 0, -13.9 } }) do
-        G.torch(ox + g.cx + d[1], 3.4, oz + g.cz + d[2], { preset = "torch", reach = 10, far = 22, intensity = 9 * dk, name = ring.id .. "_t" .. k })
+    for k, d in ipairs({ { g.c1, 0 }, { -g.c1, 0 }, { 0, g.c1 }, { 0, -g.c1 }, { g.c2, 0 }, { -g.c2, 0 }, { 0, g.c2 }, { 0, -g.c2 } }) do
+        G.torch(ox + g.cx + d[1], 3.4, oz + g.cz + d[2], { preset = "torch", reach = 12, far = 24, intensity = 15 * dk, name = ring.id .. "_t" .. k })
     end
-    for k, d in ipairs({ { 8, 8 }, { -8, 8 }, { 8, -8 }, { -8, -8 } }) do G.brazier(ox + g.cx + d[1], oz + g.cz + d[2], { reach = 14, far = 24 }) end
+    for k, d in ipairs({ { g.brazier, g.brazier }, { -g.brazier, g.brazier }, { g.brazier, -g.brazier }, { -g.brazier, -g.brazier } }) do G.brazier(ox + g.cx + d[1], oz + g.cz + d[2], { reach = 14, far = 24 }) end
     local p = ring.pit
     G.torch((p.x0 + p.x1) / 2, 0.9, (p.z0 + p.z1) / 2, { preset = "campfire", color = { 1, 0.15, 0.15 }, reach = 10, far = 22, name = ring.id .. "_ff" })
     -- the guards: two in each ring corridor, a few in the arena
@@ -591,11 +591,11 @@ function F.make_ring(P, ring)
         if extra then for k, v in pairs(extra) do e[k] = v end end
         list[ring.id][#list[ring.id] + 1] = e
     end
-    local spots = { { 18.9, 3 }, { -18.9, -3 }, { 13.9, -3 }, { -13.9, 3 } }
+    local spots = { { g.c1, 3 }, { -g.c1, -3 }, { g.c2, -3 }, { -g.c2, 3 } }
     for _, d in ipairs(spots) do add(F.pick_kind(rng, P.floor), ox + g.cx + d[1], oz + g.cz + d[2]) end
     for i = 1, F.STAGING.borough.guards do
         local a = i * 6.2832 / F.STAGING.borough.guards
-        add(F.pick_kind(rng, P.floor), ox + g.cx + math.cos(a) * 6, oz + g.cz + 3 + math.sin(a) * 4)
+        add(F.pick_kind(rng, P.floor), ox + g.cx + math.cos(a) * (g.arena - 4.8), oz + g.cz + 3 + math.sin(a) * 4)
     end
     -- the stairwell: under the forcefield until the boss falls
     local vol = events.volume{ name = ring.id .. "_down", box = { G.wx(p.x0), G.wy(-1.4), G.wz(p.z0), G.wx(p.x1) - 1, G.wy(-0.3), G.wz(p.z1) - 1 }, player = true, bodies = false }

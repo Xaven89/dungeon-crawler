@@ -196,19 +196,26 @@ end
 -- ---------------------------------------------------------------------------------------------- the borough lair: a static spiral of rings in the courtyard (the 2 x 2 cells = 64 x 64 m, centre at 32, 32)
 -- walls (half-sizes of squares around the centre): W1 22 -> 20.8 (gap S), ring C1 20.8 -> 17, W2 17 -> 15.8 (gap N), ring C2 15.8 -> 12, W3 12 -> 10.8 (gap S), the arena inside 10.8 (21.6 m square);
 -- the stairwell pit sits in the arena's north part under a forcefield slab (a glowing voxel slab, cleared by the game when the boss falls). Coordinates are super-cell local metres.
-function deco_borough_geom()
-    return {
+function deco_borough_geom(fl)
+    local g = {
         cx = 32, cz = 32, wall = 1.2, gap = 2.5, h = 6.2,
         w1 = 22, w2 = 17, w3 = 12,                     -- outer half-sizes of the three walls
         arena = 10.8,                                  -- half-size of the arena
         pit = { x0 = 30, z0 = 32 - 8, x1 = 34, z1 = 32 - 4 },     -- the stairwell pit under the forcefield (4 x 4 m)
         gaps = { w1 = "S", w2 = "N", w3 = "S" },
+        c1 = 18.9, c2 = 13.9, brazier = 8,             -- the middle of the ring corridors, where the braziers of the arena stand
     }
+    if fl == 2 then                                    -- floor 2: smaller boroughs (the orange city): corridors 3.4 m, an arena of 19.2 m
+        g.w1, g.w2, g.w3, g.arena = 20, 15.4, 10.8, 9.6
+        g.pit = { x0 = 30, z0 = 32 - 7, x1 = 34, z1 = 32 - 3 }
+        g.c1, g.c2, g.brazier = 17.1, 12.5, 7
+    end
+    return g
 end
 
 -- cu, cv: which cell of the 2 x 2 (0 / 1): the builder clips to the cell's own 32 x 32 m
-function deco_borough(B, cu, cv)
-    local g = deco_borough_geom()
+function deco_borough(B, cu, cv, fl)
+    local g = deco_borough_geom(fl)
     local ox, oz = cu * 32, cv * 32
     local function bb(x0, y0, z0, x1, y1, z1, mat)
         x0, x1, z0, z1 = x0 - ox, x1 - ox, z0 - oz, z1 - oz
@@ -252,7 +259,7 @@ function deco_borough(B, cu, cv)
     bb(p.x0, -1.55, p.z0, p.x1, -1.5, p.z1, "gold")
     bb(p.x0, 0, p.z0, p.x1, 0.5, p.z1, "neon_red")                                   -- the forcefield: a glowing slab that fills the pit up to the rim
     -- a ring of gold in the arena floor
-    B.ring(cx - ox, cz - oz, 7.5, 8.2, 0, 0.1, "gold")
+    B.ring(cx - ox, cz - oz, g.arena - 3.3, g.arena - 2.6, 0, 0.1, "gold")
 end
 
 -- ---------------------------------------------------------------------------------------------- voxel text for the hook (the engine's edit.text is a world edit: edits made when a cell comes alive made a replay differ)
@@ -514,7 +521,7 @@ function deco_room(B, theme, room, doors, mk, fl)
         B.pillar(cx, cz, 3.3, -2.35, -2.3, "gold")
         for i = 0, 7 do local a = i * math.pi / 4 + math.pi / 8; local px, pz = cx + math.cos(a) * 3.55, cz + math.sin(a) * 3.55; B.fill(px - 0.12, 0.45, pz - 0.12, px + 0.12, 0.85, pz + 0.12, "lantern") end
     elseif theme == "borough" then
-        deco_borough(B, (room.x == 0) and 1 or 0, (room.z == 0) and 1 or 0)
+        deco_borough(B, (room.x == 0) and 1 or 0, (room.z == 0) and 1 or 0, fl)
     end
     -- graffiti on a wall without a door of about one room in five (not in the special rooms)
     local PLAIN = { hall = true, crypt = true, library = true, depot = true, grotto = true, flooded = true, furnace = true, ballroom = true, warlord = true, captive = true, prize = true }
