@@ -129,16 +129,17 @@ function F.local_room(room) return room.info.room end
 -- the tables of the game's world follow the plan
 -- the colour the far end of a hall or a corridor fades to (the horizon of the sky is the fog): one per floor instead of the night's dark blue (polish pass, bucket B)
 local FOG = { [1] = { 0.12, 0.105, 0.10 }, [2] = { 0.22, 0.10, 0.04 }, [4] = { 0.07, 0.10, 0.15 },
-              [5] = { 0.05, 0.07, 0.065 }, [6] = { 0.10, 0.06, 0.035 }, [7] = { 0.11, 0.11, 0.115 }, [8] = { 0.04, 0.015, 0.01 } }
+              [5] = { 0.05, 0.07, 0.065 }, [6] = { 0.10, 0.06, 0.035 }, [7] = { 0.11, 0.11, 0.115 }, [8] = { 0.10, 0.045, 0.03 } }
 -- the ceiling lamps per floor (voxel-art bucket E): 5 cold green, 6 furnace orange, 7 cold white, 8 a dim red; the default is G.LAMP
-local LAMP = { [5] = { 0.75, 1.0, 0.85 }, [6] = { 1.0, 0.62, 0.32 }, [7] = { 0.85, 0.9, 1.0 }, [8] = { 1.0, 0.3, 0.12 } }
-local TORCH = { [5] = { 0.75, 1.0, 0.8 }, [6] = { 1.0, 0.6, 0.3 }, [7] = { 0.9, 0.92, 1.0 }, [8] = { 1.0, 0.3, 0.12 } }
+local LAMP = { [5] = { 0.75, 1.0, 0.85 }, [6] = { 1.0, 0.62, 0.32 }, [7] = { 0.85, 0.9, 1.0 }, [8] = { 1.0, 0.5, 0.28 } }
+local TORCH = { [5] = { 0.75, 1.0, 0.8 }, [6] = { 1.0, 0.6, 0.3 }, [7] = { 0.9, 0.92, 1.0 }, [8] = { 1.0, 0.5, 0.28 } }
 function F.fog(fl)
     local c = FOG[fl] or { 0.09, 0.09, 0.11 }
     sky.set{ horizon = c, fog = 1.4, blend = 0 }
     G.LAMP = LAMP[fl] or { 1.0, 0.93, 0.84 }
-    G.LIGHT.intensity = (fl == 8 or fl == 5) and 0.45 or 0.55                    -- 5 and 8 a little darker (6 is already muted by its rules)
-    G.WARM = TORCH[fl] or { 1.0, 0.8, 0.55 }                                      -- the sconces and torches take the floor colour
+    G.LIGHT.intensity = (fl == 8) and 0.65 or ((fl == 5) and 0.45 or 0.55)                    -- 5 and 8 a little darker (6 is already muted by its rules)
+    G.WARM = TORCH[fl] or { 1.0, 0.8, 0.55 }
+    G.LAMP_LOW = (fl == 8) and 4 or nil                                            -- floor 8: lamps hang to 4 m (voxel-art)                                      -- the sconces and torches take the floor colour
     G.LAMP_MAT = ({ [5] = "lichen_green", [7] = "lamp_cool", [8] = "ember" })[fl]   -- the hanging lamps' cube (nil: lantern)
 end
 function F.apply_tables(P)
@@ -783,9 +784,17 @@ function F.make_ring(P, ring)
     local room = P.rooms[ring.id]
     local _, H = F.cg()
     -- (polish: G.torch halves every light; the ring corridors got the corners as well, so they are not left dark between the four lamps of a ring)
-    for k, d in ipairs({ { g.c1, 0 }, { -g.c1, 0 }, { 0, g.c1 }, { 0, -g.c1 }, { g.c2, 0 }, { -g.c2, 0 }, { 0, g.c2 }, { 0, -g.c2 },
-                         { g.c1, g.c1 }, { -g.c1, g.c1 }, { g.c1, -g.c1 }, { -g.c1, -g.c1 }, { g.c2, g.c2 }, { -g.c2, g.c2 }, { g.c2, -g.c2 }, { -g.c2, -g.c2 } }) do
-        G.torch(ox + g.cx + d[1], 3.4, oz + g.cz + d[2], { preset = "torch", reach = 11, far = 22, intensity = 10 * dk, raw = true, name = ring.id .. "_t" .. k })
+    -- (voxel-art: a torch every 8 m along the middle of both ring corridors, corners included: the probes carry a light 7 m, so no stretch is left dark)
+    local spots = {}
+    for _, r in ipairs({ g.c1, g.c2 }) do
+        local n = math.max(1, math.floor(2 * r / 8 + 0.5))
+        for i = 0, n - 1 do
+            local t = -r + i * (2 * r / n)
+            spots[#spots + 1] = { t, -r }; spots[#spots + 1] = { r, t }; spots[#spots + 1] = { -t, r }; spots[#spots + 1] = { -r, -t }
+        end
+    end
+    for k, d in ipairs(spots) do
+        G.torch(ox + g.cx + d[1], 3.4, oz + g.cz + d[2], { preset = "torch", color = nil, reach = 11, far = 22, intensity = 10 * dk, raw = true, name = ring.id .. "_t" .. k })
     end
     for k, d in ipairs({ { g.brazier, g.brazier }, { -g.brazier, g.brazier }, { g.brazier, -g.brazier }, { -g.brazier, -g.brazier } }) do G.brazier(ox + g.cx + d[1], oz + g.cz + d[2], { reach = 14, far = 24 }) end
     local p = ring.pit

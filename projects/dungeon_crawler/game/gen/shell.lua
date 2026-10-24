@@ -35,7 +35,7 @@ function shell_region(rx, rz, wh, run)
     local carves = {}
     -- floors 5-8 (the shrinking grid): wall, floor, ceiling, ceiling-light cube (voxel-art bucket E, palette/themes_E.md)
     local DEEP = { [5] = { "wet_stone", "mud_slab", "ceiling_dark", "lichen_green" }, [6] = { "soot_brick", "iron_plate", "basalt", "lantern" },
-                   [7] = { "ash_stone", "ash_floor", "ceiling_dark", "lamp_cool" }, [8] = { "scorched_stone", "obsidian", "basalt", "ember" } }
+                   [7] = { "ash_stone", "ash_floor", "ceiling_dark", "lamp_cool" }, [8] = { "scorched_stone", "basalt", "basalt", "ember" } }
     local CEIL_DEF = DEEP[fl] and DEEP[fl][3] or "ceiling_dark"
     local FLOOR_DEF = (fl == 2) and "tar_slab" or (DEEP[fl] and DEEP[fl][2]) or "flagstone"
     local CEIL_MAT = CEIL_DEF
@@ -53,12 +53,14 @@ function shell_region(rx, rz, wh, run)
     local mass_mat = base_wall
     if in_cell then local th = CG.cell(ctx, ci, cj).theme; mass_mat = WALL[th] or base_wall end
     box(0, 32, 0, 32, YB, YT, mass_mat)
+    if OPEN then box(0, 32, 0, 32, YT - 1, YT, "ruin_cap") end                 -- the weathered top of the ruin mass
     if OPEN then                                                          -- broken wall tops: a few notches of 1-3 m
         for k = 1, 5 do
             if H_(0, fl * 1000 + 840, ci, cj, k) < 0.75 then
                 local nx, nz = H_(0, fl * 1000 + 841, ci, cj, k) * 28, H_(0, fl * 1000 + 842, ci, cj, k) * 28
                 local nw, nd, nh = 2 + H_(0, fl * 1000 + 843, ci, cj, k) * 5, 2 + H_(0, fl * 1000 + 844, ci, cj, k) * 5, 16 + math.floor(H_(0, fl * 1000 + 845, ci, cj, k) * 32)
                 box(nx, nx + nw, nz, nz + nd, YT - nh, YT, nil)
+                box(nx, nx + nw, nz, nz + nd, YT - nh - 2, YT - nh - 1, "ruin_cap")   -- the notch floor weathers too
             end
         end
     end

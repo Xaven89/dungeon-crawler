@@ -931,7 +931,7 @@ function deco_room(B, theme, room, doors, mk, fl)
         B.pillar(cx, cz, 0.45, 0, 2.2, "marble"); B.pillar(cx, cz, 0.3, 2.2, 2.6, "lantern")
     end
     for _, sc in ipairs(deco_sconce_plan(theme, room, doors)) do deco_sconce(B, sc) end
-    if not open then for _, lm in ipairs(deco_lamp_plan(theme, room)) do deco_lamp(B, lm, h, 1.2, fl) end end
+    if not open then for _, lm in ipairs(deco_lamp_plan(theme, room)) do deco_lamp(B, lm, h, (fl == 8) and math.max(1.2, h - 4) or 1.2, fl) end end
     -- graffiti on a wall without a door of about one room in five (not in the special rooms)
     local PLAIN = { hall = true, crypt = true, library = true, depot = true, grotto = true, flooded = true, furnace = true, ballroom = true, warlord = true, captive = true, prize = true }
     if PLAIN[theme] and mk(4).next() < 0.22 then
