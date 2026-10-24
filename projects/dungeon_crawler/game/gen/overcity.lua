@@ -29,12 +29,13 @@ end
 -- the sky colours at the turn of the day (replace the engine's for as long as the band lasts): the red dusk of the book's fake sun, a paler dawn; the rest of the day keeps the engine's sky
 function OC.sky_colours(t)
     if t >= 0.42 and t < 0.60 then return { zenith = { 0.35, 0.06, 0.07 }, horizon = { 1.1, 0.35, 0.2 }, ground = { 0.3, 0.12, 0.1 } }
-    elseif t < 0.08 or t >= 0.96 then return { zenith = { 0.25, 0.14, 0.22 }, horizon = { 1.0, 0.55, 0.35 }, ground = { 0.3, 0.2, 0.15 } } end
+    elseif t < 0.08 or t >= 0.96 then return { zenith = { 0.25, 0.14, 0.22 }, horizon = { 1.0, 0.55, 0.35 }, ground = { 0.3, 0.2, 0.15 } }
+    elseif t < 0.42 then return { zenith = { 0.22, 0.07, 0.09 }, horizon = { 0.70, 0.30, 0.21 }, ground = { 0.22, 0.14, 0.12 } } end      -- the day: the book's red sky stays (the dome only: the sun below is white)
     return { zenith = false, horizon = false, ground = false }
 end
 
 -- (the red is the sky's: the sun on the walls is a plain warm white by day; the red dusk of the book is the zenith / horizon colours above, which only the turn of the day replaces)
-local PALETTE = { tint = { 1.1, 0.9, 0.85 }, fog_tint = { 1.25, 0.75, 0.6 }, sun = { 1.1, 0.95, 0.8 }, ambient = 1.0, fog = 1.6 }
+local PALETTE = { tint = { 1.0, 0.95, 0.92 }, fog_tint = { 1.25, 0.75, 0.6 }, sun = { 0.5, 0.46, 0.4 }, ambient = 0.7, fog = 1.6 }
 
 function OC.enter(P)
     OC.npcs, OC.lights, OC.pubs, OC.night_added = {}, {}, {}, {}

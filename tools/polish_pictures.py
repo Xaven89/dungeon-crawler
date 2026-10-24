@@ -47,7 +47,7 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         vil = L(v, "local CG, H = Game.floorgen.cg(); local P = Game.floorgen.layout\nfor _, id in ipairs(P.order) do local r = P.rooms[id]\n  if r.theme == 'village' then local sup = CG.super_of(P.ctx, r.ci, r.cj); print(sup.ci, sup.cj); return end end", 0)
         oci, ocj = [int(x) for x in vil[0].split("\t")]; ox, oz = oci * 32, ocj * 32
         tp(ox + 31, oz + 30, wait=400)
-        L(v, "Game.gen.overcity.fixed = 0.25", 0); v.step(130)
+        L(v, "Game.gen.overcity.fixed = %s" % opt("--time", "0.25"), 0); v.step(130)
         if "square_f3_day" in only: shot("square_f3_day", BZ, 25.06, ox + 28.5, 1.8, oz + 27.5, ox + 33, 1.2, oz + 34)
         if "pub_f3_inside" in only:
             plan = L(v, "local H = select(2, Game.floorgen.cg()); local pl = deco_village_plan(function(salt) return deco_rng(H, 3, %d, %d, salt or 1) end); for _, b in ipairs(pl.buildings) do print(b.kind, b.x0, b.z0, b.x1, b.z1, b.door.side, b.door.pos) end" % (oci, ocj), 0)

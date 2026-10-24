@@ -655,13 +655,13 @@ end
 -- the palette of a room theme: { floor material, trim material } (a hall takes the palette of the room its half leaves: the first half of a corridor is the room's, the second the next room's)
 function deco_palette(theme, fl)
     local P = {
-        library = { "dark_wood", "dark_wood" }, safe = { "dark_wood", "carpet" }, rest = { "dark_wood", "carpet" }, grotto = { "cavestone", "mossy" }, flooded = { "flagstone", "mossy" },
+        library = { "oak_floor", "dark_wood" }, safe = { "oak_floor", "carpet" }, rest = { "oak_floor", "carpet" }, grotto = { "cave_floor", "mossy" }, flooded = { "flagstone", "mossy" },
         ballroom = { "marble", "marble" }, warlord = { "obsidian", "dark_wood" }, crypt = { "flagstone", "bone" }, depot = { "dark_wood", "metal" }, furnace = { "obsidian", "metal" },
         arena = { "marble", "gold" }, ante = { "marble", "gold" }, guild = { "marble", "gold" }, prize = { "marble", "gold" }, captive = { "flagstone", "metal" },
     }
     local p = P[theme]
     if p then return p[1], p[2] end
-    if fl == 2 then return "flagstone", "brick" end
+    if fl == 2 then return "tar_slab", "brick" end
     return "flagstone", "brick"
 end
 

@@ -32,14 +32,17 @@ function shell_region(rx, rz, wh, run)
         if x1 <= x0 or z1 <= z0 then return end
         ops[#ops + 1] = { kind = mat and "box" or "clear", lo = { X0 + R(x0), y0, Z0 + R(z0) }, hi = { X0 + R(x1) - 1, y1, Z0 + R(z1) - 1 }, material = mat }
     end
-    local function carve(x0, x1, z0, z1, hvox) box(x0, x1, z0, z1, YF, YF + hvox - 1) end
+    local carves = {}
+    local CEIL_MAT = "ceiling_dark"
+    local function carve(x0, x1, z0, z1, hvox) box(x0, x1, z0, z1, YF, YF + hvox - 1); carves[#carves + 1] = { x0, x1, z0, z1, hvox, CEIL_MAT } end
     local DX = { E = 1, W = -1, S = 0, N = 0 }
     local DZ = { E = 0, W = 0, S = 1, N = -1 }
     local OPP = { E = "W", W = "E", S = "N", N = "S" }
     local function inside(a, b) return a >= 0 and b >= 0 and a < W and b < H end
     local in_cell = inside(ci, cj)
     local deco
-    local WALL = { flooded = "mossy", grotto = "cavestone", library = "dark_wood", safe = "dark_wood", rest = "dark_wood" }
+    local WALL = { flooded = "mossy", grotto = "cavestone", library = "dark_wood", safe = "dark_wood", rest = "dark_wood", ballroom = "plaster", crypt = "crypt_stone", captive = "crypt_stone",
+                   arena = "ruin_stone", ante = "ruin_stone", guild = "ruin_stone", prize = "ruin_stone", depot = "cinderblock" }
     -- the mass: the cell's whole volume in the wall material of its theme (everything below is carved out of it)
     local base_wall = OPEN and "ruin_stone" or ((fl == 2) and "cinderblock" or "dungeon_brick")          -- floor 2: the orange city is cinderblock, floor 3 weathered stone
     local mass_mat = base_wall
@@ -94,10 +97,10 @@ function shell_region(rx, rz, wh, run)
     -- the arteries: 4 m strips along every side that lies on a block border (and the rim ring's half)
     local function artery_side(d)
         local len = (fl == 2) and 3 or 4                           -- (floor 2: narrower arteries, 6 m)
-        if d == "E" then carve(32 - len, 32, 0, 32, 144); floor_mat(32 - len, 32, 0, 32, "flagstone")
-        elseif d == "W" then carve(0, len, 0, 32, 144); floor_mat(0, len, 0, 32, "flagstone")
-        elseif d == "S" then carve(0, 32, 32 - len, 32, 144); floor_mat(0, 32, 32 - len, 32, "flagstone")
-        else carve(0, 32, 0, len, 144); floor_mat(0, 32, 0, len, "flagstone") end
+        if d == "E" then carve(32 - len, 32, 0, 32, 144); floor_mat(32 - len, 32, 0, 32, (fl == 2) and "tar_slab" or "flagstone")
+        elseif d == "W" then carve(0, len, 0, 32, 144); floor_mat(0, len, 0, 32, (fl == 2) and "tar_slab" or "flagstone")
+        elseif d == "S" then carve(0, 32, 32 - len, 32, 144); floor_mat(0, 32, 32 - len, 32, (fl == 2) and "tar_slab" or "flagstone")
+        else carve(0, 32, 0, len, 144); floor_mat(0, 32, 0, len, (fl == 2) and "tar_slab" or "flagstone") end
         for t = 4, 28, 8 do
             if d == "E" then light(32 - 2, t, YF + 143) elseif d == "W" then light(2, t, YF + 143)
             elseif d == "S" then light(t, 32 - 2, YF + 143) else light(t, 2, YF + 143) end
@@ -139,10 +142,13 @@ function shell_region(rx, rz, wh, run)
         if r then
             local hv = (r.h + ((theme == "ballroom") and 2 or 0)) * V
             if OPEN then hv = SKY end
+            local CEIL = { library = "plaster", safe = "plaster", rest = "plaster" }
+            CEIL_MAT = CEIL[theme] or "ceiling_dark"
             carve(r.x, r.x + r.w, r.z, r.z + r.d, hv)
-            local FLOOR = { warlord = "obsidian", ballroom = "marble", grotto = "cavestone", library = "dark_wood", safe = "dark_wood", rest = "dark_wood", prize = "marble", arena = "marble",
+            CEIL_MAT = "ceiling_dark"
+            local FLOOR = { warlord = "obsidian", ballroom = "marble", grotto = "cave_floor", library = "oak_floor", safe = "oak_floor", rest = "oak_floor", prize = "marble", arena = "marble",
                             stairs_free = "marble" }
-            floor_mat(r.x, r.x + r.w, r.z, r.z + r.d, FLOOR[theme] or "flagstone")
+            floor_mat(r.x, r.x + r.w, r.z, r.z + r.d, FLOOR[theme] or ((fl == 2) and "tar_slab" or "flagstone"))
             -- ceiling lights: a grid of 8 m
             for x = r.x + 4, r.x + r.w - 2, 8 do for z = r.z + 4, r.z + r.d - 2, 8 do light(x, z, YF + hv - 1) end end
             deco = { theme = theme, room = r }
@@ -197,6 +203,13 @@ function shell_region(rx, rz, wh, run)
                 end
             end
         end
+    end
+    if not OPEN then                               -- the ceilings: a skin on top of every carve, moved to just after the mass so every carve (and its decoration) comes later
+        local n0 = #ops
+        for _, c in ipairs(carves) do box(c[1], c[2], c[3], c[4], YF + c[5], YF + c[5] + 1, c[6]) end
+        local skins = {}
+        for i = n0 + 1, #ops do skins[#skins + 1] = ops[i]; ops[i] = nil end
+        for k = #skins, 1, -1 do table.insert(ops, 2, skins[k]) end
     end
     for _, f in ipairs(floors) do box(f[1], f[2], f[3], f[4], YF - 2, YF - 1, f[5]) end
     if deco then

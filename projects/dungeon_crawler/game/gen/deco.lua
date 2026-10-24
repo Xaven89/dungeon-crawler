@@ -396,17 +396,20 @@ function deco_village(B, cu, cv, room, doors, mk)
     end
     bb(6, -0.125, 6, 58, 0, 58, "cobble")                                           -- the paving of the village
     local q = plan.square
-    bb(q.x0, -0.125, q.z0, q.x1, 0, q.z1, "marble")
+    bb(q.x0, -0.125, q.z0, q.x1, 0, q.z1, "flagstone")
     -- the well in the middle of the square
-    B.ring(32 - ox, 32 - oz, 1.0, 1.6, 0, 0.9, "marble")
+    B.ring(32 - ox, 32 - oz, 1.0, 1.6, 0, 0.9, "ruin_stone")
     B.pillar(32 - ox, 32 - oz, 1.0, -0.6, 0.05, "gutter_water")
     for _, b in ipairs(plan.buildings) do
-        local wall = (b.kind == "hall") and "marble" or ((b.kind == "pub") and "dark_wood" or "dungeon_brick")
+        local wall = (b.kind == "hall") and "ruin_stone" or "plaster"
         bb(b.x0, 0, b.z0, b.x1, b.h, b.z1, wall)                                      -- the solid block with its roof (the top 0.4 m)
+        bb(b.x0, 0, b.z0, b.x1, 0.6, b.z1, "plinth_stone")                            -- (bucket A) a plinth band
+        bb(b.x0, b.h - 0.4, b.z0, b.x1, b.h, b.z1, "terracotta")                      -- (bucket A) the roof
         bb(b.x0 + 0.5, 0, b.z0 + 0.5, b.x1 - 0.5, b.h - 0.4, b.z1 - 0.5, nil)        -- the inside
+        bb(b.x0 + 0.5, b.h - 0.525, b.z0 + 0.5, b.x1 - 0.5, b.h - 0.4, b.z1 - 0.5, "dark_wood")   -- (bucket A) the ceiling boards
         local d = b.door
         if d.side == "E" then bb(b.x1 - 0.6, 0, d.pos - 1.25, b.x1 + 0.02, 3.0, d.pos + 1.25, nil) else bb(b.x0 - 0.02, 0, d.pos - 1.25, b.x0 + 0.6, 3.0, d.pos + 1.25, nil) end
-        bb(b.x0 + 0.5, -0.125, b.z0 + 0.5, b.x1 - 0.5, 0, b.z1 - 0.5, "dark_wood")   -- the floor
+        bb(b.x0 + 0.5, -0.125, b.z0 + 0.5, b.x1 - 0.5, 0, b.z1 - 0.5, "oak_floor")   -- the floor
         if b.kind == "pub" then
             bb(b.crystal.x - 1, 0, b.crystal.z - 0.8, b.crystal.x + 1, 0.9, b.crystal.z + 0.8, "marble")
             if cu * 32 <= b.crystal.x and b.crystal.x < cu * 32 + 32 and cv * 32 <= b.crystal.z and b.crystal.z < cv * 32 + 32 then B.sphere(b.crystal.x - ox, 1.55, b.crystal.z - oz, 0.55, "rune") end
@@ -427,7 +430,7 @@ function deco_village(B, cu, cv, room, doors, mk)
         end
     end
     -- the locator stones
-    for _, l in ipairs(plan.locators) do bb(l[1] - 0.4, 0, l[2] - 0.4, l[1] + 0.4, 2.2, l[2] + 0.4, "marble"); bb(l[1] - 0.25, 2.2, l[2] - 0.25, l[1] + 0.25, 2.6, l[2] + 0.25, "lantern") end
+    for _, l in ipairs(plan.locators) do bb(l[1] - 0.4, 0, l[2] - 0.4, l[1] + 0.4, 2.2, l[2] + 0.4, "ruin_stone"); bb(l[1] - 0.25, 2.2, l[2] - 0.25, l[1] + 0.25, 2.6, l[2] + 0.25, "lantern") end
     -- the gates: a frame at every hall that leaves this cell's quarter of the courtyard
     for _, d in ipairs(doors or {}) do deco_door_frame(B, room, d.side, d.pos, "gold", 3.4, 5.2) end
 end
