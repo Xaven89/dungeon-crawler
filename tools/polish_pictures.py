@@ -42,7 +42,7 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         print("artery", rid, side, ex, ez)
         tp(ex, ez, wait=400)
         shot("corridor_f2", 2 * 1024 + 64, 8, ex, 1.7, ez, tx, 1.5, tz)
-    if "square_f3_day" in only or "pub_f3_inside" in only:
+    if "square_f3_day" in only or "pub_f3_inside" in only or "meadow_f3" in only or "street_f3_day" in only:
         new_floor(v, 3); BZ = 3 * 1024 + 64
         vil = L(v, "local CG, H = Game.floorgen.cg(); local P = Game.floorgen.layout\nfor _, id in ipairs(P.order) do local r = P.rooms[id]\n  if r.theme == 'village' then local sup = CG.super_of(P.ctx, r.ci, r.cj); print(sup.ci, sup.cj); return end end", 0)
         oci, ocj = [int(x) for x in vil[0].split("\t")]; ox, oz = oci * 32, ocj * 32
@@ -50,7 +50,8 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         L(v, "Game.gen.overcity.fixed = %s" % opt("--time", "0.25"), 0); v.step(130)
         if "square_f3_day" in only: shot("square_f3_day", BZ, 25.06, ox + 28.5, 1.8, oz + 27.5, ox + 33, 1.2, oz + 34)
         if "meadow_f3" in only:                 # outside the village: the plain's grass (not one of the five fixed views)
-            tp(ox + 31, oz + 1, wait=400); shot("meadow_f3", BZ, 25.06, ox + 31, 1.8, oz + 2, ox + 31, 1.0, oz - 14)
+            tp(8, 176, wait=400); v.step(60); shot("meadow_f3", BZ, 25.06, 3, 14.0, 176, -70, 1.0, 176, settle=200)       # over the west wall of the ruin onto the plain outside
+        if "street_f3_day" in only: shot("street_f3_day", BZ, 25.06, ox + 32, 1.7, oz + 7, ox + 32, 1.6, oz + 30)       # the lane between two slots, looking at the square (voxel-art bucket D)
         if "pub_f3_inside" in only:
             plan = L(v, "local H = select(2, Game.floorgen.cg()); local pl = deco_village_plan(function(salt) return deco_rng(H, 3, %d, %d, salt or 1) end); for _, b in ipairs(pl.buildings) do print(b.kind, b.x0, b.z0, b.x1, b.z1, b.door.side, b.door.pos) end" % (oci, ocj), 0)
             for line in plan:

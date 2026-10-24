@@ -386,6 +386,165 @@ function deco_pub_layout(b, mk)
 end
 
 -- cu, cv: which cell of the 2 x 2; doors: the cell's own doors (cell metres) get a gold gate; the builder clips to the cell
+-- The over-city house kit (voxel-art bucket D): one building of deco_village_plan drawn with box fills only.
+-- bb(x0, y0, z0, x1, y1, z1, mat) is the village builder's clipped fill in super-cell metres (mat nil = clear); b is a plan entry
+-- { kind = house | store | pub | hall, x0, z0, x1, z1, h, door = { side = "E" | "W", pos } }.
+-- The inner box is the same as before (walls 0.5 m, the inside from the floor to h - 0.4, board ceiling under it), so interiors and the pub layout do not move.
+-- Every size is a whole number of voxels (1/16 m). Materials: plaster, ruin_stone, plinth_stone, terracotta, dark_wood, oak_floor, glass, carpet, gold.
+-- A hook function sees only hook_globals and its own locals (level.lua): add "deco_house" there, and keep every helper inside the function.
+function deco_house(bb, b)
+    local V = 0.0625
+    local function pick(salt, n) return math.floor(b.x0 * 7 + b.z0 * 13 + salt * 5) % n end   -- deterministic per building (the plan's own numbers)
+    local x0, z0, x1, z1 = b.x0, b.z0, b.x1, b.z1
+    local wt = b.h - 0.4                                  -- the top of the walls (the inside's ceiling)
+    local stone = (b.kind == "hall")
+    local wall = stone and "ruin_stone" or "plaster"
+    local d = b.door
+    local along_x = (x1 - x0) >= (z1 - z0)                -- the ridge runs along the longer side
+
+    -- 1. the walls (solid; the inside is cleared further down)
+    bb(x0, 0, z0, x1, wt, z1, wall)
+
+    -- 2. the roof: stepped terracotta, 4 voxels up for every 6 in (a 34 degree pitch), 6 voxels of eaves; gable ends filled with the wall,
+    --    the hall a hip roof (stepped on all four sides)
+    local rise, run, ov = 4 * V, 6 * V, 6 * V
+    bb(x0 - ov, wt, z0 - ov, x1 + ov, wt + 2 * V, z1 + ov, "dark_wood")          -- the eaves board (a dark line under the tiles)
+    local half = (along_x and (z1 - z0) or (x1 - x0)) / 2
+    local half_l = (along_x and (x1 - x0) or (z1 - z0)) / 2
+    local n = math.floor((half + ov) / run)
+    local y = wt + 2 * V
+    for i = 0, n - 1 do
+        local s = i * run                                  -- the inset across the ridge
+        local l = stone and s or 0                         -- the hall: the same inset along it
+        if stone and l >= half_l + ov - run then break end
+        if along_x then
+            bb(x0 - ov + l, y, z0 - ov + s, x1 + ov - l, y + rise, z1 + ov - s, "terracotta")
+            if not stone and z0 + s + run < z1 - s - run then bb(x0, y, z0 + s + run, x1, y + rise, z1 - s - run, wall) end   -- the gable ends
+        else
+            bb(x0 - ov + s, y, z0 - ov + l, x1 + ov - s, y + rise, z1 + ov - l, "terracotta")
+            if not stone and x0 + s + run < x1 - s - run then bb(x0 + s + run, y, z0, x1 - s - run, y + rise, z1, wall) end
+        end
+        y = y + rise
+    end
+    local ridge_y = y
+    if not stone then                                      -- the ridge: a dark beam end at each gable
+        if along_x then bb(x0 - ov, y - rise, (z0 + z1) / 2 - 2 * V, x1 + ov, y, (z0 + z1) / 2 + 2 * V, "dark_wood")
+        else bb((x0 + x1) / 2 - 2 * V, y - rise, z0 - ov, (x0 + x1) / 2 + 2 * V, y, z1 + ov, "dark_wood") end
+    end
+
+    -- 3. the base and the frame of the walls: a plinth 1 voxel proud, a cornice under the eaves, quoins on plaster houses, half-timber on the pub
+    bb(x0 - V, 0, z0 - V, x1 + V, 10 * V, z1 + V, "plinth_stone")
+    bb(x0 - 2 * V, wt - 3 * V, z0 - 2 * V, x1 + 2 * V, wt, z1 + 2 * V, "plinth_stone")
+    if b.kind == "pub" then
+        local beam = 2.4
+        local function strip(y0, y1)                                              -- 1 voxel proud, 1 into the wall: outside only (a full box shows inside the walls)
+            bb(x0 - V, y0, z0 - V, x1 + V, y1, z0 + V, "dark_wood"); bb(x0 - V, y0, z1 - V, x1 + V, y1, z1 + V, "dark_wood")
+            bb(x0 - V, y0, z0 - V, x0 + V, y1, z1 + V, "dark_wood"); bb(x1 - V, y0, z0 - V, x1 + V, y1, z1 + V, "dark_wood")
+        end
+        strip(beam, beam + 3 * V)                                                 -- the floor beam all round
+        for _, c in ipairs({ { x0, z0 }, { x1, z0 }, { x0, z1 }, { x1, z1 } }) do
+            bb(c[1] - 2 * V, 10 * V, c[2] - 2 * V, c[1] + 2 * V, wt - 3 * V, c[2] + 2 * V, "dark_wood")
+        end
+        for _, side in ipairs({ "N", "S" }) do                                    -- posts every 2-3 m on the long faces
+            local k = math.floor((x1 - x0) / 2.5)
+            for j = 1, k - 1 do
+                local px = x0 + j * (x1 - x0) / k
+                local pz = (side == "N") and z0 or z1
+                bb(px - 2 * V, 10 * V, pz - V, px + 2 * V, wt - 3 * V, pz + V, "dark_wood")
+            end
+        end
+    elseif not stone then
+        for _, c in ipairs({ { x0, z0, 1, 1 }, { x1, z0, -1, 1 }, { x0, z1, 1, -1 }, { x1, z1, -1, -1 } }) do
+            local yy, k = 10 * V, 0
+            while yy + 4 * V <= wt - 3 * V do
+                local lx, lz = (k % 2 == 0) and 8 * V or 5 * V, (k % 2 == 0) and 5 * V or 8 * V        -- long and short blocks, crossing at the corner
+                local ax, bx = c[1] - c[3] * V, c[1] + c[3] * lx
+                local az, bz = c[2] - c[4] * V, c[2] + c[4] * lz
+                bb(math.min(ax, bx), yy, math.min(az, bz), math.max(ax, bx), yy + 4 * V, math.max(az, bz), "ruin_stone")
+                yy, k = yy + 4 * V + V, k + 1                                 -- (1 voxel of plaster between courses reads as a joint)
+            end
+        end
+    else                                                                      -- the hall: pilasters by the door
+        local fx = (d.side == "E") and x1 or x0
+        local o = (d.side == "E") and 1 or -1
+        for _, dz in ipairs({ -1.9, 1.9 }) do
+            bb(math.min(fx, fx + o * 3 * V), 0, d.pos + dz - 4 * V, math.max(fx, fx + o * 3 * V), wt, d.pos + dz + 4 * V, "plinth_stone")
+        end
+    end
+
+    -- 4. the inside (unchanged box), its board ceiling and its floor
+    bb(x0 + 0.5, 0, z0 + 0.5, x1 - 0.5, wt, z1 - 0.5, nil)
+    bb(x0 + 0.5, wt - 2 * V, z0 + 0.5, x1 - 0.5, wt, z1 - 0.5, "dark_wood")
+    bb(x0 + 0.5, -2 * V, z0 + 0.5, x1 - 0.5, 0, z1 - 0.5, "oak_floor")
+
+    -- 5. the door: the opening (2.5 x 3 m, as before), a dark frame 3 voxels wide and 1 proud, a stone lintel, a step
+    local fx = (d.side == "E") and x1 or x0
+    local o = (d.side == "E") and 1 or -1
+    local function xs(a, c) return math.min(fx + o * a, fx + o * c), math.max(fx + o * a, fx + o * c) end
+    do
+        local a, c = xs(-0.6, 0.02); bb(a, 0, d.pos - 1.25, c, 3.0, d.pos + 1.25, nil)
+        a, c = xs(-0.5, V)
+        bb(a, 0, d.pos - 1.25 - 3 * V, c, 3.0, d.pos - 1.25, "dark_wood"); bb(a, 0, d.pos + 1.25, c, 3.0, d.pos + 1.25 + 3 * V, "dark_wood")
+        a, c = xs(-0.5, 2 * V); bb(a, 3.0, d.pos - 1.25 - 5 * V, c, 3.0 + 4 * V, d.pos + 1.25 + 5 * V, "plinth_stone")
+        a, c = xs(0, 8 * V); bb(a, 0, d.pos - 1.25 - 2 * V, c, 2 * V, d.pos + 1.25 + 2 * V, "plinth_stone")
+    end
+
+    -- 6. windows: 14 x 20 voxels (0.875 x 1.25 m) from 1.125 m, glass in the middle of the wall, a sill 2 voxels proud, a stone lintel, shutters on half the houses;
+    --    one per 3 m bay, none within 2.2 m of the door
+    local shutters = (b.kind == "house" or b.kind == "store") and pick(1, 2) == 0
+    local wy0, wy1, ww = 1.125, 2.375, 7 * V
+    local function window(face, t)                          -- face N / S / E / W, t the coordinate along it
+        local ox_, oz_ = 0, 0
+        if face == "N" then oz_ = -1 elseif face == "S" then oz_ = 1 elseif face == "W" then ox_ = -1 else ox_ = 1 end
+        local p = (face == "N") and z0 or ((face == "S") and z1 or ((face == "W") and x0 or x1))
+        local function slab(a, c, u0, u1, y0, y1, mat)      -- a..c across the wall (outward +), u along it
+            local lo, hi = math.min(p - (ox_ + oz_) * a, p + (ox_ + oz_) * c), math.max(p - (ox_ + oz_) * a, p + (ox_ + oz_) * c)
+            if face == "N" or face == "S" then bb(u0, y0, lo, u1, y1, hi, mat) else bb(lo, y0, u0, hi, y1, u1, mat) end
+        end
+        slab(0.55, 0.02, t - ww, t + ww, wy0, wy1, nil)
+        slab(0.25 + V, -0.25 + V, t - ww, t + ww, wy0, wy1, "glass")
+        slab(0.1, 2 * V, t - ww - 2 * V, t + ww + 2 * V, wy0 - 2 * V, wy0, "dark_wood")
+        slab(0.1, V, t - ww - 2 * V, t + ww + 2 * V, wy1, wy1 + 3 * V, "plinth_stone")
+        if shutters then
+            slab(-0.0, 2 * V, t - ww - 9 * V, t - ww - V, wy0, wy1, "dark_wood"); slab(-0.0, 2 * V, t + ww + V, t + ww + 9 * V, wy0, wy1, "dark_wood")
+        end
+    end
+    for _, face in ipairs({ "N", "S", "E", "W" }) do
+        local u0, u1 = (face == "N" or face == "S") and x0 or z0, (face == "N" or face == "S") and x1 or z1
+        local k = math.floor((u1 - u0 - 1.5) / 3)
+        for j = 1, k do
+            local t = u0 + 0.75 + (j - 0.5) * (u1 - u0 - 1.5) / k
+            local door_face = (face == d.side)
+            if not (door_face and math.abs(t - d.pos) < 2.2) then window(face, t) end
+        end
+    end
+
+    -- 7. a chimney on one gable (the pub's over its fire wall), stone, a cap one voxel wider
+    if b.kind ~= "hall" and (b.kind == "pub" or pick(2, 3) ~= 0) then
+        local cx_, cz_
+        if along_x then cx_ = (pick(3, 2) == 0) and (x0 + 0.9) or (x1 - 0.9); cz_ = (z0 + z1) / 2 + 0.6
+        else cx_ = (x0 + x1) / 2 + 0.6; cz_ = (pick(3, 2) == 0) and (z0 + 0.9) or (z1 - 0.9) end
+        if b.kind == "pub" and b.fire then cx_ = b.fire.x; cz_ = z0 + 0.9; if not along_x then cx_ = (x0 + x1) / 2 end end
+        bb(cx_ - 6 * V, wt, cz_ - 6 * V, cx_ + 6 * V, ridge_y + 0.75, cz_ + 6 * V, "ruin_stone")
+        bb(cx_ - 7 * V, ridge_y + 0.75, cz_ - 7 * V, cx_ + 7 * V, ridge_y + 0.75 + 2 * V, cz_ + 7 * V, "plinth_stone")
+        bb(cx_ - 3 * V, ridge_y + 0.5, cz_ - 3 * V, cx_ + 3 * V, ridge_y + 0.75 + 2 * V, cz_ + 3 * V, nil)
+    end
+
+    -- 8. what tells the kinds apart from the square: the pub's hanging sign, the store's awning
+    if b.kind == "pub" then
+        local sz_ = d.pos - 1.25 - 1.0
+        local a, c = xs(0, 0.9); bb(a, 3.3, sz_ - V, c, 3.3 + 2 * V, sz_ + V, "dark_wood")            -- the bracket
+        a, c = xs(0.3, 0.85); bb(a, 2.55, sz_ - V, c, 3.25, sz_ + V, "dark_wood")                     -- the board
+        a, c = xs(0.35, 0.8); bb(a, 2.65, sz_ - 2 * V, c, 3.15, sz_ + 2 * V, "gold")                  -- its painted face (both sides)
+        a, c = xs(0.4, 0.75); bb(a, 2.7, sz_ - 2 * V, c, 3.1, sz_ + 2 * V, "dark_wood")
+    elseif b.kind == "store" then
+        for i = 0, 3 do                                                                                -- a striped cloth awning, stepping down and out
+            local a, c = xs(i * 0.25, (i + 1) * 0.25)
+            bb(a, 3.3 - i * 0.125, d.pos - 1.75, c, 3.3 - i * 0.125 + 2 * V, d.pos + 1.75, (i % 2 == 0) and "carpet" or "plaster")
+        end
+    end
+end
+
 function deco_village(B, cu, cv, room, doors, mk)
     local plan = deco_village_plan(mk)
     local ox, oz = cu * 32, cv * 32
@@ -401,45 +560,8 @@ function deco_village(B, cu, cv, room, doors, mk)
     B.ring(32 - ox, 32 - oz, 1.0, 1.6, 0, 0.9, "ruin_stone")
     B.pillar(32 - ox, 32 - oz, 1.0, -0.6, 0.05, "gutter_water")
     for _, b in ipairs(plan.buildings) do
-        local wall = (b.kind == "hall") and "ruin_stone" or "plaster"
-        bb(b.x0, 0, b.z0, b.x1, b.h, b.z1, wall)                                      -- the solid block with its roof (the top 0.4 m)
-        bb(b.x0, 0, b.z0, b.x1, 0.6, b.z1, "plinth_stone")                            -- (bucket A) a plinth band
-        bb(b.x0, b.h - 0.4, b.z0, b.x1, b.h, b.z1, "terracotta")                      -- (bucket A) the roof
-        bb(b.x0 + 0.5, 0, b.z0 + 0.5, b.x1 - 0.5, b.h - 0.4, b.z1 - 0.5, nil)        -- the inside
-        bb(b.x0 + 0.5, b.h - 0.525, b.z0 + 0.5, b.x1 - 0.5, b.h - 0.4, b.z1 - 0.5, "dark_wood")   -- (bucket A) the ceiling boards
         local d = b.door
-        if d.side == "E" then bb(b.x1 - 0.6, 0, d.pos - 1.25, b.x1 + 0.02, 3.0, d.pos + 1.25, nil) else bb(b.x0 - 0.02, 0, d.pos - 1.25, b.x0 + 0.6, 3.0, d.pos + 1.25, nil) end
-        bb(b.x0 + 0.5, -0.125, b.z0 + 0.5, b.x1 - 0.5, 0, b.z1 - 0.5, "oak_floor")   -- the floor
-        -- (bucket C) a house is more than a box: eaves 0.5 m out, a cornice band under them, window holes with a glass pane, a sill and a lintel, a frame round the door
-        bb(b.x0 - 0.5, b.h - 0.4, b.z0 - 0.5, b.x1 + 0.5, b.h, b.z1 + 0.5, "terracotta")
-        bb(b.x0 - 0.15, b.h - 0.9, b.z0 - 0.15, b.x1 + 0.15, b.h - 0.4, b.z1 + 0.15, "plinth_stone")
-        local function window(wx, wz, along_x)                                                  -- the middle of the window on the wall's outer face
-            if along_x then
-                local zo = (wz < (b.z0 + b.z1) / 2) and b.z0 or b.z1
-                local zi, zj = math.min(zo, zo + ((zo == b.z0) and 0.5 or -0.5)), math.max(zo, zo + ((zo == b.z0) and 0.5 or -0.5))
-                bb(wx - 0.5, 1.2, zi, wx + 0.5, 2.7, zj, nil)
-                bb(wx - 0.5, 1.2, (zi + zj) / 2 - 0.0625, wx + 0.5, 2.7, (zi + zj) / 2 + 0.0625, "glass")
-                bb(wx - 0.65, 1.05, zi - 0.12, wx + 0.65, 1.2, zj, "dark_wood"); bb(wx - 0.65, 2.7, zi, wx + 0.65, 2.85, zj, "dark_wood")
-            else
-                local xo = (wx < (b.x0 + b.x1) / 2) and b.x0 or b.x1
-                local xi, xj = math.min(xo, xo + ((xo == b.x0) and 0.5 or -0.5)), math.max(xo, xo + ((xo == b.x0) and 0.5 or -0.5))
-                bb(xi, 1.2, wz - 0.5, xj, 2.7, wz + 0.5, nil)
-                bb((xi + xj) / 2 - 0.0625, 1.2, wz - 0.5, (xi + xj) / 2 + 0.0625, 2.7, wz + 0.5, "glass")
-                bb(xi - 0.12, 1.05, wz - 0.65, xj, 1.2, wz + 0.65, "dark_wood"); bb(xi, 2.7, wz - 0.65, xj, 2.85, wz + 0.65, "dark_wood")
-            end
-        end
-        for _, side in ipairs({ "N", "S", "E", "W" }) do
-            local len = (side == "N" or side == "S") and (b.x1 - b.x0) or (b.z1 - b.z0)
-            local n = math.floor((len - 2.5) / 3.5)
-            for k = 1, n do
-                local t = (k - 0.5) / n * (len - 2.5) + 1.25
-                if side == "N" then window(b.x0 + t, b.z0 + 0.1, true) elseif side == "S" then window(b.x0 + t, b.z1 - 0.1, true)
-                elseif side == "W" and not (d.side == "W" and math.abs(b.z0 + t - d.pos) < 2.4) then window(b.x0 + 0.1, b.z0 + t, false)
-                elseif side == "E" and not (d.side == "E" and math.abs(b.z0 + t - d.pos) < 2.4) then window(b.x1 - 0.1, b.z0 + t, false) end
-            end
-        end
-        if d.side == "E" then bb(b.x1 - 0.6, 0, d.pos - 1.5, b.x1 + 0.08, 3.2, d.pos - 1.25, "dark_wood"); bb(b.x1 - 0.6, 0, d.pos + 1.25, b.x1 + 0.08, 3.2, d.pos + 1.5, "dark_wood"); bb(b.x1 - 0.6, 3.0, d.pos - 1.5, b.x1 + 0.08, 3.25, d.pos + 1.5, "dark_wood")
-        else bb(b.x0 - 0.08, 0, d.pos - 1.5, b.x0 + 0.6, 3.2, d.pos - 1.25, "dark_wood"); bb(b.x0 - 0.08, 0, d.pos + 1.25, b.x0 + 0.6, 3.2, d.pos + 1.5, "dark_wood"); bb(b.x0 - 0.08, 3.0, d.pos - 1.5, b.x0 + 0.6, 3.25, d.pos + 1.5, "dark_wood") end
+        deco_house(bb, b)                                                             -- (voxel-art bucket D) the whole shell: kit/house.lua
         if b.kind == "pub" then
             bb(b.crystal.x - 1, 0, b.crystal.z - 0.8, b.crystal.x + 1, 0.9, b.crystal.z + 0.8, "marble")
             if cu * 32 <= b.crystal.x and b.crystal.x < cu * 32 + 32 and cv * 32 <= b.crystal.z and b.crystal.z < cv * 32 + 32 then B.sphere(b.crystal.x - ox, 1.55, b.crystal.z - oz, 0.55, "crystal") end
