@@ -1,8 +1,10 @@
 -- THE DESCENT: Season 7, Floor 1. The entry point: includes the modules and wires the engine callbacks. See GAME.md.
+hook_globals = { "cellgen_make", "cellgen_hash_from", "shell_region" }   -- the big floors: the hook runs the same pure plan as the game (game/gen/cell.lua, shell.lua)
 include("game/core.lua")
 include("game/gen/layout.lua")
 include("game/gen/cell.lua")
 include("game/gen/contract.lua")
+include("game/gen/shell.lua")
 include("game/gen/track.lua")
 include("game/items.lua")
 include("game/announcer.lua")
@@ -153,4 +155,9 @@ end
 function on_anim(m, event, clip)
     if G.enemies.on_anim(m, event, clip) then return end
     if G.companion and G.companion.on_anim then G.companion.on_anim(m, event, clip) end
+end
+
+-- the region hook (docs/WORLD_GEN.md): one 32 m cell of a big floor per region; only used by projects with terrain = biomes (the one-row table)
+function on_region(rx, rz)
+    return shell_region(rx, rz, worldgen.hash)
 end

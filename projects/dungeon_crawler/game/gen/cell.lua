@@ -559,6 +559,21 @@ function cellgen_make(H)
             theme = role                                       -- borough / village / park: the super-cell is built by its own plan
         end
         info.theme = theme
+        -- a cell of a super-cell holds its quarter of the courtyard (6 m margin on the outside, none toward the other cells of the super-cell)
+        local sup = (not w) and CG.super_of(ctx, ci, cj)
+        if sup then
+            local left, top = (ci == sup.ci), (cj == sup.cj)
+            info.room = { x = left and 6 or 0, z = top and 6 or 0, w = 26, d = 26, h = 12 }
+            w, d = nil, nil
+            info.door = {}
+            local r = info.room
+            for sd, kind in pairs(info.open) do
+                if kind ~= "internal" then
+                    if sd == "E" or sd == "W" then info.door[sd] = r.z + 3 + 2 * floor(h(ctx, ci, cj, 8 + (sd == "E" and 0 or 1), 111) * ((r.d - 6) / 2 + 1))
+                    else info.door[sd] = r.x + 3 + 2 * floor(h(ctx, ci, cj, 10 + (sd == "N" and 0 or 1), 111) * ((r.w - 6) / 2 + 1)) end
+                end
+            end
+        end
         if w then
             local maxox, maxoz = 32 - 5 - w, 32 - 5 - d
             info.room = { x = 5 + 2 * floor(h(ctx, ci, cj, 5, 111) * ((maxox - 5) / 2 + 1)), z = 5 + 2 * floor(h(ctx, ci, cj, 6, 111) * ((maxoz - 5) / 2 + 1)), w = w, d = d,
