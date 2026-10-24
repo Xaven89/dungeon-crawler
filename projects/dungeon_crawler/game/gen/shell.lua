@@ -153,7 +153,7 @@ function shell_region(rx, rz, wh, run)
             CEIL_MAT = CEIL[theme] or CEIL_DEF
             carve(r.x, r.x + r.w, r.z, r.z + r.d, hv)
             CEIL_MAT = CEIL_DEF
-            local FLOOR = { warlord = "obsidian", ballroom = "marble", grotto = "cave_floor", library = "oak_floor", safe = "oak_floor", rest = "oak_floor", prize = "marble", arena = "marble",
+            local FLOOR = { warlord = "obsidian", ballroom = "polished_marble", flooded = "wet_flagstone", grotto = "cave_floor", library = "oak_floor", safe = "oak_floor", rest = "oak_floor", prize = "marble", arena = "marble",
                             stairs_free = "marble" }
             floor_mat(r.x, r.x + r.w, r.z, r.z + r.d, FLOOR[theme] or (FLOOR_DEF))
             -- ceiling lights: a grid of 8 m

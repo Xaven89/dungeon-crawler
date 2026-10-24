@@ -23,46 +23,35 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
     L(v, "Game.contracts.sign(nil)", 2); v.step(60)
     L(v, "Game.run.cur().floor_ticks = 10000000; Game.state.flags.god = true; Game.state.hp = 99999; Game.floorgen.ENEMY_CAP = 0", 0)
     def tp(x, z, y=0.1, wait=300): L(v, "local G=Game; player.hand_model(nil); player.model(nil); player.teleport(G.mx(%f), G.my(%f), G.mz(%f), { wait = true })" % (x, y, z), wait)
+    def mean_brightness(path):                  # a crude mean of an 8-bit RGB(A) PNG (a black picture is a view that was not ready, not a view of a black room)
+        import zlib, struct
+        d = open(path, "rb").read(); i = 8; idat = b""; w = h = ct = 0
+        while i < len(d):
+            n, = struct.unpack(">I", d[i:i + 4]); t = d[i + 4:i + 8]; c = d[i + 8:i + 8 + n]
+            if t == b"IHDR": w, h, _, ct = struct.unpack(">IIBB", c[:10])
+            if t == b"IDAT": idat += c
+            i += 12 + n
+        raw = zlib.decompress(idat); bpp = {2: 3, 6: 4}.get(ct, 3); stride = w * bpp + 1; tot = cnt = 0
+        for y in range(0, h, 16):
+            row = raw[y * stride + 1:(y + 1) * stride]; tot += sum(row[::bpp * 8]); cnt += len(row[::bpp * 8])
+        return tot / max(1, cnt)
     def shot(name, bz, y0, ex, ey, ez, tx, ty, tz, fov=85, settle=300):
-        v.screenshot(os.path.join(SH, name + ".png"), hud=False, settle=settle, eye=[ex, y0 + ey, bz + ez], target=[tx, y0 + ty, bz + tz], fov=fov)
-    def hall_view(fl, name):                    # the first hall of the floor, from its north-west corner toward the middle
-        r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == 'hall' and r.w >= 14 and r.d >= 14 then print(id, r.x, r.z, r.w, r.d); break end end", 0)[0].split("\t")
-        rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]
-        L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
-        shot(name, fl * 1024 + 64, 8, x + 2.2, 3.0, z + 2.2, x + w / 2, 0.9, z + d / 2, fov=90)
-    def corridor_view(fl, name):                # an artery: the 6 m strip between blocks, looking along it
-        a = L(v, """local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]
-  for _, d in ipairs(P.doors[id] or {}) do if d.kind == 'artery' then print(id, r.ci, r.cj, d.side, d.pos); return end end end""", 0)[0].split("\t")
-        rid, ci, cj, side, pos = a[0], int(a[1]), int(a[2]), a[3], float(a[4])
-        if side in ("E", "W"):
-            xb = (ci + (1 if side == "E" else 0)) * 32; ex, ez, tx, tz = xb, cj * 32 + pos - 12, xb, cj * 32 + pos + 30
-        else:
-            zb = (cj + (1 if side == "S" else 0)) * 32; ex, ez, tx, tz = ci * 32 + pos - 12, zb, ci * 32 + pos + 30, zb
-        tp(ex, ez, wait=400)
-        shot(name, fl * 1024 + 64, 8, ex, 1.7, ez, tx, 1.5, tz)
-    for fl in (5, 6, 7, 8):
-        if ("hall_f%d" % fl) in only or ("corridor_f%d" % fl) in only:
-            new_floor(v, fl)
-            if ("hall_f%d" % fl) in only: hall_view(fl, "hall_f%d" % fl)
-            if ("corridor_f%d" % fl) in only: corridor_view(fl, "corridor_f%d" % fl)
-    if "borough_f2" in only or "rotunda_f2" in only:     # the borough fortress of floor 2: the rings seen from the entrance, the rotunda in the middle
-        new_floor(v, 2)
-        pk = L(v, "local P = Game.floorgen.layout; local r = P.ring_list and P.ring_list[1]; if r then print(r.ox, r.oz) else print('none') end", 0)[0].split("\t")
-        print("borough", pk)
-        if pk[0] != "none":
-            px, pz = float(pk[0]), float(pk[1])
-            L(v, "Game.gen.rules.cur.night = false", 0)          # (the rule of the floor may be NIGHT SHIFT: this view judges the palette, not the rule)
-            if "borough_f2" in only:                # inside the outer ring corridor (south side), looking along it at the lamp (g.c1 = 17.1 from the middle)
-                tp(px + 22, pz + 49.1, wait=500); v.step(60)
-                shot("borough_f2", 2 * 1024 + 64, 8, px + 22, 1.7, pz + 49.1, px + 40, 1.8, pz + 49.1, settle=200)
-            if "rotunda_f2" in only:
-                tp(px + 32, pz + 44, wait=500); v.step(60)
-                shot("rotunda_f2", 2 * 1024 + 64, 8, px + 32, 1.7, pz + 44, px + 32, 1.5, pz + 32, settle=200)
+        for attempt in range(3):               # (the first picture after a new binary or a cold start has come out black: wait and take it again)
+            v.screenshot(os.path.join(SH, name + ".png"), hud=False, settle=settle + attempt * 200, eye=[ex, y0 + ey, bz + ez], target=[tx, y0 + ty, bz + tz], fov=fov)
+            if mean_brightness(os.path.join(SH, name + ".png")) > 6: break
+            print("  %s was black (attempt %d): again" % (name, attempt + 1))
     if "hall_f1" in only:                       # floor 1: the first hall, from its north-west corner toward the middle
         r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == 'hall' and r.w >= 14 and r.d >= 14 then print(id, r.x, r.z, r.w, r.d); break end end", 0)[0].split("\t")
         rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]
         L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
         shot("hall_f1", 1 * 1024 + 64, 8, x + 2.2, 3.0, z + 2.2, x + w / 2, 0.9, z + d / 2, fov=90)
+    for name, theme in (("ballroom_f1", "ballroom"), ("flooded_f1", "flooded")):      # single-room materials (polished_marble, wet_flagstone): judged on their own rooms, from a corner
+        if name in only:
+            r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == '%s' then print(id, r.x, r.z, r.w, r.d); break end end" % theme, 0)
+            if not r: print(name, "no such room on floor 1 of this seed"); continue
+            rid, x, z, w, d = r[0].split("\t")[0], *[float(t) for t in r[0].split("\t")[1:5]]
+            L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
+            shot(name, 1 * 1024 + 64, 8, x + 2.2, 1.9, z + 2.2, x + w / 2, 0.6, z + d / 2, fov=90)
     if "corridor_f2" in only:                   # floor 2: an artery (the 6 m wide strip between blocks), looking along it
         new_floor(v, 2)
         a = L(v, """local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]
@@ -100,4 +89,40 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         new_floor(v, 4)
         tp(100, 201, wait=400)
         shot("hub_f4", 4 * 1024 + 64, 8, 100, 1.7, 201, 124, 1.2, 209, settle=300)
+# (the views of the floors above run in the order of their floors: the sessions only ever go DOWN, except borough_f2 which begins floor 2 again)
+    def hall_view(fl, name):                    # the first hall of the floor, from its north-west corner toward the middle
+        r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == 'hall' and r.w >= 14 and r.d >= 14 then print(id, r.x, r.z, r.w, r.d); break end end", 0)[0].split("\t")
+        rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]
+        L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
+        shot(name, fl * 1024 + 64, 8, x + 2.2, 3.0, z + 2.2, x + w / 2, 0.9, z + d / 2, fov=90)
+        if name + "_wall" in only: shot(name + "_wall", fl * 1024 + 64, 8, x + 3.0, 1.7, z + d / 2, x, 1.5, z + d / 2, fov=70)           # the bump reads within 2-6 m: a wall at 3 m
+        if name + "_floor" in only: shot(name + "_floor", fl * 1024 + 64, 8, x + w / 2, 1.7, z + d / 2, x + w / 2 + 2.5, 0.0, z + d / 2, fov=70)   # and the floor
+    def corridor_view(fl, name):                # an artery: the 6 m strip between blocks, looking along it
+        a = L(v, """local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]
+  for _, d in ipairs(P.doors[id] or {}) do if d.kind == 'artery' then print(id, r.ci, r.cj, d.side, d.pos); return end end end""", 0)[0].split("\t")
+        rid, ci, cj, side, pos = a[0], int(a[1]), int(a[2]), a[3], float(a[4])
+        if side in ("E", "W"):
+            xb = (ci + (1 if side == "E" else 0)) * 32; ex, ez, tx, tz = xb, cj * 32 + pos - 12, xb, cj * 32 + pos + 30
+        else:
+            zb = (cj + (1 if side == "S" else 0)) * 32; ex, ez, tx, tz = ci * 32 + pos - 12, zb, ci * 32 + pos + 30, zb
+        tp(ex, ez, wait=400)
+        shot(name, fl * 1024 + 64, 8, ex, 1.7, ez, tx, 1.5, tz)
+    for fl in (5, 6, 7, 8):
+        if ("hall_f%d" % fl) in only or ("corridor_f%d" % fl) in only or ("hall_f%d_wall" % fl) in only:
+            new_floor(v, fl)
+            if ("hall_f%d" % fl) in only or ("hall_f%d_wall" % fl) in only: hall_view(fl, "hall_f%d" % fl)
+            if ("corridor_f%d" % fl) in only: corridor_view(fl, "corridor_f%d" % fl)
+    if "borough_f2" in only or "rotunda_f2" in only:     # the borough fortress of floor 2: the rings seen from the entrance, the rotunda in the middle
+        new_floor(v, 2)
+        pk = L(v, "local P = Game.floorgen.layout; local r = P.ring_list and P.ring_list[1]; if r then print(r.ox, r.oz) else print('none') end", 0)[0].split("\t")
+        print("borough", pk)
+        if pk[0] != "none":
+            px, pz = float(pk[0]), float(pk[1])
+            L(v, "Game.gen.rules.cur.night = false", 0)          # (the rule of the floor may be NIGHT SHIFT: this view judges the palette, not the rule)
+            if "borough_f2" in only:                # inside the outer ring corridor (south side), looking along it at the lamp (g.c1 = 17.1 from the middle)
+                tp(px + 22, pz + 49.1, wait=500); v.step(60)
+                shot("borough_f2", 2 * 1024 + 64, 8, px + 22, 1.7, pz + 49.1, px + 40, 1.8, pz + 49.1, settle=200)
+            if "rotunda_f2" in only:
+                tp(px + 32, pz + 44, wait=500); v.step(60)
+                shot("rotunda_f2", 2 * 1024 + 64, 8, px + 32, 1.7, pz + 44, px + 32, 1.5, pz + 32, settle=200)
 print("pictures in", SH)
