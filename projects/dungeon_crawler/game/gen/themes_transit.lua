@@ -47,7 +47,7 @@ F.register("station", {
             for _, sp in ipairs(transit_crowd_spots(room.info)) do spots[#spots + 1] = { x = sp.x + ox, z = sp.z + oz, kind = "idle" } end
             local L = G.gen.layout
             local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)
-            F.populate(room, ctx, r2, 2 + (room.info.code == "Y" and 1 or 0), { allow = rects and F.clear_of(rects, 0.45) or nil, spots = spots, still = true, kinds = { { "goblin", 4 }, { "bandit", 3 }, { "imp", 2 }, { "rat", 2 } } })
+            F.populate(room, ctx, r2, 2 + (room.info.code == "Y" and 1 or 0), { allow = rects and F.clear_of(rects, 0.45) or nil, spots = spots, still = true, y = yl(room), kinds = { { "goblin", 4 }, { "bandit", 3 }, { "imp", 2 }, { "rat", 2 } } })
         end
     end,
 })

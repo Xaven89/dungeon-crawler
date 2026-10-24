@@ -184,8 +184,9 @@ function shell_region(rx, rz, wh, run)
                     end
                 end
                 -- the hall's own decoration (pilasters, beams, a runner, trim in the palette of the room it leaves; pipes in a side hall; rubble and crates in an alley): floors 1, 2 and up under a roof
-                if not OPEN then
+                do
                     local seg = deco_hall_seg(info, d)
+                    if seg and OPEN then seg.open = true; seg.h = 5 end
                     if seg then deco_hall(B, seg, function(salt) return deco_rng(H_, fl, ci, cj, (salt or 1) + (d == "E" and 0 or (d == "S" and 20 or (d == "W" and 40 or 60)))) end, fl) end
                 end
                 -- a light in the middle of every hall's half

@@ -697,7 +697,48 @@ function deco_hall(B, seg, mk, fl)
     local function note(u0, u1, side, depth) prot[#prot + 1] = { u0, u1, side, depth } end
     if len < 3 then return prot end
     local function bath_clear(u0, u1, side) return not (seg.bath and side == -1 and u1 > seg.bath - 1.4 and u0 < seg.bath + 1.4) end
-    if kind == "tree" or kind == "loop" or kind == "side" then
+    if seg.open and (kind == "tree" or kind == "loop" or kind == "side") then
+        -- floor 3, the open-air city: no roof, so no beams or pipes; a cobbled street with broken pilasters of different heights on one side, market stalls (a counter and an awning) or banners on the other,
+        -- a lamp post every 9 m; the free width stays (hw - 1)
+        local ht = hw / 2
+        box(1.0, -0.0625, -ht, len, 0, ht, "cobble")
+        local sside = (r.next() < 0.5) and -1 or 1                       -- the stall side
+        local u = 2.5 + r.int(0, 2)
+        while u < len - 0.8 do
+            local ph = 1.2 + r.next() * 2.8
+            local v0, v1 = (-sside > 0) and (ht - 0.35) or -ht, (-sside > 0) and ht or (-ht + 0.35)
+            box(u - 0.2, 0, v0, u + 0.2, ph, v1, "ruin_stone"); box(u - 0.3, ph, v0, u + 0.3, ph + 0.15, v1, "ruin_stone")
+            if ph < 2 then box(u - 0.5, 0, v0 - 0.0, u + 0.5, 0.3, v1, "cobble") end              -- rubble at the foot
+            note(u - 0.3, u + 0.3, -sside, 0.35)
+            u = u + 6
+        end
+        u = 3.5 + r.int(0, 2)
+        local k = 0
+        while u < len - 2.5 do
+            k = k + 1
+            local v0, v1 = (sside > 0) and (ht - 0.65) or -ht, (sside > 0) and ht or (-ht + 0.65)
+            if k % 2 == 1 and kind ~= "side" then                                              -- a stall: counter, two posts, an awning
+                box(u, 0, v0, u + 2.4, 0.9, v1, "dark_wood"); box(u - 0.05, 0.9, v0, u + 2.45, 0.96, v1 + (sside > 0 and 0.05 or -0.05), "marble")
+                box(u, 0.96, v0, u + 0.1, 2.3, v0 + 0.1, "dark_wood"); box(u + 2.3, 0.96, v0, u + 2.4, 2.3, v0 + 0.1, "dark_wood")
+                box(u - 0.1, 2.3, v0, u + 2.5, 2.4, v1, (k % 4 == 1) and "neon_red" or "gold")
+                box(u + 0.3, 0.96, v0 + 0.15, u + 0.9, 1.3, v1 - 0.15, "chest_wood"); box(u + 1.3, 0.96, v0 + 0.15, u + 1.7, 1.4, v1 - 0.2, "bone")
+                note(u - 0.1, u + 2.5, sside, 0.65)
+            else                                                                                   -- a banner on the wall
+                local bv0, bv1 = (sside > 0) and (ht - 0.1) or -ht, (sside > 0) and ht or (-ht + 0.1)
+                box(u, 1.4, bv0, u + 1.2, 3.2, bv1, (k % 3 == 0) and "gold" or "neon_red")
+                note(u, u + 1.2, sside, 0.1)
+            end
+            u = u + 5
+        end
+        u = 4.5
+        while u < len - 1.5 do                                                                      -- lamp posts on the pilaster side, in the street's edge
+            local v0, v1 = (-sside > 0) and (ht - 0.5) or -ht, (-sside > 0) and (ht - 0.2) or (-ht + 0.3)
+            if (-sside > 0) then v0, v1 = ht - 0.35, ht - 0.05 else v0, v1 = -ht + 0.05, -ht + 0.35 end
+            box(u - 0.1, 0, v0, u + 0.1, 3.0, v1, "metal"); box(u - 0.25, 3.0, v0 - 0.0, u + 0.25, 3.12, v1, "metal"); box(u - 0.15, 3.12, v0, u + 0.15, 3.5, v1, "lantern")
+            note(u - 0.25, u + 0.25, -sside, 0.35)
+            u = u + 9
+        end
+    elseif kind == "tree" or kind == "loop" or kind == "side" then
         -- the floor in the palette of the room, a trim band at the height of a hand along both walls
         box(1.0, -0.0625, -hw / 2, len, 0, hw / 2, floor_mat_)
         local ht = hw / 2
@@ -725,6 +766,7 @@ function deco_hall(B, seg, mk, fl)
             box(1.0, 0, -0.8, len, 0.0625, 0.8, "carpet")           -- a runner down the middle of the main corridors
         end
     elseif kind == "alley" then
+        if seg.open then floor_mat_ = "cobble" end
         -- a back lane: rubble, crates, litter on ONE side (the other stays free; nothing deeper than 0.5 m)
         local s = (r.next() < 0.5) and -1 or 1
         if not bath_clear(0, 0, s) then s = -s end

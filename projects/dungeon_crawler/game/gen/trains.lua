@@ -74,7 +74,7 @@ function T.on_stopped(name, e)
                 local ox, oz = G.floorgen.off(room)
                 local sp = spots and spots[1 + (#riders + inst.id) % math.max(1, #spots)]
                 local x, z = sp and sp.x or (room.x + 10), sp and sp.z or (room.z + 8)
-                local n = E.spawn(kind, x, 0, z, { room = here, hp_mult = 1 })
+                local n = E.spawn(kind, x, room.info.room.y or 0, z, { room = here, hp_mult = 1 })
                 if n then n.commuter = true end
             end
         else stay[#stay + 1] = r end

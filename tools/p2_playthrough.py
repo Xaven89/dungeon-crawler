@@ -103,6 +103,28 @@ def body_summary(v, label):
 def below_world(v):
     return L(v, "local E = Game.enemies; local n = 0; for id, inst in pairs(E.list) do local x, y, z = E.position(inst); if y and y < -5 then n = n + 1; if n <= 6 then print(id, inst.kind, tostring(inst.dead), inst.room, string.format('%.1f %.1f %.1f', x, y, z)) end end end; print('below', n)", 0)
 
+def body_table(v, label):
+    """BODY_TABLE=1: the loose bodies of the session by owner and by floor band (a leak across floors shows as bodies in a band the player has left)"""
+    if not os.environ.get("BODY_TABLE"): return
+    o = L(v, """local rows, bands, mass = {}, {}, {}
+local n = 0
+for _, b in ipairs(body.list()) do
+  n = n + 1
+  local key = b.owner .. (b.kinematic and ':kin' or '')
+  local r = rows[key] or { 0, 0 }; r[1] = r[1] + 1; if b.awake then r[2] = r[2] + 1 end; rows[key] = r
+  local band = math.floor((b.z - 64) / 1024)
+  local bb = bands[band] or { 0, 0 }; bb[1] = bb[1] + 1; if b.awake then bb[2] = bb[2] + 1 end; bands[band] = bb
+  if b.owner == 'script' then local k = (b.mass < 20 and 'script<20kg') or (b.mass < 60 and 'script<60kg') or (b.mass < 400 and 'script<400kg') or 'script>=400kg'; mass[k] = (mass[k] or 0) + 1 end
+end
+local t = {}
+for k, r in pairs(rows) do t[#t + 1] = k .. '=' .. r[1] .. '(' .. r[2] .. ' awake)' end; table.sort(t)
+local tb = {}
+for k, r in pairs(bands) do tb[#tb + 1] = 'band' .. k .. '=' .. r[1] end; table.sort(tb)
+local tm = {}
+for k, c in pairs(mass) do tm[#tm + 1] = k .. '=' .. c end; table.sort(tm)
+print(n, table.concat(t, ' '), '|', table.concat(tb, ' '), '|', table.concat(tm, ' '))""", 0)
+    print("   BODIES %-28s %s" % (label, o[0].replace("\t", " ") if o else "?"))
+
 def borough_run(v):
     """go to the borough of the floor, kill its boss, take the stairwell behind the forcefield"""
     info = L(v, "local P = Game.floorgen.layout; local r = P.ring_list[1]; if not r then print('none') return end; print(r.id, r.origin, r.pit.x0, r.pit.z0, r.pit.x1, r.pit.z1)", 0)[0].split("\t")
@@ -156,6 +178,7 @@ def restore_state(snap, present):
 
 def main():
     snap, present = snapshot_state()
+    print("state snapshot:", snap)
     maxagents = 0
     with Voxelith(["--project", project, "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed), "--record", log]) as v:
         v.step(400)
@@ -192,6 +215,7 @@ for _, s in ipairs(G.items.inv.bag) do
   end
 end""", 5)
                 print("  %-6s %-11s ticks %4d kills %2d  hp %s deaths %s level %s   %s" % (rid, theme, t, kills, end[1], end[2], end[3], counts(v))); sys.stdout.flush()
+            body_table(v, "floor %d end" % cur)
             print("  at the stairwell: the recap, then down")
             if fl < floors:
                 L(v, "local G = Game; local F = G.floorgen; local P = F.layout; local id = P.free_list[1]; if id and not F.stairs_open(id) then G.run.cur().fclock = math.floor(F.floor_ticks() * F.AT_OPEN) + 60 end", 120)    # (the clock opens the stairs)
@@ -202,6 +226,7 @@ end""", 5)
                 L(v, "Game.run.descend(true)", 2)
                 print("floor %d built in" % (fl + 1), wait_floor(v), "s")
                 v.step(200)
+                body_table(v, "floor %d, +200 ticks" % (fl + 1))
                 L(v, "if Game.screen == 'contracts' then Game.contracts.sign(nil) end", 2)
         errs = [l.strip() for l in v.stderr_tail(2000).splitlines() if "[error]" in l or "[warn" in l or "failed" in l]
         print("engine errors / warnings:", errs[-8:] if errs else "none")
@@ -211,6 +236,7 @@ end""", 5)
         print("hook:", json.dumps(st["world"].get("hook")))
         print("render:", json.dumps(st.get("render")))
         print("sim:", json.dumps({k: st["sim"].get(k) for k in ("bodies", "awake_bodies", "gravity_fields")}), "agents", L(v, "print(Game.enemies.alive_count(), #Game.floorgen.made_list)", 0)[0].replace("\t", " cells "))
+        body_table(v, "the end")
         print("state hash:", v.state_hash())
         if os.environ.get("DUMP_BODIES"):
             b = v.tool("bodies")

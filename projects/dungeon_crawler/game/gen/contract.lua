@@ -337,6 +337,7 @@ function K.check(plan, CG)
             if info.room then
                 for _, d in ipairs({ "E", "S", "W", "N" }) do
                     local seg = deco_hall_seg(info, d)
+                    if seg and plan.P.kind == "ruin" then seg.open = true; seg.h = 5 end
                     if seg then
                         n16 = n16 + 1
                         local prot = deco_hall(stub, seg, function(salt) return deco_rng(CG.H, ctx.floor, info.ci, info.cj, (salt or 1) + (d == "E" and 0 or (d == "S" and 20 or (d == "W" and 40 or 60)))) end, ctx.floor)
