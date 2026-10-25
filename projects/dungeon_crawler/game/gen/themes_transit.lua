@@ -7,6 +7,38 @@ local floor, max, min = math.floor, math.max, math.min
 
 local function yl(room) return room.info.room.y or 0 end
 
+-- the kiosks of the grammar (hubs, stations, dens): search one for what the last traveller left (an item and some gold, once). The voxels are the hook's; the button is a box on the kiosk's counter
+local function kiosk_drops(room, ctx)
+    local lay = F.furnished(room, ctx)
+    if not lay then return end
+    local ox, oz = F.off(room)
+    local T = G.traps
+    local FRONT = { ["+z"] = { 0, 1 }, ["-z"] = { 0, -1 }, ["+x"] = { 1, 0 }, ["-x"] = { -1, 0 } }
+    local n = 0
+    for _, it in ipairs(lay.items) do
+        if it.id == "kiosk" then
+            n = n + 1
+            local id = string.format("k%d_%d_%d_%d", ctx.floor, room.ci, room.cj, n)
+            local x0, z0, x1, z1 = it.x0 + ox, it.z0 + oz, it.x1 + ox, it.z1 + oz
+            local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
+            local fr = FRONT[it.face] or { 0, 1 }
+            local btn = events.button{ name = id, box = { G.wx(x0), G.wy(0.9), G.wz(z0), G.wx(x1) - 1, G.wy(1.5), G.wz(z1) - 1 }, prompt = "Search the kiosk", on = "neon", off = "gold", press_ticks = 8 }
+            local function search()
+                if G.state.opened[id] then return end
+                G.state.opened[id] = true
+                local wx, wy, wz = G.mx(cx + fr[1] * 1.1), G.my(1.0), G.mz(cz + fr[2] * 1.1)
+                G.sfx.play("coin", cx, 1.2, cz, 0.6, 1.2)
+                G.enemies.drop(wx, wy, wz, "gold", G.irange(8, 18))
+                G.enemies.drop(wx, wy + 0.2, wz, "item", G.items.roll("bronze", 17 * n + #id))
+                G.tally("kiosks", "searched", 1)
+            end
+            events.on(btn, "pressed", search)
+            T.kiosks[id] = { cell = room.id, search = search, x = cx + fr[1] * 1.0, z = cz + fr[2] * 1.0 }          -- (the bot searches them like it opens crates)
+            T.add_interact(id, cx, 1.4, cz, "Search the kiosk", 2.8, function() return not G.state.opened[id] end)
+        end
+    end
+end
+
 -- a row of lights along the axis of a hall, every 8 m, at the ceiling of its level
 local function strip_lights(room, ctx, step, intensity, reach)
     step = step * 2                                                    -- (one light per 12 m: the polish pass)
@@ -60,6 +92,7 @@ F.register("station", {
     names = { "Platform", "The Concourse", "Transfer Platform" },
     things = function(room, ctx)
         strip_lights(room, ctx, 6, 16, 14)
+        kiosk_drops(room, ctx)
         if room.info.code ~= "X" then platform_lights(room) end                     -- (voxel-art)
         if room.info.code == "X" then                                               -- (voxel-art) the cross hall: wall lights at both levels
             local pts = { { 16, 5 }, { 16, 27 }, { 5, 16 }, { 27, 16 }, { 5, 5 }, { 27, 5 }, { 5, 27 }, { 27, 27 } }
@@ -98,6 +131,7 @@ F.register("hub", {
     things = function(room, ctx)
         strip_lights(room, ctx, 6, 17, 14)
         platform_lights(room)                                                       -- (voxel-art)
+        kiosk_drops(room, ctx)
         local dk = G.gen.rules.dark()
         local ox, oz = F.off(room)
         local f = transit_hub_fixtures(room.info)
@@ -127,6 +161,7 @@ F.register("hub", {
 F.register("den", {
     names = { "The Commuters' Den", "Rest Hall B", "The Waiting Pen" },
     things = function(room, ctx)
+        kiosk_drops(room, ctx)
         local dk = G.gen.rules.dark()
         local ox, oz = F.off(room)
         local n = 0

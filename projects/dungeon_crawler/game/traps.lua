@@ -28,6 +28,7 @@ end
 -- a new floor: forget everything the old one registered (the nodes and bodies themselves go through gen/track.lua)
 function T.reset()
     T.crate_loot = {}
+    T.kiosks = {}
     T.interact, T.crates, T.all_chests, T.crate_hooks, T.barrels, T.hazards, T.plates, T.doors = {}, {}, {}, {}, {}, {}, {}, nil
     T.floating_list, T.secret_wall, T.boulder = {}, nil, nil
     G.texts = {}

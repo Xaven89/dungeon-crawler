@@ -238,6 +238,9 @@ def main():
                 ids = L(v, "local G=Game; local ids = {}; for id, c in pairs(G.traps.crates) do if c.cell == '%s' then ids[#ids+1] = id end end; table.sort(ids); print(table.concat(ids, ','))" % rid, 0)[0].split(",")
                 for cid in [x for x in ids if x]:        # (the bot stands at the crate when it opens it and waits for the loot to be picked up: a crate opened from across the room paid nothing)
                     L(v, "local G=Game; local c = G.traps.crates['%s']; local off = { ['+z'] = { 0, 1.0 }, ['-z'] = { 0, -1.0 }, ['+x'] = { 1.0, 0 }, ['-x'] = { -1.0, 0 } }; local o = off[c.face] or { 0, 1.0 }; player.teleport(G.mx(c.cx + o[1]), G.my(c.ly + 0.1), G.mz(c.cz + o[2]), { wait = true }); G.traps.open_crate('%s')" % (cid, cid), 150)
+                ks = L(v, "local G=Game; local ids = {}; for id, k in pairs(G.traps.kiosks or {}) do if k.cell == '%s' then ids[#ids+1] = id end end; table.sort(ids); print(table.concat(ids, ','))" % rid, 0)
+                for kid in [x for x in (ks[0].split(",") if ks else []) if x]:      # (the kiosks of floor 4: a search drops an item and some gold at the kiosk's front)
+                    L(v, "local G=Game; local k = G.traps.kiosks['%s']; player.teleport(G.mx(k.x), G.my(0.1), G.mz(k.z), { wait = true }); k.search()" % kid, 150)
                 L(v, "local G=Game", 30)
                 L(v, """local G=Game
 for _, s in ipairs(G.items.inv.bag) do
