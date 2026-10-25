@@ -70,6 +70,7 @@ W.things[#W.things + 1] = function()
     for k, x in ipairs({ 10, 24 }) do for z = 58, 106, 8 do                -- the grotto is a cave: its lights along two lines inside it (the box's edges are rock)
         G.torch(x, 2.5, z, { color = { 0.45, 1.0, 0.8 }, reach = 7, far = 24, intensity = 7, raw = true, flicker = false, name = "f0_grotto_l" .. k .. "_" .. z })
     end end
+    row(30, 5.5, 72, 16.5, 3.5, { 1.0, 0.82, 0.6 }, "f0_hall_l")       -- the Hall of Mild Peril (the tutorial): warm, two lines inside the pillar rows (z 7 and 15)
     row(54, 124, 70, 140, 3.0, { 1.0, 0.8, 0.55 }, "f0_stair_l")        -- the stairwell (the safe room): warm
     row(80, 70, 122, 96, 2.5, { 0.55, 1.0, 0.6 }, "f0_gutter_l")       -- the gutter: green
     row(38, 66, 76, 98, 3.5, { 1.0, 0.82, 0.6 }, "f0_ballroom_l")     -- the ballroom: warm, on the painted panels

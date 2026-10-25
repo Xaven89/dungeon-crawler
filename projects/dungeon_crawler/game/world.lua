@@ -111,6 +111,16 @@ function W.build()
         W.pending_chest_redraw = true
         G.state.flags.fix_v5 = true
     elseif G.should_build() then G.state.flags.fix_v5 = true end
+    if not G.should_build() and not G.state.flags.fix_hall_sign then
+        -- the hall's EXPLOSIVES sign used to start at x 34 and its 15 m line ran out through the hall's west wall into the lobby (letters free in the air at z 20, x 19-26, y 2.6-3.1): the letters' own voxels only,
+        -- whatever they stand in (air, rock, the front layer of the wall), are taken out once
+        local SIGN = { neon_red = true, sign_red = true, sign_warm = true, lantern = true }
+        for x = G.wx(18.9), G.wx(34.1) do for y = G.wy(2.6), G.wy(3.1) do for z = G.wz(19.9), G.wz(20.1) do
+            local m = world.material_at(x, y, z)
+            if m and SIGN[m] then edit.clear(x, y, z, x, y, z) end
+        end end end
+        G.state.flags.fix_hall_sign = true
+    elseif G.should_build() then G.state.flags.fix_hall_sign = true end
     if not G.should_build() and not G.state.flags.fix_v3 then
         G.clear(36.6, 0, 44.3, 39.4, 3.4, 46.2)                         -- the secret tunnel's crossing
         for _, i in ipairs({ 1, 2 }) do local z = 126 + i * 3.5; G.clear(53.9, 0, z, 55.8, 3.7, z + 3) end       -- the two bookcases in the stairwell's entrance

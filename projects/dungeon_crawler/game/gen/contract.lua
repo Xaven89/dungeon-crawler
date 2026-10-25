@@ -99,6 +99,13 @@ function K.check_transit(plan, CG)
             end
         end
     end
+    -- the railed car (E16, 54 voxels = 3.4 m with its roof frame): every cell a line's waypoints lie in is at least 4.5 m high (the tunnels are 6 m, the stations 7 m, the corners 8 m, the X halls 14 m)
+    for _, line in ipairs(lines) do
+        for i, p in ipairs(line.points) do
+            local inf = transit_cell_info(floor(p[1] / 32), floor(p[2] / 32))
+            if inf and inf.room and inf.room.h < 4.5 then bad(17, line.name .. ": waypoint " .. i .. " is in a room " .. inf.room.h .. " m high: the car (3.4 m) does not fit") end
+        end
+    end
     -- lines of one level never come closer than 12 m to each other (the cars meet only in the X halls, which are two storeys: the verticals run at level 1, the rows at level 0)
     for i = 1, #lines do
         for j = i + 1, #lines do

@@ -153,12 +153,19 @@ def borough_run(v):
     L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true }); Game.state.hp = Game.player.max_hp()" % rid, 400)
     print("   current room:", L(v, "print(Game.current_room, Game.boss.started)", 0))
     v.step(500)
+    def arena_floor():          # solid voxels in the slab 1.5 m under the arena floor, 9 m round the middle of the ring (the pit is inside it: the same before and after): a slam that digs shows here
+        c = L(v, "local G=Game; local r = G.floorgen.layout.rings['%s']; local g = r.g; print(G.wx(r.ox + g.cx), G.wy(0), G.wz(r.oz + g.cz))" % rid, 0)[0].split("\t")
+        cx, cy, cz = int(float(c[0])), int(float(c[1])), int(float(c[2]))
+        r_ = v.tool("count_voxels", min=[cx - 144, cy - 24, cz - 144], max=[cx + 144, cy - 1, cz + 144])
+        c_ = r_.get("counts", {}); return "air %d solid %d" % (c_.get("air", 0), sum(n for m, n in c_.items() if m != "air"))
+    floor_before = arena_floor()
     for k in range(6):
         t, kills, end = fight(v, rid, 4800)
         print("   fight", k, "ticks", t, "kills", kills, "hp", end[1], "deaths", end[2], "boss dead:", L(v, "print(Game.state.flags['boss_dead_%s'])" % rid, 0))
         if L(v, "print(Game.state.flags['boss_dead_%s'])" % rid, 0)[0].startswith("true"): break
         L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true }); Game.state.hp = Game.player.max_hp()" % rid, 300)
     v.step(400)
+    print("   arena floor, solid voxels 1.5 m under it: before the fight", floor_before, "after", arena_floor(), "(equal = the slams dug nothing)")
     body_summary(v, "after the boss")
     if os.environ.get("BODIES_TRACE"):
         print("   enemies below the world:", below_world(v))

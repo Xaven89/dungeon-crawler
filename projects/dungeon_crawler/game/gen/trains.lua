@@ -18,7 +18,7 @@ function T.enter(P)
     for _, line in ipairs(transit_lines()) do
         local pts = {}
         for i, p in ipairs(line.points) do pts[i] = { G.wx(p[1]), G.wy(line.level * transit_const().level_m), G.wz(p[2]) } end
-        local id = events.train{ name = "iron_" .. line.name, body = { width = floor(car.width * 16 + 0.5), thickness = floor(car.thickness * 16 + 0.5), length = floor(car.len * 16 + 0.5), material = DECK[line.name] },
+        local id = events.train{ name = "iron_" .. line.name, model = "models/train_car_" .. line.name .. ".vxm", deck = 4,                 -- (the artist's railed car: voxel-exact, hollow, the deck 4 layers, 58 x 54 x 224 voxels)
                                  track = pts, closed = line.closed, speed = line.speed, accel = car.accel, stops = line.stops, end_seconds = 20, start_on = true }
         T.cars[line.name] = { id = id, body = events.train_body(id), line = line }
         events.on(id, "arrived", function(e) T.on_stopped(line.name, e) end)       -- (the pulse that comes with the stop: e.stop is its number)
