@@ -7,29 +7,38 @@
         v.run_script("turn:90,boom:40,idle:120")
         v.screenshot("shot.png", time_of_day=0.25)
         print(v.state_hash())
+
+Every `Voxelith()` starts the engine with a FRESH `--state-dir` (under the temp folder, removed when it closes) unless the arguments name one or `state_dir=DIR` is given (kept); VX_KEEP_STATE=1 turns
+it off (the project folder's own persisted state is used): two live runs of one script only agree when they start from the same state (docs/MCP.md, docs/SAVES.md).
 """
 import atexit, base64, collections, json, os, shutil, subprocess, tempfile, threading
 
 DEFAULT_BIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "build", "release", "voxelith")
 
 
-class McpError(RuntimeError):
-    pass
-
-
-def state_dir_args():
-    """`--state-dir DIR` with a FRESH directory (removed at exit): the project folder's persisted state (.state/store.json, .prefabs/, .events/state.txt, .state/wear.bin) is read at the start of a run and written at its
-    end, so a run that starts from what the last run left is not the same session: two live runs of one seed only agree from fresh state (engine 6a8e1fe, ENGINE_FEEDBACK Phase 27). Every tool that starts the engine passes it."""
-    d = tempfile.mkdtemp(prefix="descent_state_")
+def state_dir_args(prefix="voxelith_state_"):
+    """`--state-dir DIR` with a FRESH directory (removed at exit): the project folder's persisted state (.state/store.json, .prefabs/, .events/state.txt, .state/wear.bin) is read at the start of a run and written at
+    its end, so a run that starts from what the last run left is not the same session; two live runs of one script only agree from fresh state (engine 6a8e1fe, docs/MCP.md). For anything that starts the engine
+    other than `Voxelith()` (a `--replay`, a recording). VX_KEEP_STATE=1 gives no arguments (the project folder's own state)."""
+    if os.environ.get("VX_KEEP_STATE"): return []
+    d = tempfile.mkdtemp(prefix=prefix)
     atexit.register(shutil.rmtree, d, True)
     return ["--state-dir", d]
 
 
+class McpError(RuntimeError):
+    pass
+
+
 class Voxelith:
-    def __init__(self, args=(), binary=None, env=None):
+    def __init__(self, args=(), binary=None, env=None, state_dir=None):
         self.binary = binary or os.environ.get("VOXELITH", DEFAULT_BIN)
         args = list(args)
-        if "--state-dir" not in args and not os.environ.get("VX_KEEP_STATE"): args += state_dir_args()
+        self._own_state = None
+        if state_dir is not None: args += ["--state-dir", str(state_dir)] # (the caller's: kept)
+        elif "--state-dir" not in args and not os.environ.get("VX_KEEP_STATE"):
+            self._own_state = tempfile.mkdtemp(prefix="voxelith_state_") # (a fresh one for this session, removed when it closes)
+            args += ["--state-dir", self._own_state]
         self.p = subprocess.Popen([self.binary, "--mcp"] + args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace", bufsize=1,
                                   env=dict(os.environ, **(env or {})))
         # the engine logs to stderr: it is drained all the time (a full pipe would block the server in the middle of a call); the last lines are kept for error messages
@@ -133,3 +142,6 @@ class Voxelith:
             self.p.wait(timeout=60)
         except Exception:
             self.p.kill()
+        if getattr(self, "_own_state", None): # (the fresh state folder of this session)
+            shutil.rmtree(self._own_state, ignore_errors=True)
+            self._own_state = None

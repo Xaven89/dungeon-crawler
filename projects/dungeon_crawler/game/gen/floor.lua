@@ -899,6 +899,7 @@ function F.enter_room(id, old)
     A.say_key("room." .. room.theme, { prio = 0, key = "room_" .. id, cooldown = 99999 }, room.name)
     if G.music and G.music.on_room then G.music.on_room(id) end
     G.safe = F.is_safe(room) or (room.cellrole == "arrival" and not F.safe_closed()) or (G.gen.overcity.in_pub() ~= nil)
+    if G.safe then G.tally("safe_visits", room.theme) end
     if G.safe then
         G.player.set_checkpoint(id)
         if room.theme == "safe" or room.cellrole == "arrival" then G.show.deliver(room) end        -- (the sponsors' boxes only in the safe rooms, not in the rest stops)

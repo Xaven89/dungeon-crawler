@@ -176,6 +176,7 @@ function P.hurt(amount, src, opts)
     end
     amount = floor(amount + 0.5)
     s.hp = s.hp - amount
+    G.tally("damage", tostring(src or "?"), amount)
     if G.show then G.show.on_hurt(amount, src) end
     if src ~= "bleeding" then G.skills.bump("dodging") end
     P.flash = time.tick()
@@ -199,6 +200,7 @@ function P.die(src)
     P.dead = true
     P.dead_tick = time.tick()
     s.deaths = s.deaths + 1
+    G.tally("deaths", tostring(src or "?"))
     local lost = floor(s.gold * 0.2)
     s.gold = s.gold - lost
     P.death_gold_lost = lost

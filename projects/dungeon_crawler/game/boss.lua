@@ -26,6 +26,7 @@ function B.begin(lair)
         else return end
     end
     B.started = true
+    B.t0 = time.tick()
     B.lair_prev = L_.room
     local A = G.announcer
     local inst = E.spawn(L_.kind or "manager", L_.x, 0, L_.z, { room = L_.room, still = true, hp_mult = (1 + (G.state.level - 1) * ((L_.room == "arena") and 0.04 or 0.02)) * (L_.hp_mult or 1) * G.run.diff().hp })
@@ -193,6 +194,7 @@ function B.on_room_despawn(room)
 end
 
 function B.on_dead(inst)
+    G.tally("boss_ticks", inst.kind or "boss", time.tick() - (B.t0 or time.tick()))
     if B.lair.on_end then B.lair.on_end() end
     G.state.flags[B.lair.flag or "boss_dead"] = true
     B.started = false

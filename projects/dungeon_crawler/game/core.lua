@@ -155,6 +155,14 @@ function G.dust(name, preset, pos, size) return emitter.create(G.as_motes({ name
 
 local torch_n = 0
 G.torches = {}
+-- telemetry for the balance table (tools/balance.py): counters per floor, written by the game, never read by it
+G.stats = {}
+function G.tally(group, key, n)
+    local fl = (G.run and G.run.floor_no and G.run.floor_no()) or 0
+    local f = G.stats[fl]; if not f then f = {}; G.stats[fl] = f end
+    local g = f[group]; if not g then g = {}; f[group] = g end
+    g[key] = (g[key] or 0) + (n or 1)
+end
 G.WARM = { 1.0, 0.8, 0.55 }                      -- the two temperatures of the game's light: fire and lanterns are warm ...
 G.COOL = { 0.7, 0.8, 1.0 }
 G.LAMP = { 1.0, 0.93, 0.84 }                     -- (bucket B delta) the ceiling lamps: near white, so the palette keeps its hues; fire and sconces stay WARM                       -- ... runes, crystals, windows, the night of the over-city and the steel of floor 4 are cool; never both on one wall

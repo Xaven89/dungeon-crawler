@@ -330,6 +330,7 @@ function E.kill(inst, opts)
     inst.state = "dead"
     local x, y, z = wpos(inst)
     s.kills = s.kills + 1
+    G.tally("kills", inst.kind)
     A.bump("kills_" .. inst.kind)
     local k = A.bump("kills")
     if not T.boss then A.award("first_blood") end
@@ -429,11 +430,13 @@ local function pickup(l)
     local A = G.announcer
     if l.kind == "gold" then
         G.state.gold = G.state.gold + l.payload
+        G.tally("gold", "picked", l.payload)
         G.player.log("+" .. l.payload .. " gold", "#ffd24a")
         G.sfx.play("coin")
     else
         local d = G.items.defs[l.payload]
         if G.items.add(l.payload, 1) then
+            G.tally("items", d.rarity or "common")
             G.player.log(d.name, d.color)
             G.sfx.play("pickup")
             if d.rarity ~= "common" then A.say_key("item." .. d.rarity, { key = "item_" .. d.rarity, cooldown = 600 }, d.name) end

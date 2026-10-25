@@ -35,6 +35,9 @@ def wait_floor(v, limit=240):
         if o and o[0].endswith("done") and not o[0].startswith("loading"): return round(time.time() - t, 1)
     return None
 
+TALLY_LUA = """local G = Game; local fl = G.run.floor_no(); local s = G.stats[fl] or {}; local out = {}
+for group, g in pairs(s) do for key, n in pairs(g) do out[#out + 1] = group .. '|' .. key .. '|' .. n end end
+table.sort(out); print(table.concat(out, ';'))"""
 PATH = """
 local G = Game
 local P = G.floorgen.layout
@@ -224,6 +227,7 @@ def main():
             if (("--borough" in sys.argv and cur == int(sys.argv[sys.argv.index("--borough-floor") + 1] if "--borough-floor" in sys.argv else 1)) or ("--park" in sys.argv and cur == 3)) and borough_run(v): continue
             info = L(v, PATH, 0)[0].split("\t")
             print("FLOOR", info[0], "cells", info[1], "path", info[2])
+            t_floor0 = int(L(v, "print(time.tick())", 0)[0])
             rooms = [x.split(":") for x in info[2].split(",")]
             for rid, theme in rooms:
                 L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 150)
@@ -240,6 +244,8 @@ for _, s in ipairs(G.items.inv.bag) do
   end
 end""", 5)
                 print("  %-6s %-11s ticks %4d kills %2d  hp %s deaths %s level %s   %s" % (rid, theme, t, kills, end[1], end[2], end[3], counts(v))); sys.stdout.flush()
+            ticks_ = int(L(v, "print(time.tick())", 0)[0]) - t_floor0
+            print("TALLY", cur, ticks_, L(v, TALLY_LUA, 0)[0])        # (the game's own counters of this floor, for tools/balance.py)
             body_table(v, "floor %d end" % cur)
             print("  at the stairwell: the recap, then down")
             if fl < floors:

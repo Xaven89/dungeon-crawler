@@ -102,6 +102,10 @@ print(G.state.flags.boss_dead and 1 or 0, G.boss.inst and math.floor(G.boss.inst
         print("achievements:", o)
         errs = [l.strip() for l in v.stderr_tail(400).splitlines() if "[error]" in l or "[warn" in l]
         print("engine errors / warnings in the log tail:", errs[-8:] if errs else "none")
+        _t = v.lua("print(time.tick(), Game.run.floor_no())", ticks=0).get("output", [""])[0].split("\t")
+        print("TALLY", _t[1], _t[0], v.lua("""local G = Game; local fl = G.run.floor_no(); local s = G.stats[fl] or {}; local out = {}
+for group, g in pairs(s) do for key, n in pairs(g) do out[#out + 1] = group .. '|' .. key .. '|' .. n end end
+table.sort(out); print(table.concat(out, ';'))""", ticks=0).get("output", [""])[0])      # (the Orientation's counters, for tools/balance.py)
         print("state hash:", v.state_hash())
         print("\n".join(report))
     if "--no-replay" not in sys.argv:

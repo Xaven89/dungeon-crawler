@@ -11,3 +11,5 @@ bin/
 lib/
 .state/
 .events/
+.engine_install.sha
+tools/*.new
