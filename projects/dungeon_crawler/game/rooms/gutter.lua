@@ -25,10 +25,12 @@ W.builders[#W.builders + 1] = function()
     -- pipes across the ceiling and a few leaking ones: thin green streams into the water
     for z = 74, 94, 8 do G.fill(80, 6.0, z, 122, 6.6, z + 0.6, "metal") end
     for _, p in ipairs({ { 96, 78 }, { 110, 74 }, { 90, 88 }, { 104, 94 } }) do
-        G.fill(p[1], -0.2, p[2], p[1] + 0.25, 6.0, p[2] + 0.25, "toxic")
-        G.fill(p[1] - 0.2, 5.4, p[2] - 0.2, p[1] + 0.45, 6.2, p[2] + 0.45, "metal")
+        G.fill(p[1] - 0.2, 5.4, p[2] - 0.2, p[1] + 0.45, 6.2, p[2] + 0.45, "iron_dark")                -- (voxel-art) the leak: a nozzle and a thin stream
+        G.fill(p[1] - 0.05, 5.25, p[2] - 0.05, p[1] + 0.3, 5.4, p[2] + 0.3, "metal")
+        G.fill(p[1] + 0.0625, -0.2, p[2] + 0.0625, p[1] + 0.1875, 5.25, p[2] + 0.1875, "toxic_stream")
+        G.fill(p[1] - 0.25, -0.2, p[2] - 0.25, p[1] + 0.5, -0.1, p[2] + 0.5, "toxic_stain")
     end
-    G.text(81, 4.8, 96, "THE GUTTER - NO LIFEGUARD ON DUTY", { facing = "-z", material = "toxic", size = 1, depth = 1 })
+    G.text(81, 4.8, 96, "THE GUTTER - NO LIFEGUARD ON DUTY", { facing = "-z", material = "sign_warm", size = 1, depth = 1 })
     W.openings[#W.openings + 1] = { 114, 0, 69.7, 122, 6, 70.3 }
     -- the exit west, to the Ballroom
     G.corridor{ x = 76, z = 82, len = 4, w = 4, h = 4.2, axis = "x", floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }

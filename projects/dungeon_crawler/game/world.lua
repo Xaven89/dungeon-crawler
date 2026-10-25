@@ -52,10 +52,10 @@ local function build_lobby_voxels()
     G.fill(8, 0, 2.2, 18, 1.1, 3.8, "marble", "blocks")
     G.fill(7.9, 1.1, 2.1, 18.1, 1.25, 3.9, "gold")
     G.fill(8, 0, 3.8, 18, 0.3, 4, "dark_wood")
-    G.fill(2, 0.8, 9, 4, 0.85, 13, "marble", "rune_tile")
+    G.fill(2, 0.8, 9, 4, 0.85, 13, "polished_marble")
     -- the check-in crystal (the save point of the lobby): a rune crystal on a plinth, west wall
     G.fill(2, 0, 9, 4, 0.8, 13, "marble", "blocks")
-    G.sphere(3, 1.4, 11, 0.62, "rune")
+    G.sphere(3, 1.4, 11, 0.62, "crystal")
     -- queue ropes: posts and chains along the south of the desk
     for i = 0, 5 do
         local x = 8 + i * 2

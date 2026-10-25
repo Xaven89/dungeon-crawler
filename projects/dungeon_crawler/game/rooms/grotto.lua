@@ -38,10 +38,11 @@ local function stalactite(x, ytop, z, len)
     end
 end
 
-local function mushroom(x, z, h, r, mat)
-    G.pillar(x, z, 0.16 + r * 0.06, 0, h, "bone")
-    G.sphere(x, h, z, r, mat or "glowcap")
-    G.fill(x - r * 0.5, h - r - 0.12, z - r * 0.5, x + r * 0.5, h - r * 0.4, z + r * 0.5, "bone")          -- the gills under the cap
+local function mushroom(x, z, h, r, mat)                                                              -- (voxel-art) a stalk, gills, a flat cap, spots
+    G.pillar(x, z, 0.16 + r * 0.06, 0, h, "bone"); G.pillar(x, z, 0.24 + r * 0.06, 0, 0.12, "bone")
+    G.pillar(x, z, r * 0.92, h - 0.0625, h, "cave_floor")
+    G.pillar(x, z, r, h, h + 0.12, mat or "glowcap"); G.pillar(x, z, r * 0.75, h + 0.12, h + 0.24, mat or "glowcap"); G.pillar(x, z, r * 0.4, h + 0.24, h + 0.32, mat or "glowcap")
+    for k = 0, 3 do local a = k * 1.57 + r; G.fill(x + math.cos(a) * r * 0.55 - 0.04, h + 0.12, z + math.sin(a) * r * 0.55 - 0.04, x + math.cos(a) * r * 0.55 + 0.04, h + 0.19, z + math.sin(a) * r * 0.55 + 0.04, "plaster") end
 end
 
 W.builders[#W.builders + 1] = function()
@@ -83,15 +84,15 @@ W.builders[#W.builders + 1] = function()
         for i = 1, floor(r) do
             local a, d = G.rand() * 6.283, G.range(r * 0.15, r * 0.75)
             local x, z = cx + math.cos(a) * d, cz + math.sin(a) * d
-            if i % 3 == 0 then mushroom(x, z, G.range(0.8, 2.6), G.range(0.5, 1.1), (i % 2 == 0) and "glowcap" or "rune") 
+            if i % 3 == 0 then mushroom(x, z, G.range(0.8, 2.6), G.range(0.5, 1.1), (i % 2 == 0) and "glowcap" or "cave_cap") 
             else for k = 0, 4 do G.fill(x - 0.25 + k * 0.045, k * 0.2, z - 0.25 + k * 0.045, x + 0.25 - k * 0.045, k * 0.2 + 0.2, z + 0.25 - k * 0.045, "cavestone") end end
         end
         -- glow cap clumps
         for i = 1, floor(r * 1.5) do
             local a, d = G.rand() * 6.283, G.range(r * 0.2, r * 0.8)
             local x, z = cx + math.cos(a) * d, cz + math.sin(a) * d
-            G.fill(x, 0, z, x + 0.12, 0.12, z + 0.12, (i % 3 == 0) and "rune" or "glowcap")
-            G.fill(x + 0.1, 0, z + 0.05, x + 0.2, 0.09, z + 0.15, "glowcap")
+            G.fill(x, 0, z, x + 0.12, 0.12, z + 0.12, (i % 3 == 0) and "cave_cap" or "mossy")              -- (voxel-art) small caps, not glowing specks
+            G.fill(x + 0.1, 0, z + 0.05, x + 0.2, 0.09, z + 0.15, "bone")
         end
     end
     -- two little pools: a dip in the floor with water

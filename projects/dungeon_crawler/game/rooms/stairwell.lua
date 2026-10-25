@@ -23,11 +23,12 @@ W.builders[#W.builders + 1] = function()
     G.fill(56, 0, 136.2, 60.5, 0.5, 138, "carpet"); G.fill(56, 0.5, 137.4, 60.5, 1.3, 138, "carpet"); G.fill(56, 0.5, 136.2, 56.5, 0.9, 138, "carpet"); G.fill(60, 0.5, 136.2, 60.5, 0.9, 138, "carpet")
     G.fill(62, 0, 136.6, 64, 0.6, 138, "dark_wood")
     -- the vending machine (east wall): a tall box with a glowing front and a coin slot (the button)
-    G.fill(68, 0, 127, 70, 3.3, 130, "metal"); G.fill(67.6, 0.8, 127.2, 68, 2.6, 129.8, "lantern"); G.fill(67.55, 0.9, 129.1, 67.7, 1.2, 129.6, "gold")
-    G.fill(67.55, 2.0, 127.4, 67.7, 2.4, 128.7, "neon_red")
+    G.fill(68.7, 0, 127, 70, 3.3, 130, "metal")                                                        -- (voxel-art) the props' machine, its front to -x
+    deco_furniture("vending", function(u0, y0, v0, u1, y1, v1, mat) if mat then G.fill(68.7 - v1 + 0.9 - 0.96 + 0.06, y0, 128.5 + u0, 68.7 - v0 + 0.9 - 0.96 + 0.06, y1, 128.5 + u1, mat) end end)
+    G.fill(67.55, 0.9, 129.1, 67.7, 1.2, 129.6, "gold")                                                -- the coin slot (the button's box)
     G.text(67.5, 3.4, 127.2, "MILD RELIEF", { facing = "-x", material = "gold", size = 1, depth = 1 })
     -- the save crystal on a plinth
-    G.fill(66, 0, 124.6, 68.2, 0.9, 126.8, "marble", "blocks"); G.sphere(67.1, 1.6, 125.7, 0.62, "rune")
+    G.fill(66, 0, 124.6, 68.2, 0.9, 126.8, "marble", "blocks"); G.sphere(67.1, 1.6, 125.7, 0.62, "crystal")
     -- Honk's bed: a hay-filled box
     G.fill(56, 0, 131, 58.4, 0.4, 133.2, "dark_wood"); G.fill(56.2, 0.4, 131.2, 58.2, 0.6, 133, "sand")
     -- the stairs down: an opening in the floor with steps (south-east), and the sealed door at the bottom
@@ -47,7 +48,7 @@ W.things[#W.things + 1] = function()
     T.add_interact("vending", 67.6, 1.6, 128.4, "Use the Vending Machine", 2.8)
     -- the save crystal
     T.add_interact("save_crystal", 67.1, 1.4, 125.7, "Touch the crystal (save)", 2.4)
-    local crystal = events.button{ name = "save_crystal", box = { G.wx(66.8), G.wy(1.2), G.wz(125.4), G.wx(67.4), G.wy(1.9), G.wz(126) }, prompt = "Touch the crystal", on = "neon", off = "rune", press_ticks = 8 }
+    local crystal = events.button{ name = "save_crystal", box = { G.wx(66.8), G.wy(1.2), G.wz(125.4), G.wx(67.4), G.wy(1.9), G.wz(126) }, prompt = "Touch the crystal", on = "neon", off = "crystal", press_ticks = 8 }
     events.on(crystal, "pressed", function() G.save_now() end)
     -- the way down: a button on the sealed door, a volume at the top of the stairs
     local down = events.button{ name = "stairs_down", box = { G.wx(66), G.wy(-3.4), G.wz(139.4), G.wx(67.2), G.wy(-2.6), G.wz(139.5) }, prompt = "Descend to Floor 2", on = "neon", off = "neon_red", press_ticks = 10 }

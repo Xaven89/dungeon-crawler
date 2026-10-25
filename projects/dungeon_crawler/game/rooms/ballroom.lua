@@ -19,8 +19,8 @@ W.builders[#W.builders + 1] = function()
     G.text(47, 8.2, 66.8, "SEASON 7 BALL", { facing = "+z", material = "gold", size = 2, depth = 1 })
     -- stained windows along both long walls: a niche with a glowing back and glass in front
     for i, x in ipairs({ 42, 48, 54, 60, 66, 72 }) do
-        local back = ({ "lantern", "rune", "neon", "lantern", "rune", "neon" })[i]
-        G.fill(x, 3, 97.5, x + 2, 9, 98, back); G.clear(x, 3, 98, x + 2, 9, 98.5); G.fill(x - 0.1, 2.9, 97.8, x + 2.1, 3, 98, "gold"); G.fill(x - 0.1, 9, 97.8, x + 2.1, 9.1, 98, "gold")
+        local back = ({ "carpet", "obsidian", "mossy", "carpet", "obsidian", "mossy" })[i]          -- (voxel-art) painted panels (red, black, green), lit by the chandeliers
+        G.fill(x, 3, 97.5, x + 2, 9, 98, back); G.clear(x, 3, 98, x + 2, 9, 98.5); G.fill(x - 0.1, 2.9, 97.5, x, 9.1, 98, "gold"); G.fill(x + 2, 2.9, 97.5, x + 2.1, 9.1, 98, "gold"); G.fill(x - 0.1, 2.9, 97.8, x + 2.1, 3, 98, "gold"); G.fill(x - 0.1, 9, 97.8, x + 2.1, 9.1, 98, "gold")
     end
     -- chandeliers: a chain from the ceiling and a ring of lanterns
     for _, p in ipairs({ { 50, 76 }, { 57, 82 }, { 64, 76 }, { 50, 90 }, { 64, 90 } }) do

@@ -9,7 +9,7 @@ W.builders[#W.builders + 1] = function()
     -- the belt bed (4 m wide) is the floor itself; the ledges either side are raised half a metre
     G.fill(114, 0, 20, 116, 0.5, 70, "flagstone", "tiles"); G.fill(120, 0, 20, 122, 0.5, 70, "flagstone", "tiles")
     G.fill(115.8, 0.5, 20, 116, 1.3, 70, "metal"); G.fill(120, 0.5, 20, 120.2, 1.3, 70, "metal")
-    G.fill(115.95, 0, 22, 116, 0.06, 62, "neon_red"); G.fill(120, 0, 22, 120.05, 0.06, 62, "neon_red")              -- guide lights along the belt
+    G.fill(115.95, 0, 22, 116, 0.06, 62, "hazard_y"); G.fill(120, 0, 22, 120.05, 0.06, 62, "hazard_y")              -- guide lights along the belt
     for z = 21, 69, 4 do G.fill(115.6, 0.5, z, 116, 1.6, z + 0.3, "metal"); G.fill(120, 0.5, z, 120.4, 1.6, z + 0.3, "metal") end
     -- the furnace pit across the belt at the far end, z 62..68
     G.clear(116, -6, 62, 120, 0, 68)
@@ -25,7 +25,7 @@ end
 
 W.things[#W.things + 1] = function()
     for z = 28, 64, 12 do G.sconce(114, 3.2, z, "+x"); G.sconce(122, 3.2, z + 5, "-x") end
-    for z = 26, 62, 9 do G.lamp(118, z, 6.0, 1.0, { color = { 1.0, 0.45, 0.25 }, reach = 12, mat = "neon_red" }) end
+    for z = 26, 62, 9 do G.lamp(118, z, 6.0, 1.0, { color = { 1.0, 0.6, 0.35 }, reach = 12, mat = "lantern_glass" }) end
     G.torch(118, -1.5, 65, { preset = "campfire", color = { 1, 0.3, 0.1 }, reach = 16, name = "furnace_glow" })
     emitter.create(G.embers{ name = "furnace_embers", preset = "embers", pos = { G.mx(118), G.my(-1), G.mz(65) }, size = { 1.8, 0.5, 2.6 } })
     T.hazard("lava", 116, -6.4, 62, 120, 0.3, 68, 60)

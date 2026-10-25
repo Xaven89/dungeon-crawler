@@ -39,7 +39,7 @@ W.builders[#W.builders + 1] = function()
     G.fill(24, 2.5, 148.7, 36, 9, 149.1, "dark_wood", "planks")
     G.text(25, 7.2, 148.7, "EMPLOYEE OF", { facing = "-z", material = "gold", size = 2, depth = 1 })
     G.text(25.6, 5.2, 148.7, "THE MONTH:", { facing = "-z", material = "gold", size = 2, depth = 1 })
-    G.text(27.4, 3.2, 148.7, "NOBODY", { facing = "-z", material = "neon_red", size = 2, depth = 1 })
+    G.text(27.4, 3.2, 148.7, "NOBODY", { facing = "-z", material = "sign_red", size = 2, depth = 1 })
     -- the way in (north tunnel from the Grotto) and the way out (east, to the Stairwell: sealed until the manager is fired)
     W.openings[#W.openings + 1] = { 26.5, 0, 113.4, 29.5, 3.6, 115.2 }
     G.corridor{ x = 47, z = 132, len = 7.2, w = 3.6, h = 3.8, axis = "x", floor = "flagstone", wall = "dungeon_brick", wtex = "blocks" }
