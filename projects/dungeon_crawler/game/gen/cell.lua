@@ -46,7 +46,7 @@ function cellgen_make(H)
     local THREAT = { rat = 1, slime = 1.3, intern = 2, goblin = 2, slime_toxic = 2.4, spitter = 2.6, bandit = 3, orc = 4, imp = 3, samurai = 5, troll = 7, cyclops = 14 }
     local RADIUS = { rat = 0.35, slime = 0.5, slime_toxic = 0.5, intern = 0.5, goblin = 0.5, spitter = 0.5, bandit = 0.5, orc = 0.55, imp = 0.5, samurai = 0.5, troll = 0.8, cyclops = 1.0 }
     -- the pools by first floor: a quadrant draws 2-3 kinds from what exists on the floor
-    local ROSTER = { { "rat", 1 }, { "slime", 1 }, { "intern", 1 }, { "goblin", 1 }, { "slime_toxic", 2 }, { "spitter", 2 }, { "bandit", 2 }, { "orc", 2 }, { "imp", 3 }, { "samurai", 4 }, { "troll", 4 } }
+    local ROSTER = { { "rat", 1 }, { "slime", 1 }, { "intern", 1 }, { "goblin", 1 }, { "slime_toxic", 2 }, { "spitter", 2 }, { "bandit", 2 }, { "orc", 2 }, { "imp", 3 }, { "samurai", 6 }, { "troll", 5 } }
 
     local DIRS = { E = { 1, 0, "W" }, S = { 0, 1, "N" }, W = { -1, 0, "E" }, N = { 0, -1, "S" } }
     local CG = { CELL = 32, THEMES = THEMES, THREAT = THREAT, RADIUS = RADIUS, H = H }
@@ -625,7 +625,7 @@ function cellgen_make(H)
     function CG.budget(ctx, info, dist)
         local fl = ctx.floor
         local ramp = 0.6 + 0.4 * min(1, (dist or 0) / 12)
-        return (14 + 6 * (fl - 1)) * ramp
+        return (14 + 6 * (fl - 1)) * ramp * ((fl <= 2) and 1.15 or (fl == 8 and 1.6 or 1))          -- (balance: floors 1-2 hold 15 % more, floor 8 60 % more)
     end
 
     function CG.population(ctx, info, dist)
@@ -640,16 +640,17 @@ function cellgen_make(H)
         pop.budget = B
         local n = 0
         local kinds = info.mob and info.mob.kinds or { "rat" }
-        if role == "room" then n = max(3, min(14, floor(r.w * r.d / 75) + floor(h(ctx, ci, cj, 1, 121) * 3) + floor((fl - 1) / 2)))
+        if role == "room" then n = floor(r.w * r.d / 75) + floor(h(ctx, ci, cj, 1, 121) * 3) + floor((fl - 1) / 2) + ((fl == 8) and 4 or 0); if fl <= 2 then n = floor(n * 1.15 + 0.5) end; n = max(3, min((fl == 8) and 18 or 14, n))
         elseif role == "ante" then n = 3 + floor(h(ctx, ci, cj, 1, 121) * 3)
         elseif role == "prize" then n = 2 + floor(h(ctx, ci, cj, 1, 121) * 2) end
-        pop.elites, pop.ranged = 0, 0
+        pop.elites, pop.ranged, pop.trolls = 0, 0, 0
         for i = 1, n do
             local kind = kinds[1 + floor(h(ctx, ci, cj, 10 + i, 121) * #kinds)]
             local th = THREAT[kind] or 2
             local elite = (fl >= 2 and pop.elites < 1 and h(ctx, ci, cj, 30 + i, 121) < min(0.3, 0.07 * (fl - 1)))
             if elite then th = th * 1.6 end
             if pop.threat + th > B then break end
+            if kind == "troll" then if pop.trolls >= 1 then kind = "orc"; th = THREAT.orc else pop.trolls = pop.trolls + 1 end end          -- (balance: at most one troll in a room)
             if (kind == "spitter" or kind == "imp") then if pop.ranged >= 2 then kind = "rat"; th = THREAT.rat else pop.ranged = pop.ranged + 1 end end
             pop.threat = pop.threat + th
             if elite then pop.elites = pop.elites + 1 end

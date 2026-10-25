@@ -163,6 +163,9 @@ function G.tally(group, key, n)
     local g = f[group]; if not g then g = {}; f[group] = g end
     g[key] = (g[key] or 0) + (n or 1)
 end
+-- balance (the reviewer's decision after the bot's five-seed tables, ~/share/balance/step2_proposal.md): the monster damage multiplier by floor rises with the floor; the danger of a floor comes from who lives
+-- there and how many (gen/cell.lua: the roster and the budget), not from a table that jumps
+G.BAL = { dmg = { 1.0, 1.1, 1.25, 1.3, 1.35, 1.45, 1.7, 2.1 }, hp = { 1.35, 1.62, 1.89, 1.6, 1.8, 2.0, 2.2, 3.0 }, third_rail = 14 }          -- (iteration 2: the first floors were too safe for the bot, floor 8 too; the hp default is 1 + (floor-1) x 0.2)
 G.WARM = { 1.0, 0.8, 0.55 }                      -- the two temperatures of the game's light: fire and lanterns are warm ...
 G.COOL = { 0.7, 0.8, 1.0 }
 G.LAMP = { 1.0, 0.93, 0.84 }                     -- (bucket B delta) the ceiling lamps: near white, so the palette keeps its hues; fire and sconces stay WARM                       -- ... runes, crystals, windows, the night of the over-city and the steel of floor 4 are cool; never both on one wall

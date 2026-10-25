@@ -3,7 +3,7 @@
 --   dts     THE DTs         a countdown illness: after 4, 7 and 10 minutes on the floor every monster is a stage worse (marked, harder hitting, faster; the last stage hatches rats when it dies)
 --   muted   QUIET FLOOR     in some rooms spells and abilities do nothing
 --   crowd   CROWD PLEASER   a third more enemies, double the spectacle
---   third_rail THIRD RAIL   (floor 4 only, always) the bed of every track is live: standing in it (not on a car's deck, not on a platform) costs 8 health every half second
+--   third_rail THIRD RAIL   (floor 4 only, always) the bed of every track is live: standing in it (not on a car's deck, not on a platform) costs G.BAL.third_rail (14) health every half second
 Game = Game or {}
 local G = Game
 G.gen = G.gen or {}
@@ -65,7 +65,7 @@ function R.tick_third_rail(t)
     local lx, ly, lz = G.to_local(px, py, pz)
     local lvl = (ly > 4) and 1 or 0
     if transit_on_bed(lx, lz, lvl) and ly < lvl * 8 - 0.08 then
-        G.player.hurt(8, "the third rail", { pierce = true })
+        G.player.hurt(G.BAL.third_rail, "the third rail", { pierce = true })
         G.tally("zaps", "third_rail")
         if not R.rail_warned then R.rail_warned = true; G.announcer.say_key("rule.third_rail.zap", { prio = 2 }) end
         G.sfx.play("firebolt", px, py, pz, 0.5, 1.6)

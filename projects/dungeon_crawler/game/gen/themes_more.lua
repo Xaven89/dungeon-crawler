@@ -174,7 +174,7 @@ F.register("captive", {
         F.sconces(room, ctx, 8, 3.3); F.lamps(room, 14, 12)
         local id = "f" .. ctx.floor .. "cage" .. room.index
         local kind = ({ "orc", "troll", "cyclops", "samurai" })[1 + (ctx.floor + room.index) % 4]
-        if ctx.floor < 3 and kind == "cyclops" then kind = "orc" end
+        if ctx.floor < 6 and (kind == "cyclops" or kind == "samurai") then kind = "orc" end
         ctx.add(room, kind, cx, cz, 0, { captive = id })
         local x0, z0, x1, z1 = cx - 2, cz - 2, cx + 2, cz + 2
         local lock = events.button{ name = id .. "_lock", box = { G.wx(x0 + 1.5), G.wy(0.9), G.wz(z1 - 0.2), G.wx(x0 + 1.9) - 1, G.wy(1.3), G.wz(z1 + 0.1) - 1 }, prompt = "Open the cage", on = "neon", off = "gold", press_ticks = 10 }
