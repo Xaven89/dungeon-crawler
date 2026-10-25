@@ -215,8 +215,8 @@ function G.chain_lantern(xm, y_ceil, zm, hang, opts)
     opts = opts or {}
     local links = opts.links or 3
     local len = math.max(4, math.floor(hang * 16 / links))
-    local ok, c = pcall(chain.add, { anchor = { G.mx(xm), G.my(y_ceil), G.mz(zm) }, links = links, link = { length_voxels = len, radius = 1, material = "metal" },
-                                     tip = { material = "glass", size = { 4, 6, 4 } }, cone = opts.cone or 60 })
+    local ok, c = pcall(chain.add, { anchor = { G.mx(xm), G.my(y_ceil), G.mz(zm) }, links = links, link = { length_voxels = len, radius = 1, material = "iron_dark" },
+                                     tip = { material = "lantern_glass", size = { 4, 6, 4 } }, cone = opts.cone or 60 })
     if not ok or not c then return nil end
     torch_n = torch_n + 1
     local name = "chain_" .. torch_n

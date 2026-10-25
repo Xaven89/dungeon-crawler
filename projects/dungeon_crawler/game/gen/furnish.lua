@@ -790,8 +790,8 @@ function deco_item_draw(B, it, fl)
         deco_furniture("sofa", box, W, D)
     elseif id == "chain_lamp" then
         local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
-        B.fill(cx - 0.2, it.ceil - 0.1, cz - 0.2, cx + 0.2, it.ceil, cz + 0.2, "metal")
-        B.fill(cx - 0.05, it.ceil - 0.3, cz - 0.05, cx + 0.05, it.ceil - 0.1, cz + 0.05, "metal")
+        B.fill(cx - 0.2, it.ceil - 0.1, cz - 0.2, cx + 0.2, it.ceil, cz + 0.2, "iron_dark")
+        B.fill(cx - 0.05, it.ceil - 0.3, cz - 0.05, cx + 0.05, it.ceil - 0.1, cz + 0.05, "iron_dark")
     elseif id == "kiosk" then
         deco_furniture("kiosk", box, W, D)
     elseif id == "bones" then

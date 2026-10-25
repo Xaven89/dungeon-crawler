@@ -763,7 +763,11 @@ function deco_room(B, theme, room, doors, mk, fl)
         if not open then for z = room.z + 3, room.z + room.d - 2, 7 do B.fill(room.x, h - 1.4, z, room.x + room.w, h - 0.8, z + 0.6, "metal") end end
         for _, p in ipairs(open and {} or { { 0.3, 0.3 }, { 0.7, 0.7 } }) do
             local x, z = room.x + room.w * p[1], room.z + room.d * p[2]
-            B.fill(x, -0.2, z, x + 0.25, h - 1.4, z + 0.25, "toxic"); B.fill(x - 0.2, h - 2.0, z - 0.2, x + 0.45, h - 1.2, z + 0.45, "metal")
+            B.fill(x - 0.2, h - 2.0, z - 0.2, x + 0.45, h - 1.2, z + 0.45, "iron_dark")                                    -- the header box (voxel-art)
+            B.fill(x + 0.0, h - 2.6, z + 0.0, x + 0.25, h - 2.0, z + 0.25, "iron_dark")                                      -- the pipe down
+            B.fill(x - 0.05, h - 2.75, z - 0.05, x + 0.3, h - 2.6, z + 0.3, "metal")                                         -- its nozzle
+            B.fill(x + 0.0625, -0.2, z + 0.0625, x + 0.1875, h - 2.75, z + 0.1875, "toxic_stream")                          -- a thin stream
+            B.fill(x - 0.25, -0.2, z - 0.25, x + 0.5, -0.1, z + 0.5, "toxic_stain")                                         -- where it hits the pool
         end
     elseif theme == "ballroom" then
         for ix = 0, floor(room.w / 2) - 1 do for iz = 0, floor(room.d / 2) - 1 do
@@ -784,17 +788,35 @@ function deco_room(B, theme, room, doors, mk, fl)
         local ytop = h - 0.2
         for _, it in ipairs(deco_grotto_plan(room, mk)) do
             local x, z = it.x, it.z
+            local function jit(k, salt) return ((it.a * 97.13 + it.b * 31.7 + k * 7.31 + salt * 3.17) % 1) - 0.5 end    -- (voxel-art) deterministic, no new draws
+            local function band(k) return (k % 3 == 2) and "cave_floor" or "cavestone" end
             if it.kind == "stalagmite" then
-                local hh = 1.2 + it.a * 2.2
-                for k = 0, 6 do local hw = 0.5 - k * 0.06; B.fill(x - hw, k * hh / 7, z - hw, x + hw, (k + 1) * hh / 7, z + hw, "cavestone") end
+                local hh, n = 1.2 + it.a * 2.2, 8
+                local ox, oz = 0, 0
+                for k = 0, n - 1 do
+                    local hw = 0.55 - k * 0.06
+                    ox, oz = ox + jit(k, 1) * 0.12, oz + jit(k, 2) * 0.12
+                    local hx, hz = hw * (1 + jit(k, 3) * 0.4), hw * (1 + jit(k, 4) * 0.4)
+                    B.fill(x + ox - hx, k * hh / n, z + oz - hz, x + ox + hx, (k + 1) * hh / n, z + oz + hz, (k == 0) and "mossy" or band(k))
+                end
             else
                 local hh, rr = 0.8 + it.a * 1.6, 0.3 + it.b * 0.45
-                B.fill(x - 0.12, 0, z - 0.12, x + 0.12, hh, z + 0.12, "bone")
-                B.sphere(x, hh, z, rr, (it.i % 2 == 0) and "glowcap" or "rune")
+                local cap = (it.i % 2 == 0) and "glowcap" or "cave_cap"
+                B.pillar(x, z, 0.14, 0, hh, "bone")                                                                          -- the stalk
+                B.pillar(x, z, 0.2, 0, 0.12, "bone")                                                                         -- its foot
+                B.pillar(x, z, rr * 0.92, hh - 0.0625, hh, "cave_floor")                                                     -- the gills
+                B.pillar(x, z, rr, hh, hh + 0.12, cap); B.pillar(x, z, rr * 0.75, hh + 0.12, hh + 0.22, cap); B.pillar(x, z, rr * 0.4, hh + 0.22, hh + 0.28, cap)
+                for k = 0, 3 do local a = (it.b * 6.28) + k * 1.57; local px, pz = x + math.cos(a) * rr * 0.55, z + math.sin(a) * rr * 0.55
+                    B.fill(px - 0.04, hh + 0.12, pz - 0.04, px + 0.04, hh + 0.19, pz + 0.04, "plaster") end                 -- pale spots
             end
             if it.c < 0.45 and not open then
-                local hh = 0.8 + it.b * 1.6
-                for k = 0, 5 do local hw = 0.45 - k * 0.07; B.fill(x + 1.3 - hw, ytop - (k + 1) * hh / 6, z - hw, x + 1.3 + hw, ytop - k * hh / 6, z + hw, "cavestone") end
+                local hh, n = 0.8 + it.b * 1.6, 7
+                local ox, oz = 0, 0
+                for k = 0, n - 1 do
+                    local hw = 0.48 - k * 0.06
+                    ox, oz = ox + jit(k, 5) * 0.12, oz + jit(k, 6) * 0.12
+                    B.fill(x + 1.3 + ox - hw, ytop - (k + 1) * hh / n, z + oz - hw, x + 1.3 + ox + hw, ytop - k * hh / n, z + oz + hw, band(k + 1))
+                end
             end
         end
     elseif theme == "crypt" and not lay then
@@ -823,9 +845,16 @@ function deco_room(B, theme, room, doors, mk, fl)
         end
     elseif theme == "prize" then
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
-        B.fill(cx - 5, 0, cz - 2.5, cx + 5, 0.4, cz + 2.5, "dark_wood")
-        B.fill(cx - 5, 0.4, cz - 2.5, cx + 5, 0.45, cz + 2.5, "carpet")
-        for _, dx in ipairs({ -5.5, 5.2 }) do for _, dz in ipairs({ -3, 3 }) do if not deco_near_door(room, doors, cx + dx, cz + dz, 3) then B.pillar(cx + dx, cz + dz, 0.5, 0, h, "gold") end end end
+        B.fill(cx - 5, 0, cz - 2.5, cx + 5, 0.4, cz + 2.5, "polished_marble")
+        B.fill(cx - 5, 0.33, cz - 2.5, cx + 5, 0.4, cz + 2.5, "gold")
+        B.fill(cx - 4.8, 0.4, cz - 2.3, cx + 4.8, 0.45, cz + 2.3, "carpet")
+        for _, dx in ipairs({ -5.5, 5.2 }) do for _, dz in ipairs({ -3, 3 }) do if not deco_near_door(room, doors, cx + dx, cz + dz, 3) then
+            local px, pz = cx + dx, cz + dz                                                                                    -- (voxel-art) gold as trim
+            B.pillar(px, pz, 0.7, 0, 0.3, "plinth_stone"); B.pillar(px, pz, 0.62, 0.3, 0.4, "gold")
+            B.pillar(px, pz, 0.5, 0.4, h - 0.6, deco_floor_accent(fl).pillar)
+            B.pillar(px, pz, 0.56, 1.6, 1.7, "gold")
+            B.pillar(px, pz, 0.62, h - 0.6, h - 0.45, "gold"); B.pillar(px, pz, 0.7, h - 0.45, h, "plinth_stone")
+        end end end
     elseif theme == "captive" then
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
         local x0, z0, x1, z1 = cx - 2, cz - 2, cx + 2, cz + 2
@@ -930,10 +959,10 @@ function deco_room(B, theme, room, doors, mk, fl)
         for _, d in ipairs(doors or {}) do used[d.side] = true end
         local len = deco_text_len(txt)
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2
-        if not used.N then deco_text(B, cx - len / 2, 1.7, room.z + 0.0, txt, "+z", "neon_red")
-        elseif not used.S then deco_text(B, cx + len / 2, 1.7, room.z + room.d, txt, "-z", "neon_red")
-        elseif not used.W then deco_text(B, room.x, 1.7, cz + len / 2, txt, "+x", "neon_red")
-        elseif not used.E then deco_text(B, room.x + room.w, 1.7, cz - len / 2, txt, "-x", "neon_red") end
+        if not used.N then deco_text(B, cx - len / 2, 1.7, room.z + 0.0, txt, "+z", "sign_red")
+        elseif not used.S then deco_text(B, cx + len / 2, 1.7, room.z + room.d, txt, "-z", "sign_red")
+        elseif not used.W then deco_text(B, room.x, 1.7, cz + len / 2, txt, "+x", "sign_red")
+        elseif not used.E then deco_text(B, room.x + room.w, 1.7, cz - len / 2, txt, "-x", "sign_red") end
     end
     for _, c in ipairs(deco_crates(theme, room, doors, mk, fl or 1)) do deco_chest(B, c.tier, c.x, c.y, c.z, c.face) end
     if theme == "depot" and not lay then

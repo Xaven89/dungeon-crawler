@@ -88,7 +88,20 @@ F.register("grotto", {
         F.sconces(room, ctx, 12, 3)
         local ox, oz = F.off(room)
         local rects = {}
-        for _, it in ipairs(deco_grotto_plan(F.lroom(room), ctx.mk(room))) do rects[#rects + 1] = { it.x + ox - 0.6, it.z + oz - 0.6, it.x + ox + 0.6, it.z + oz + 0.6 } end
+        local nl = 0
+        for _, it in ipairs(deco_grotto_plan(F.lroom(room), ctx.mk(room))) do
+            rects[#rects + 1] = { it.x + ox - 0.6, it.z + oz - 0.6, it.x + ox + 0.6, it.z + oz + 0.6 }
+            if it.kind ~= "stalagmite" and nl < 8 then                 -- (voxel-art) the caps are the light: under each cap, in its colour
+                nl = nl + 1
+                local hh = 0.8 + it.a * 1.6
+                local col = (it.i % 2 == 0) and { 1.0, 0.35, 0.75 } or { 0.3, 1.0, 0.85 }
+                G.torch(it.x + ox, hh - 0.1, it.z + oz, { color = col, reach = 7, far = 22, intensity = 7, flicker = false, raw = true, name = room.id .. "_cap" .. nl })
+            end
+        end
+        local k = 0                                                     -- (voxel-art) a cold green wash on the walls, every 8 m, 1 m off the wall
+        for u = room.x + 4, room.x + room.w - 2, 8 do for _, z in ipairs({ room.z + 1, room.z + room.d - 1 }) do
+            k = k + 1; G.torch(u, 2.5, z, { color = { 0.45, 1.0, 0.8 }, reach = 7, far = 22, intensity = 5, flicker = false, raw = true, name = room.id .. "_wash" .. k })
+        end end
         local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)
         F.populate(room, ctx, r2, F.head_count(room, ctx.floor, r2), { allow = clear_of(rects, 0.5), kinds = { { "spitter", 4 }, { "slime", 3 }, { "slime_toxic", 2 }, { "rat", 2 } } })
     end,
