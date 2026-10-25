@@ -30,6 +30,7 @@ F.register("furnace", {
         G.torch(cx, 0.2, pl.z0 + 2, { preset = "campfire", color = { 1, 0.35, 0.1 }, reach = 18, far = 26, name = room.id .. "_glow1" })
         G.torch(cx, 0.2, pl.z1 - 2, { preset = "campfire", color = { 1, 0.35, 0.1 }, reach = 18, far = 26, name = room.id .. "_glow2" })
         emitter.create(G.embers{ name = room.id .. "_embers", preset = "embers", pos = { G.mx(cx), G.my(0.4), G.mz(cz) }, size = { (pl.x1 - pl.x0) / 2, 0.5, (pl.z1 - pl.z0) / 2 } })
+        G.sfx.bed(room.id, room.id .. ":lava", "lava_bed", cx, 0, cz); G.sfx.bed(room.id, room.id .. ":fire", "fire_bed", cx, 0.5, pl.z0 + 2)          -- (voxel-art / voxel-audio: the pool's and the glows' beds while the player is in the room)
         T.hazard("lava", pl.x0, -3.4, pl.z0, pl.x1, -0.1, pl.z1, 28 + ctx.floor * 2)       -- (balance step 1: the box ended at +0.35, so the stones and the causeway at 0 hurt too; now only whoever is IN the lava, like the toxic pool)
         local corners = { { room.x + 2, room.z + 2 }, { room.x + room.w - 2, room.z + 2 }, { room.x + 2, room.z + room.d - 2 }, { room.x + room.w - 2, room.z + room.d - 2 } }
         local out = outside(pl)
@@ -50,6 +51,7 @@ F.register("flooded", {
             G.torch(room.x + room.w * p[1] + 0.1, 1.5, room.z + room.d * p[2] + 0.1, { color = { 0.3, 1.0, 0.25 }, reach = 11, far = 22, preset = "fireflies", name = room.id .. "_glow" .. i })
         end
         emitter.create{ name = room.id .. "_mist", preset = "steam_vent", pos = { G.mx(cx), G.my(0), G.mz(cz) }, rate = 10, size = { (pl.x1 - pl.x0) / 3, 0.3, (pl.z1 - pl.z0) / 3 } }
+        G.sfx.bed(room.id, room.id .. ":water", "water_bed", cx, 0, cz)
         T.hazard("toxic", pl.x0, -1.3, pl.z0, pl.x1, -0.2, pl.z1, 4)
         F.populate(room, ctx, r, F.head_count(room, ctx.floor, r), { allow = outside(pl), margin = 1.2, kinds = { { "slime_toxic", 4 }, { "slime", 3 }, { "rat", 4 }, { "spitter", 1 } } })
     end,

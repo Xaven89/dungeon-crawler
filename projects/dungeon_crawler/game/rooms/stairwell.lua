@@ -44,12 +44,12 @@ W.things[#W.things + 1] = function()
     G.dust("stairwell_dust", "dust_motes", { G.mx(62), G.my(2.5), G.mz(132) }, { 6, 2, 6 })
     -- the vending machine
     local btn = events.button{ name = "vending_machine", box = { G.wx(67.55), G.wy(0.9), G.wz(129.1), G.wx(67.7) - 1, G.wy(1.2), G.wz(129.6) - 1 }, prompt = "Vending Machine of Mild Relief", on = "neon", off = "gold", press_ticks = 8 }
-    events.on(btn, "pressed", function() if G.shop then G.shop.open() end end)
+    events.on(btn, "pressed", function() if G.shop then G.shop.open("vending") end end)
     T.add_interact("vending", 67.6, 1.6, 128.4, "Use the Vending Machine", 2.8)
     -- the save crystal
     T.add_interact("save_crystal", 67.1, 1.4, 125.7, "Touch the crystal (save)", 2.4)
     local crystal = events.button{ name = "save_crystal", box = { G.wx(66.8), G.wy(1.2), G.wz(125.4), G.wx(67.4), G.wy(1.9), G.wz(126) }, prompt = "Touch the crystal", on = "neon", off = "crystal", press_ticks = 8 }
-    events.on(crystal, "pressed", function() G.save_now() end)
+    events.on(crystal, "pressed", function() G.save_now("crystal") end)
     -- the way down: a button on the sealed door, a volume at the top of the stairs
     local down = events.button{ name = "stairs_down", box = { G.wx(66), G.wy(-3.4), G.wz(139.4), G.wx(67.2), G.wy(-2.6), G.wz(139.5) }, prompt = "Descend to Floor 2", on = "neon", off = "neon_red", press_ticks = 10 }
     events.on(down, "pressed", function() if G.finish_floor then G.finish_floor() end end)

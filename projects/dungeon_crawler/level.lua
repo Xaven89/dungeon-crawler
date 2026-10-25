@@ -86,10 +86,10 @@ function on_start()
     include_optional("dev/boot.lua")      -- a developer's scratch script (not in git): sets up a situation for a screenshot, see tools/hudshot.sh
 end
 
-function G.save_now()
+function G.save_now(from)
     G.save()
     G.player.popup(tr("ui.save_done"), "#a6ffcc", true)
-    G.sfx.play("checkpoint")
+    G.sfx.play(from == "crystal" and "crystal_save" or "checkpoint")
     G.player.set_checkpoint(G.current_room == "stairwell" and "stairwell" or (G.state.checkpoint or "lobby"), true)
 end
 
@@ -152,6 +152,7 @@ function on_tick(t)
     G.enemies.tick(t)
     G.companion.tick(t)
     G.music.tick(t)
+    G.sfx.tick(t)
     if G.world.tick then G.world.tick(t) end
     if t % 1800 == 900 and G.state.class then G.save() end        -- progress is kept every 30 s (the world itself is saved on exit / F11)
 end

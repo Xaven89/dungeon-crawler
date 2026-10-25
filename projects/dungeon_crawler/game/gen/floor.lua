@@ -294,6 +294,7 @@ function F.drop_cell(id)
     F.despawn(id)
     G.world.populate_list[id] = nil
     G.gen.overcity.drop_cell(id)
+    G.sfx.drop(id .. ":")
 end
 
 -- ---------------------------------------------------------------------------------------------- the cells around the player
@@ -571,8 +572,11 @@ function F.pit_cover(room, open)
     local cx, cz = room.x + room.w / 2, room.z + room.d / 2
     local key = "cov_" .. room.id
     local flags = G.state.flags
-    if open and flags[key] then G.cyl_clear(cx, cz, 3.2, -0.3, 0); flags[key] = nil
+    if open and flags[key] then
+        G.cyl_clear(cx, cz, 3.2, -0.3, 0); flags[key] = nil
+        if G.sfx.loop_stop(room.id .. ":ff", 0.1) then G.sfx.play("ff_down", cx, 0.5, cz) end
     elseif not open and not flags[key] then G.pillar(cx, cz, 3.2, -0.3, 0, "forcefield"); flags[key] = true end
+    if not open then G.sfx.loop(room.id .. ":ff", "ff_hum", cx, 0.5, cz, 1) end
 end
 
 function F.refresh_pits()
@@ -705,14 +709,14 @@ function F.lair_close(P, id)
         while x < r.x1 do n = n + 1; local xx = x; after(n * 3, function() if F.bars[id] then G.fill(xx, 0, r.z0, xx + 0.14, h, r.z1, "metal") end end); x = x + 0.5 end
         after(n * 3 + 3, function() if F.bars[id] then G.fill(r.x0, 0, r.z0, r.x1, 0.12, r.z1, "metal"); G.fill(r.x0, h - 0.12, r.z0, r.x1, h, r.z1, "metal") end end)
     end
-    G.sfx.play("lever", (r.x0 + r.x1) / 2, 1.5, (r.z0 + r.z1) / 2, 0.9, 0.7)
+    G.sfx.play("bars_close", (r.x0 + r.x1) / 2, 1.5, (r.z0 + r.z1) / 2)
 end
 function F.lair_open(id)
     local r = F.bars[id]
     if not r then return end
     F.bars[id] = nil
     G.clear(r.x0, 0, r.z0, r.x1, 5.0, r.z1)
-    G.sfx.play("lever", (r.x0 + r.x1) / 2, 1.5, (r.z0 + r.z1) / 2, 0.8, 1.0)
+    G.sfx.play("bars_open", (r.x0 + r.x1) / 2, 1.5, (r.z0 + r.z1) / 2)
 end
 function F.lair_open_all()
     local ids = {}
@@ -735,11 +739,7 @@ function F.walls_tick(P, clock)
                     local changed = (want ~= e.open)
                     e.open = want
                     pcall(events.command, e.id, want and "open" or "close")
-                    if not changed then goto continue end
-                    local px, py, pz = player.pos(); local lx, _, lz = G.to_local(px, py, pz)
-                    if lx and G.dist2(lx, lz, e.x, e.z) < 36 then G.sfx.play("lever", e.x, 1.5, e.z, 0.5, want and 1.3 or 0.8) end
                 end
-                ::continue::
             end
         end
     end
@@ -748,6 +748,7 @@ end
 function F.ff_clear(ring)
     local p = ring.pit
     G.clear(p.x0, 0, p.z0, p.x1, 0.55, p.z1)
+    if G.sfx.loop_stop(ring.origin .. ":ff", 0.1) then G.sfx.play("ff_down", (p.x0 + p.x1) / 2, 0.5, (p.z0 + p.z1) / 2) end
 end
 
 function F.lair_cleared(P, id, tier)
@@ -823,15 +824,16 @@ function F.make_ring(P, ring)
         ring.walls = {}
         for _, w in ipairs(plan) do
             local y0, y1 = G.wy(0), G.wy(w.h)
-            local id = events.door{ name = ring.id .. "_wall" .. w.id, box = { G.wx(ox + w.x0), y0, G.wz(oz + w.z0), G.wx(ox + w.x1) - 1, y1 - 1, G.wz(oz + w.z1) - 1 }, travel = { 0, -(y1 - y0), 0 }, speed = 3 }
+            local id = events.door{ name = ring.id .. "_wall" .. w.id, box = { G.wx(ox + w.x0), y0, G.wz(oz + w.z0), G.wx(ox + w.x1) - 1, y1 - 1, G.wz(oz + w.z1) - 1 }, travel = { 0, -(y1 - y0), 0 }, speed = 3, sound = false }
             ring.walls[#ring.walls + 1] = { id = id, w = w, open = false, x = ox + (w.x0 + w.x1) / 2, z = oz + (w.z0 + w.z1) / 2 }
+            G.sfx.watch_door(ring.origin .. ":wall" .. w.id, id, ox + (w.x0 + w.x1) / 2, oz + (w.z0 + w.z1) / 2)
         end
     end
     -- the stairwell: under the forcefield until the boss falls
     local vol = events.volume{ name = ring.id .. "_down", box = { G.wx(p.x0), G.wy(-1.4), G.wz(p.z0), G.wx(p.x1) - 1, G.wy(-0.3), G.wz(p.z1) - 1 }, player = true, bodies = false }
     events.on(vol, "enter", function() if G.state.flags[ring.ff_flag] then F.stairs_enter(ring.id) end end)
     G.traps.add_interact(ring.id .. "_down", (p.x0 + p.x1) / 2, 0.4, (p.z0 + p.z1) / 2, tr("ui.descend", G.run.next_floor(P.floor) or "?"), 3.2, function() return G.state.flags[ring.ff_flag] end)
-    if G.state.flags[ring.ff_flag] then F.ff_clear(ring) end
+    if G.state.flags[ring.ff_flag] then F.ff_clear(ring) else G.sfx.loop(ring.origin .. ":ff", "ff_hum", (p.x0 + p.x1) / 2, 0.5, (p.z0 + p.z1) / 2, 1) end
 end
 
 -- ---------------------------------------------------------------------------------------------- stairs, signs, safe rooms

@@ -47,9 +47,11 @@ W.things[#W.things + 1] = function()
     emitter.create{ name = "boiler_steam_2", preset = "steam_vent", pos = { G.mx(104), G.my(0.2), G.mz(22) } }
     emitter.create(G.embers{ name = "boiler_embers", preset = "embers", pos = { G.mx(93), G.my(0.4), G.mz(13) }, size = { 3, 0.5, 12 } })
     T.hazard("lava", 90, -3.4, 0, 96, 0.35, 26, 28)
+    G.sfx.bed("boiler", "boiler:lava", "lava_bed", 93, 0, 13)
     -- the drawbridge: a vertical slab on the west bank, lowered by the lever
     local bridge = events.door{ name = "drawbridge", material = "metal", box = { G.wx(90), G.wy(0), G.wz(10.8), G.wx(90) + 3, G.wy(0) + 94, G.wz(13.2) - 1 },
-                                hinge = { axis = "z", at = { G.wx(90), G.wy(0), G.wz(10.8) }, open = -90, seconds = 2.2 } }
+                                hinge = { axis = "z", at = { G.wx(90), G.wy(0), G.wz(10.8) }, open = -90, seconds = 2.2 }, sound = false }
+    G.sfx.watch_door("boiler:drawbridge", bridge, 90, 12)
     local lever = events.lever{ name = "drawbridge_lever", box = { G.wx(87.2), G.wy(0.9), G.wz(8.8), G.wx(87.6) - 1, G.wy(1.5), G.wz(9.2) - 1 }, prompt = "Lower the drawbridge", on = "neon", off = "metal" }
     events.connect(lever, "on", bridge, "open")
     events.connect(lever, "off", bridge, "close")

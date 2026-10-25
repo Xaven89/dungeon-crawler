@@ -25,7 +25,7 @@ local function load_sound(name)
 end
 -- variation sets (voxel-audio step 2): name.wav, name_2.wav .. name_N.wav, played in turn. A counter, not a random number: the sound is cosmetic, the simulation and its hash are untouched and a replay
 -- plays the same variants. Never the same variant twice in a row.
-G.sfx.variants = { swing = 4, hit = 4, goblin_hit = 4, hurt = 4, hit_crit = 2, boss_hit = 2, bone = 3, honk_bite = 3, zap = 3 }
+G.sfx.variants = { swing = 4, hit = 4, goblin_hit = 4, hurt = 4, hit_crit = 2, boss_hit = 2, bone = 3, honk_bite = 3, zap = 3, slab_move = 2, slab_stop = 2 }
 local VORDER, vcount, vlast = { 1, 3, 2, 4, 3, 1, 4, 2 }, {}, {}
 local function variant(name)
     local n = G.sfx.variants[name]
@@ -58,6 +58,55 @@ function G.sfx.play_world(name, wx, wy, wz, vol, pitch)
     return sound.play{ file = "sounds/" .. name .. ".wav", at = { wx, wy, wz }, volume = vol or 1, pitch = pitch or 1, bus = "sfx" }
 end
 function G.sfx.preload(names) for _, n in ipairs(names) do load_sound(n) end end
+
+-- ---------------------------------------------------------------------------------------------- the world's loops and moving doors (voxel-audio step 2b): cosmetic, nothing here touches the simulation
+-- G.sfx.loop(key, file, lx, ly, lz [, fade]): one 3D loop at a local position unless that key already plays; loop_stop(key [, fade]); drop(prefix): everything whose key starts with the prefix (a cell going away).
+-- G.sfx.bed(room, key, file, lx, ly, lz): a loop that plays while the player is in that room (fade in 2 s, out 2 s). G.sfx.watch_door(key, id, lx, lz): a door's travel is a `slab_move` that ends in a `slab_stop`.
+G.sfx.loops, G.sfx.beds, G.sfx.doors = {}, {}, {}
+function G.sfx.loop(key, file, lx, ly, lz, fade)
+    if G.sfx.loops[key] then return end
+    G.sfx.logline(file, "sfx", 1, 1, true)
+    G.sfx.loops[key] = sound.play{ file = "sounds/" .. file .. ".wav", loop = true, at = { G.mx(lx), G.my(ly), G.mz(lz) }, bus = "sfx", fade_in = fade or 1 } or true
+end
+function G.sfx.loop_stop(key, fade)
+    local h = G.sfx.loops[key]
+    if h == nil then return false end
+    G.sfx.loops[key] = nil
+    if type(h) == "number" then pcall(sound.stop, h, fade or 0.5) end
+    return true
+end
+local function has_prefix(k, prefix) return k:sub(1, #prefix) == prefix end
+function G.sfx.drop(prefix)
+    for k in pairs(G.sfx.loops) do if has_prefix(k, prefix) then G.sfx.loop_stop(k, 0.3) end end
+    for k in pairs(G.sfx.beds) do if has_prefix(k, prefix) then G.sfx.beds[k] = nil end end
+    for k, w in pairs(G.sfx.doors) do if has_prefix(k, prefix) then if type(w.h) == "number" then pcall(sound.stop, w.h, 0.1) end; G.sfx.doors[k] = nil end end
+end
+function G.sfx.reset() G.sfx.drop("") end
+function G.sfx.bed(room, key, file, lx, ly, lz) G.sfx.beds[key] = { room = room, file = file, x = lx, y = ly, z = lz } end
+function G.sfx.watch_door(key, id, lx, lz) G.sfx.doors[key] = { id = id, x = lx, z = lz } end
+function G.sfx.tick(t)
+    if t % 5 ~= 0 then return end
+    if next(G.sfx.doors) then
+        local px, py, pz = player.pos()
+        local plx, _, plz = G.to_local(px, py, pz)
+        for k, w in pairs(G.sfx.doors) do
+            local ok, st = pcall(events.state, w.id)
+            local mv = ok and st and st.moving
+            if mv and not w.h then
+                if plx and G.dist2(plx, plz, w.x, w.z) < 30 then w.h = G.sfx.play("slab_move", w.x, 1.5, w.z) or true end
+            elseif not mv and w.h then
+                if type(w.h) == "number" then pcall(sound.stop, w.h, 0.08) end
+                G.sfx.play("slab_stop", w.x, 1.5, w.z); w.h = nil
+            end
+        end
+    end
+    if t % 30 == 0 then
+        for k, b in pairs(G.sfx.beds) do
+            if G.current_room == b.room then G.sfx.loop("bed:" .. k, b.file, b.x, b.y, b.z, 2)
+            else G.sfx.loop_stop("bed:" .. k, 2) end
+        end
+    end
+end
 
 -- ---------------------------------------------------------------------------------------------- messages
 A.queue = {}

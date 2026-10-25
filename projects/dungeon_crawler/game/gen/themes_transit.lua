@@ -144,12 +144,12 @@ F.register("hub", {
         local function wb(x0, y0, z0, x1, y1, z1) return { G.wx(x0), G.wy(y0), G.wz(z0), G.wx(x1) - 1, G.wy(y1), G.wz(z1) - 1 } end
         local vbox = ax and wb(vx - 0.5, 0.9, vz + 0.45, vx + 0.5, 1.5, vz + 0.65) or wb(vx + 0.45, 0.9, vz - 0.5, vx + 0.65, 1.5, vz + 0.5)
         local btn = events.button{ name = id .. "_vending", box = vbox, prompt = "Vending Machine of Mild Relief", on = "neon", off = "gold", press_ticks = 8 }
-        events.on(btn, "pressed", function() if G.shop then G.shop.open() end end)
+        events.on(btn, "pressed", function() if G.shop then G.shop.open("vending") end end)
         T.add_interact(id .. "_vending", ax and vx or vx + 0.9, 1.6, ax and vz + 0.9 or vz, "Use the Vending Machine", 2.8)
         T.add_interact(id .. "_crystal", cx, 1.4, cz, "Touch the crystal (save)", 2.4)
         local cb = ax and wb(cx - 0.3, 1.2, cz - 0.3, cx + 0.3, 1.9, cz + 0.3) or wb(cx - 0.3, 1.2, cz - 0.3, cx + 0.3, 1.9, cz + 0.3)
         local crystal = events.button{ name = id .. "_save", box = cb, prompt = "Touch the crystal", on = "neon", off = "crystal", press_ticks = 8 }
-        events.on(crystal, "pressed", function() G.save_now() end)
+        events.on(crystal, "pressed", function() G.save_now("crystal") end)
         -- the sponsors' boxes: along the south platform's wall (axis x) / the east platform's wall (axis z)
         room.box_spots = {}
         for k = 1, 3 do

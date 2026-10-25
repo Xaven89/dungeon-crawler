@@ -9,7 +9,7 @@ S.stock = {
     { id = "firecracker", price = 24 }, { id = "cheese", price = 70 }, { id = "hivis", price = 70 }, { id = "dagger_cd", price = 85 },
 }
 
-function S.open() G.screen = "shop"; G.sfx.play("ui_open"); G.announcer.say_key("shop.enter", { key = "shop_enter", cooldown = 5000 }) end
+function S.open(from) S.vending = (from == "vending"); G.screen = "shop"; G.sfx.play("ui_open"); G.announcer.say_key("shop.enter", { key = "shop_enter", cooldown = 5000 }) end
 
 function S.buy(i)
     local e = S.stock[i]
@@ -20,6 +20,7 @@ function S.buy(i)
     if not G.items.add(e.id, 1) then G.player.popup("BAG FULL", "#ff8080"); return false end
     s.gold = s.gold - price
     G.sfx.play("coin")
+    if S.vending then G.sfx.play("vend_dispense") end
     G.announcer.say_key("shop.buy", { key = "shop_buy", cooldown = 900 })
     G.announcer.award("shopper")
     G.save()

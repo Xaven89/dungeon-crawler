@@ -259,6 +259,7 @@ F.register("warlord", {
         local cx = room.x + room.w / 2
         F.sconces(room, ctx, 8, 3.3); F.lamps(room, 15, 12)
         G.brazier(cx - 5, room.z + room.d - 3, { reach = 12, far = 24 }); G.brazier(cx + 5, room.z + room.d - 3, { reach = 12, far = 24 })
+        G.sfx.bed(room.id, room.id .. ":fire", "fire_bed", cx, 1, room.z + room.d - 3)
         local kind = (ctx.floor >= 6) and "cyclops" or "troll"          -- (balance: the Cyclops first appears on floor 6)
         local extra = { hp = (kind == "troll") and 1.8 or 1 }
         -- from floor 3 a rival crawler may hold the first warlord room of the floor (the one you did not kill follows you from floor to floor)

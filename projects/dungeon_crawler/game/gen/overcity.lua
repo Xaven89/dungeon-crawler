@@ -206,7 +206,7 @@ function OC.make_village(P, sup, origin_id)
             G.torch(ox + f.x, 0.8, oz + f.z, { preset = "campfire", color = { 1, 0.55, 0.2 }, reach = 12, far = 30, name = vid .. "_fire" })
             G.torch(ox + c.x, 2.6, oz + c.z, { preset = "magic_sparks", color = { 0.62, 0.72, 1.0 }, reach = 9, far = 30, name = vid .. "_crystal" })
             G.torch(ox + b.cx, 3.2, oz + b.cz, { preset = "torch", reach = 10, far = 30, intensity = 12 * dk, name = vid .. "_pubcl" })
-            button(vid .. "_save", ox + c.x - 0.25, 1.3, oz + c.z - 0.25, ox + c.x + 0.25, 1.9, oz + c.z + 0.25, tr("oc.pub_save"), function() G.save_now() end)
+            button(vid .. "_save", ox + c.x - 0.25, 1.3, oz + c.z - 0.25, ox + c.x + 0.25, 1.9, oz + c.z + 0.25, tr("oc.pub_save"), function() G.save_now("crystal") end)
             button(vid .. "_note", ox + nt.x - 0.4, 1.4, oz + nt.z - 0.1, ox + nt.x + 0.4, 1.9, oz + nt.z + 0.15, tr("oc.pub_note"), function() OC.read_note() end)
             G.world.checkpoints[v.pub.id] = { x = ox + b.cx, y = 0.1, z = oz + b.cz + 1.5 }
             local lay, inner = deco_pub_layout(b, function(salt) return deco_rng(H, P.floor, sup.ci, sup.cj, salt or 1) end)

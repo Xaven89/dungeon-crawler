@@ -28,7 +28,8 @@ W.things[#W.things + 1] = function()
         G.state.flags.closet_door_v2 = true
     end
     local slab = { G.wx(20.8), G.wy(0), G.wz(-0.25), G.wx(23.4) - 1, G.wy(2.9) - 1, G.wz(0) - 1 }
-    local door = events.door{ name = "closet_slider", material = "dark_wood", box = slab, travel = { 0, 50, 0 }, speed = 2 }
+    local door = events.door{ name = "closet_slider", material = "dark_wood", box = slab, travel = { 0, 50, 0 }, speed = 2, sound = false }
+    G.sfx.watch_door("lobby:closet_slider", door, 22.1, 0)
     local plate = events.volume{ name = "closet_plate", box = { G.wx(20.2), G.wy(0), G.wz(-2.4), G.wx(24.0), G.wy(1.4), G.wz(2.4) }, player = true, bodies = true, min_mass = 3 }
     events.connect(plate, "enter", door, "open")
     events.connect(plate, "exit", door, "close", { delay = 120 })
