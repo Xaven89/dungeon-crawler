@@ -23,8 +23,22 @@ local function load_sound(name)
     end
     return v
 end
+-- variation sets (voxel-audio step 2): name.wav, name_2.wav .. name_N.wav, played in turn. A counter, not a random number: the sound is cosmetic, the simulation and its hash are untouched and a replay
+-- plays the same variants. Never the same variant twice in a row.
+G.sfx.variants = { swing = 4, hit = 4, goblin_hit = 4, hurt = 4, hit_crit = 2, boss_hit = 2, bone = 3, honk_bite = 3 }
+local VORDER, vcount, vlast = { 1, 3, 2, 4, 3, 1, 4, 2 }, {}, {}
+local function variant(name)
+    local n = G.sfx.variants[name]
+    if not n then return name end
+    local c = (vcount[name] or 0) + 1; vcount[name] = c
+    local k = (VORDER[(c - 1) % #VORDER + 1] - 1) % n + 1
+    if k == vlast[name] then k = k % n + 1 end
+    vlast[name] = k
+    return k == 1 and name or (name .. "_" .. k)
+end
 -- play a sound: at a local position (metres) in the world, or, with no position, 2D at the listener (no distance, no pan) on the sfx bus. `bus` and `loop` can be given in opts (a table as the last argument).
 function G.sfx.play(name, lx, ly, lz, vol, pitch)
+    name = variant(name)
     local idx = load_sound(name)
     if idx < 0 then return false end
     G.sfx.logline(name, "sfx", vol, pitch, lx ~= nil)
@@ -38,6 +52,7 @@ function G.sfx.voice(name, vol, pitch)
     return sound.play{ file = "sounds/" .. name .. ".wav", volume = vol or 1, pitch = pitch or 1, bus = "voice" }
 end
 function G.sfx.play_world(name, wx, wy, wz, vol, pitch)
+    name = variant(name)
     if load_sound(name) < 0 then return false end
     G.sfx.logline(name, "sfx", vol, pitch, true)
     return sound.play{ file = "sounds/" .. name .. ".wav", at = { wx, wy, wz }, volume = vol or 1, pitch = pitch or 1, bus = "sfx" }
