@@ -58,7 +58,7 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         L(v, "local G=Game; G.dg = G.enemies.spawn('goblin', %f, 0, %f, { room = '%s' }); G.state.flags.god = true" % (cx + 3.0, cz, rid), 30)
         L(v, "local G=Game; G.enemies.kill(G.dg, { source = 'test' })", 90)
         shot("dead_goblin_f1", 1 * 1024 + 64, 8, cx, 1.7, cz, cx + 3.0, 0.4, cz, fov=70)
-    for name, theme in (("ballroom_f1", "ballroom"), ("flooded_f1", "flooded"), ("library_f1", "library"), ("safe_f1", "safe"), ("rest_f1", "rest")):      # single-room materials (polished_marble, wet_flagstone): judged on their own rooms, from a corner
+    for name, theme in (("ballroom_f1", "ballroom"), ("flooded_f1", "flooded"), ("library_f1", "library"), ("safe_f1", "safe"), ("rest_f1", "rest"), ("room_stairs_free", "stairs_free"), ("room_grotto", "grotto"), ("room_flooded", "flooded"), ("room_prize", "prize")):      # single-room materials (polished_marble, wet_flagstone): judged on their own rooms, from a corner
         if name in only:
             r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == '%s' then print(id, r.x, r.z, r.w, r.d); break end end" % theme, 0)
             if not r: print(name, "no such room on floor 1 of this seed"); continue

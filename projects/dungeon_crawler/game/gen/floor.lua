@@ -571,7 +571,7 @@ function F.pit_cover(room, open)
     local key = "cov_" .. room.id
     local flags = G.state.flags
     if open and flags[key] then G.cyl_clear(cx, cz, 3.2, -0.3, 0); flags[key] = nil
-    elseif not open and not flags[key] then G.pillar(cx, cz, 3.2, -0.3, 0, "neon_red"); flags[key] = true end
+    elseif not open and not flags[key] then G.pillar(cx, cz, 3.2, -0.3, 0, "forcefield"); flags[key] = true end
 end
 
 function F.refresh_pits()
@@ -662,7 +662,7 @@ function F.lair_of(P, id)
     local room = P.rooms[id]
     local tier = room.ring and "borough" or "quarter"
     local S = F.STAGING[tier]
-    local bx, bz = room.x + room.w / 2, room.z + room.d / 2 + (room.ring and 2 or 0)
+    local bx, bz = room.x + room.w / 2, room.z + room.d / 2 + (room.ring and -5 or 0)      -- (a borough boss stands north of the pit, not on its cover: his slam digs the floor and he fell into the pit in a trace of seed 99, old and new models alike)
     if room.theme == "arena" then                       -- the boss stands on the dais of his room's layout
         local _, H = F.cg()
         local lay = deco_layout(room.theme, room.info.room, F.local_doors(room), function(salt) return deco_rng(H, P.floor, room.ci, room.cj, salt or 1) end, P.floor)

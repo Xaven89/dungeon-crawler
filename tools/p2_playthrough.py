@@ -85,7 +85,9 @@ for _, i in pairs(G.enemies.list) do if not i.dead and i.room == '%s' then local
 table.sort(t); print(string.format('player (%%.1f,%%.1f,%%.1f) hp %%.0f | ', px, py, pz, G.state.hp) .. table.concat(t, ' | '))""" % room, 0))
             if os.environ.get("BOSS_TRACE") == "2":
                 print("   boss/walls", L(v, """local G=Game; local P = G.floorgen.layout; local ring = P.rings and P.rings['%s']; local out = {}
-for _, i in pairs(G.enemies.list) do if i.T and i.T.boss and not i.dead then local x, y, z = G.enemies.position(i); out[#out + 1] = string.format('boss at (%%.1f,%%.2f,%%.1f) hp %%.0f', x - G.mx(0), y, z - G.mz(0), i.hp) end end
+local i0; for _, i in pairs(G.enemies.list) do if i.T and i.T.boss and not i.dead then i0 = i; local x, y, z = G.enemies.position(i); out[#out + 1] = string.format('boss at (%%.1f,%%.2f,%%.1f) hp %%.0f state %%s ai_is_boss %%s', x - G.mx(0), y, z - G.mz(0), i.hp, tostring(i.state), tostring(i.ai == G.boss.ai)) end end
+if i0 then local x, y, z = G.enemies.position(i0); local col = {}; for k = 0, 12 do local m = world.material_at(math.floor(x * 16), math.floor((y + 1.0 - k * 0.5) * 16), math.floor(z * 16)); col[#col + 1] = (m and m ~= 'air') and m or '.' end; out[#out + 1] = 'column below (every 0.5 m from +1.0): ' .. table.concat(col, ' ') end
+out[#out + 1] = string.format('safe %%s room %%s lair %%s started %%s active %%s', tostring(G.safe), tostring(G.current_room), tostring(G.boss.lair and G.boss.lair.room), tostring(G.boss.started), tostring(G.boss.active))
 if ring and ring.walls then for _, w in ipairs(ring.walls) do out[#out + 1] = string.format('wall %%s %%s (%%.0f,%%.0f)', tostring(w.w.id), w.open and 'OPEN' or 'shut', w.x, w.z) end end
 print(table.concat(out, ' | '))""" % room, 0))
         if os.environ.get("BODIES_TRACE"):

@@ -321,7 +321,7 @@ function deco_borough(B, cu, cv, fl)
     bb(pitw.x0, 0, pitw.z0, p.x0, 0.5, pitw.z1, "marble"); bb(p.x1, 0, pitw.z0, pitw.x1, 0.5, pitw.z1, "marble")
     bb(p.x0, 0, pitw.z0, p.x1, 0.5, p.z0, "marble"); bb(p.x0, 0, p.z1, p.x1, 0.5, pitw.z1, "marble")
     bb(p.x0, -1.55, p.z0, p.x1, -1.5, p.z1, "gold")
-    bb(p.x0, 0, p.z0, p.x1, 0.5, p.z1, "neon_red")                                   -- the forcefield: a glowing slab that fills the pit up to the rim
+    bb(p.x0, 0, p.z0, p.x1, 0.5, p.z1, "forcefield")                                   -- the forcefield: a glowing slab that fills the pit up to the rim
     -- a ring of gold in the arena floor
     B.ring(cx - ox, cz - oz, g.arena - 3.3, g.arena - 2.6, 0, 0.1, "gold")
 end

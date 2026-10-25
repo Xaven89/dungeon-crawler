@@ -572,7 +572,7 @@ end
 
 function E.shockwave(inst, x, y, z, r, dmg)
     G.sfx.play("slam", G.to_local(x, y, z))
-    fx.explosion(floor(x * 16), floor(y * 16) + 2, floor(z * 16), inst.T.boss and 22 or 12, 0.35)
+    fx.explosion(floor(x * 16), floor(y * 16) + 28, floor(z * 16), inst.T.boss and 22 or 12, 0.35)       -- (a metre and a half above the feet: at the feet every slam dug the arena floor and the boss sank into his own crater, 3.4 m in a trace of seed 99)
     local px, py, pz = player.pos()
     if G.dist2(x, z, px, pz) <= r and abs(py - y) < 2.2 then G.player.hurt(dmg, inst.name) end
 end
