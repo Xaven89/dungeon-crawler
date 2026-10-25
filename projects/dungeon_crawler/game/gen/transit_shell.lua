@@ -204,6 +204,16 @@ function transit_region(rx, rz, wh, run)
                 end
             end
         end
+        if code ~= "B" or not along_x then                      -- (voxel-art) the platform floor: terrazzo bays (iron_dark lines every 4 m, off the bed) and a dark border along the walls
+            local A0, A1 = along_x and rz0 or rx0, along_x and rz1 or rx1
+            local P0, P1 = along_x and rx0 or rz0, along_x and rx1 or rz1
+            if code == "B" then P0, P1 = (cj == 1) and 16 or 0, (cj == 1) and 32 or 16 end   -- B: the platform half only (the stair takes the other half, 8 m below)
+            local function fa(a0, a1, b0, b1, mat) if along_x then F(b0, yl - 0.0625, a0, b1, yl, a1, mat) else F(a0, yl - 0.0625, b0, a1, yl, b1, mat) end end
+            for _, s in ipairs({ { A0, 16 - 2.7 }, { 16 + 2.7, A1 } }) do
+                if s[2] > s[1] then for t = P0 + 4, P1 - 1, 4 do fa(s[1], s[2], t, t + 0.0625, "iron_dark") end end
+            end
+            fa(A0, A0 + 0.5, P0, P1, "tar_slab"); fa(A1 - 0.5, A1, P0, P1, "tar_slab")
+        end
         -- the edge of the platform: a hazard strip along the bed
         if along_x then F(rx0, yl - 0.0625, 16 - 2.4, rx1, yl, 16 - 2.1, "hazard_y"); F(rx0, yl - 0.0625, 16 + 2.1, rx1, yl, 16 + 2.4, "hazard_y")
         else F(16 - 2.4, yl - 0.0625, rz0, 16 - 2.1, yl, rz1, "hazard_y"); F(16 + 2.1, yl - 0.0625, rz0, 16 + 2.4, yl, rz1, "hazard_y") end
