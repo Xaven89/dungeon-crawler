@@ -72,5 +72,51 @@ function M.tick(t)
     elseif not fighting and M.combat then sound.stop(M.combat, 2.5); M.combat = nil end
 end
 
+-- ambience: the floor's bed under the music, and now and then one of its events far away (sounds/amb_*.wav, ev_*.wav; voxel-audio step 3). 2D loops on the sfx bus with 3 s crossfades; the choice, the
+-- direction, the distance and the gap come from a counter and the tick, never the game's random numbers.
+M.amb = {
+    [0] = { bed = "amb_f0", ev = { "ev_f0_ding", "ev_f0_door" } },
+    [1] = { bed = "amb_f1", ev = { "ev_f1_drip", "ev_f1_stone" } },
+    [2] = { bed = "amb_f2", ev = { "ev_f2_pipe", "ev_f2_clang" } },
+    [3] = { bed = "amb_f3_day", ev = { "ev_f3_bell", "ev_f3_bird" }, night = "amb_f3_night", ev_night = { "ev_f3n_owl", "ev_f3n_pub" } },
+    [4] = { bed = "amb_f4", ev = { "ev_f4_train", "ev_f4_chime" } },
+    [5] = { bed = "amb_f5", ev = { "ev_f5_drip", "ev_f5_splash" } },
+    [6] = { bed = "amb_f6", ev = { "ev_f6_hiss", "ev_f6_clank" } },
+    [7] = { bed = "amb_f7", ev = { "ev_f7_rattle", "ev_f7_gust" } },
+    [8] = { bed = "amb_f8", ev = { "ev_f8_crack", "ev_f8_bloop" } },
+}
+M.amb_h, M.amb_name, M.amb_next, M.amb_n = nil, nil, 0, 0
+M.amb_seen, M.amb_floor = nil, nil
+function M.amb_tick(t)
+    if t % 20 ~= 0 or not M.enabled or not G.state or not G.state.class then return end
+    local L = G.floorgen and G.floorgen.layout
+    local fl = L and L.floor or 0                               -- layout nil: the Orientation (gen/floor.lua:18)
+    -- between floors layout can be stale or nil for a moment: follow a floor only once it is read twice in a row (40 ticks)
+    if fl ~= M.amb_floor then
+        if fl == M.amb_seen then M.amb_floor = fl else M.amb_seen = fl; return end
+    end
+    local A = M.amb[M.amb_floor]
+    if not A then return end
+    local OC = G.gen and G.gen.overcity
+    local night = M.amb_floor == 3 and A.night and OC and OC.is_night and OC.is_night()   -- the over-city clock: only on floor 3
+    local want = night and A.night or A.bed
+    if want ~= M.amb_name then
+        if M.amb_h then pcall(sound.stop, M.amb_h, 3) end
+        G.sfx.logline(want, "sfx", 1, 1, false)
+        M.amb_h = sound.play{ file = "sounds/" .. want .. ".wav", loop = true, bus = "sfx", fade_in = 3 }
+        M.amb_name = want
+        M.amb_next = t + 600                                    -- the first event 10 s after a floor starts
+    end
+    if t >= M.amb_next then
+        local list = night and A.ev_night or A.ev
+        M.amb_n = M.amb_n + 1
+        local ang = (M.amb_n * 0.618034) % 1 * 2 * math.pi       -- golden-angle steps: every direction in turn
+        local r = 12 + (M.amb_n * 7) % 19                       -- 12-30 m
+        local px, py, pz = player.pos()
+        G.sfx.play_world(list[M.amb_n % #list + 1], px + r * math.sin(ang), py + 1.5, pz + r * math.cos(ang))
+        M.amb_next = t + 60 * (20 + (M.amb_n * 13) % 41)          -- 20-60 s to the next
+    end
+end
+
 -- (a game setting that lives next to the sound ones) damage numbers as voxel particles, or as flat text over the crosshair
 function M.set_flat_numbers(on) G.state.flags.flat_numbers = on and true or false end
