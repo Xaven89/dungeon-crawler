@@ -28,3 +28,6 @@ An engine from before format 2 opening a version-2 `.vxs` reads the header recor
 
 ## Node states and the world save
 The states of the event nodes (a door left open, a lever thrown: `<project>/.events/state.txt`) belong to the world they were saved with. A start that has **no world save** (it was deleted, or this is a new run) builds the level again and does **not** read them (the log says so): a door saved open would otherwise be declared open in a corridor whose bars the level has just built. `project.store` (the game's own progress) is separate and is read whenever the file is there.
+
+## Where the persisted state lives: `--state-dir` (E21)
+The project folder keeps `.state/store.json` (the script's store), `.state/wear.bin` (worn ground and tracks), `.prefabs/` (tracked prefab instances) and `.events/state.txt` (node states: only used when the world is read from a save). `voxelith --state-dir DIR` puts all of them under `DIR` instead, for any session that would use them (a plain game, an MCP session with `--save`, a recording; a replay reads its clip's copies as before). An empty `DIR` is a session that starts from nothing, whatever earlier runs left: the way to make two live runs of one script (a bot, a validator) start the same. Without it a run starts from the project folder's state, which the run before it wrote.
