@@ -414,7 +414,7 @@ function T.tick(t)
     for _, h in ipairs(T.hazards) do
         if lx >= h.x0 and lx <= h.x1 and ly >= h.y0 and ly <= h.y1 and lz >= h.z0 and lz <= h.z1 then
             if h.kind == "lava" then
-                if t % 18 == 0 then local fl_ = (G.run and G.run.floor_no and G.run.floor_no()) or 1; G.player.hurt(((fl_ == 1 or fl_ == 2) and 0.5 or 1) * h.dmg, "the lava", { pierce = true }); fx.play("sparks", floor(units.vox(px)), floor(units.vox(py)), floor(units.vox(pz)), 1.0) end
+                if t % 18 == 0 then local fl_ = (G.run and G.run.floor_no and G.run.floor_no()) or 1; local lr = h.cell and G.floorgen and G.floorgen.layout and G.floorgen.layout.rooms and G.floorgen.layout.rooms[h.cell]; G.tally("lava_where", (lr and lr.theme) or "authored", 1); G.player.hurt(((fl_ == 1 or fl_ == 2) and 0.5 or 1) * h.dmg, "the lava", { pierce = true }); fx.play("sparks", floor(units.vox(px)), floor(units.vox(py)), floor(units.vox(pz)), 1.0) end
                 if not T.lava_said then T.lava_said = true; G.announcer.say_key("trap.lava", { prio = 1, key = "lava", cooldown = 3000 }) end
             elseif h.kind == "toxic" then
                 if t % 36 == 0 then G.player.hurt(h.dmg, "toxic sludge", { pierce = true }) end

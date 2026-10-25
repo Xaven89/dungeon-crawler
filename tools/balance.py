@@ -14,7 +14,7 @@ logdir = opt("--reuse", "/tmp/balance_logs_%s" % time.strftime("%H%M%S")); os.ma
 data = {}          # seed -> floor -> { ticks, group -> key -> n }
 def parse(text, seed, orientation=False):
     for m in re.finditer(r"^TALLY (\d+) (\d+) ?(.*)$", text, re.M):
-        fl, ticks, body = int(m.group(1)), int(m.group(2)), m.group(3)
+        fl, ticks, body = (0 if orientation else int(m.group(1))), int(m.group(2)), m.group(3)      # (the Orientation is floor 0: it was added to floor 1's row of its seed)
         d = data.setdefault(seed, {}).setdefault(fl, {"ticks": ticks})
         d["ticks"] = ticks if not orientation else ticks
         for item in body.split(";"):
