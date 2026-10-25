@@ -244,4 +244,6 @@ Views for every bucket: `tools/polish_pictures.py NAME [--only a,b] [--time 0.12
 - Every visible change gets a picture (`tools/polish_pictures.py NAME`, or the tool of the floor) and a look at it; the log is read after every run; a plan check asserts on what the hook BUILDS (item 17), not on what the plan says.
 - A new model or material: bot recorded and replayed (live = replay), `furnish_check`, one lineup / hall picture.
 - Material ids: the artist owns 111-123 and 130-199, the game 124-129 and 200-254.
+- **hook_globals holds at most 64 names** (the engine warns "hook_globals lists more than 64 names" and the region hook STOPS: 1,635 warnings and no rooms). It is at 63 (`level.lua`, with `deco_furniture`); the last slot is reserved (a `hook_textures` declaration may need it). Anything new for the hook folds into an existing dispatcher (`deco_furniture` kinds, a table global's field), never a new global name. Count before adding: `python3 -c` over the list in level.lua.
+- **Live bot runs are deterministic only through `act()`** (tools/p2_playthrough.py): an input action follows a `state_hash` sync; precommit (full) runs the bot twice and compares. Fight outcomes and loot counts are comparable between runs and between model sets only because of that (ENGINE_FEEDBACK Phase 27).
 
