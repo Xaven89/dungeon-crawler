@@ -84,6 +84,6 @@ function A.on_hit(inst)
     inst.swing_target = nil
     if tg and not tg.dead then
         G.enemies.damage(tg, inst.T.dmg * 0.7 + (G.state.level or 1) * 0.6, { source = "ally", stun = 25 })
-        G.sfx.play("hit", G.to_local(G.enemies.position(tg)))
+        do local lx, ly, lz = G.to_local(G.enemies.position(tg)); G.sfx.play("hit", lx, ly, lz, 1.25) end
     end
 end

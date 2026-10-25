@@ -96,7 +96,7 @@ function B.throw(inst, x, y, z)
     local sp = 13
     body.push(b, dx / d * sp * 30, (dy / d * sp + 2.5) * 30, dz / d * sp * 30)
     E.projectiles[#E.projectiles + 1] = { body = b, born = time.tick(), dmg = 12, from = "a thrown clipboard" }
-    G.sfx.play("swing", G.to_local(x, y + 3, z), 0.8, 0.6)
+    do local lx, ly, lz = G.to_local(x, y + 3, z); G.sfx.play("swing", lx, ly, lz, 1.33, 0.6) end
 end
 
 function B.summon(inst, x, y, z)
@@ -107,7 +107,7 @@ function B.summon(inst, x, y, z)
         local e = E.spawn(inst.T.minion or "intern", lx + math.cos(a) * 4, 0, lz + math.sin(a) * 4, { room = B.lair.room, index = 90 + i })
         if e then E.aggro(e, true); n = n + 1; fx.play("poof", floor(units.vox(x + math.cos(a) * 4)), floor(units.vox(y)), floor(units.vox(z + math.sin(a) * 4)), 1.4) end
     end
-    G.sfx.play("boss_roar", G.to_local(x, y, z), 0.7, 1.3)
+    do local lx, ly, lz = G.to_local(x, y, z); G.sfx.play("boss_roar", lx, ly, lz, 0.7, 1.3) end
 end
 
 function B.ai(inst, t, d, dy, info)

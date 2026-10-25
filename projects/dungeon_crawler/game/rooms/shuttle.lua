@@ -59,7 +59,7 @@ function S.tick(t)
                 if x and G.dist3(x, y + 0.5, z, info.x, info.y, info.z) < 2.4 and (t - (hit_at[inst.id] or -999)) > 30 then
                     hit_at[inst.id] = t
                     G.enemies.damage(inst, 25 + math.abs(info.speed) * 6, { source = "shuttle", stun = 40, crit = true })
-                    G.sfx.play("slam", G.to_local(x, y, z), 0.6, 1.4)
+                    do local lx, ly, lz = G.to_local(x, y, z); G.sfx.play("slam", lx, ly, lz, 0.6, 1.4) end
                     G.announcer.say_key("shuttle.hit", { key = "shuttle_hit", cooldown = 1500 })
                 end
             end

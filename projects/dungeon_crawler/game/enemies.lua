@@ -277,7 +277,7 @@ function E.damage(inst, amount, opts)
         local ny = math.min(y + inst.height * 0.72, py + 2.0)
         G.vnum.show(amount, x + dx / n * off, ny, z + dz / n * off, kind, 1, inst.id)
     end
-    G.sfx.play(opts.crit and "hit_crit" or "hit", nil, nil, nil, 0.8)
+    G.sfx.play(opts.crit and "hit_crit" or "hit", nil, nil, nil, 1.0)
     if inst.T.hit_sfx then G.sfx.play(inst.T.hit_sfx, G.to_local(x, y, z)) end
     if x then
         fx.play(inst.T.splat or "splat_red", floor(x * 16), floor((y + inst.height * 0.6) * 16), floor(z * 16), 0.7)
@@ -582,7 +582,7 @@ function E.on_anim(mdl, event, clip)
             local inf = inst.T.inflict
             if inf and dealt and dealt > 0 and G.rand() < inf.chance then G.skills.afflict(inf.kind, inf.dur) end
         end
-        G.sfx.play("swing", G.to_local(x, y + 1, z), 0.5, 0.7)
+        do local lx, ly, lz = G.to_local(x, y + 1, z); G.sfx.play("swing", lx, ly, lz, 0.83, 0.7) end          -- (the call used to pass the volume and pitch as y and z: G.to_local in the middle of an argument list gives one value)
     elseif event == "slam" then
         E.shockwave(inst, x, y, z, inst.T.boss and 6 or 4.2, inst.T.dmg * 1.3)
     elseif event == "spit" then

@@ -182,7 +182,7 @@ function P.hurt(amount, src, opts)
     P.flash = time.tick()
     P.last_hurt = time.tick()
     P.popup("-" .. amount, "#ff6060")
-    G.sfx.play("hurt", nil, nil, nil, 0.8)
+    G.sfx.play("hurt", nil, nil, nil, 1.0)
     if s.hp <= 0 then
         s.hp = 0
         P.die(src)
@@ -322,7 +322,7 @@ function P.attack()
     P.swings = P.swings + 1
     P.swing_tick = now
     player.hand_play("swing"); player.model_play("attack")          -- the sword in the first-person view and the body in the third (render only)
-    G.sfx.play("swing", nil, nil, nil, 0.6, 0.9 + (P.swings % 3) * 0.1)
+    G.sfx.play("swing", nil, nil, nil, 1.0, 0.9 + (P.swings % 3) * 0.1)
     local targets = P.targets_in_cone(w.reach, 0.62, 2)
     local hit = false
     for _, t in ipairs(targets) do
@@ -479,7 +479,7 @@ function P.use_item(id)
     if d.mana then s.mp = min(P.max_mp(), s.mp + d.mana); P.log("+" .. d.mana .. " MP", "#7aa8ff"); G.sfx.play("heal", nil, nil, nil, 0.6, 1.3) end
     if d.throw then
         local ex, ey, ez, hx, hy, hz = G.look_ray(24, 0.25)
-        G.sfx.play("swing")
+        G.sfx.play("swing", nil, nil, nil, 1.67)
         after(18, function()
             fx.explosion(floor(ex * 16), floor(ey * 16), floor(ez * 16), 14, 0.6)
             G.traps.blast(ex, ey, ez, 4.5)

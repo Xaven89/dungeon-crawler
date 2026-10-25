@@ -6,8 +6,8 @@ local G = Game
 local M = {}
 G.music = M
 
-M.beds = { lobby = { file = "m_lobby", vol = 0.6 }, dungeon = { file = "m_dungeon", vol = 0.8 }, ballroom = { file = "m_ballroom", vol = 0.6 },
-           cave = { file = "m_cave", vol = 0.75 }, safe = { file = "m_safe", vol = 0.6 }, boss = { file = "m_boss", vol = 0.55 }, victory = { file = "m_victory", vol = 0.7, once = true } }
+M.beds = { lobby = { file = "m_lobby", vol = 1.0 }, dungeon = { file = "m_dungeon", vol = 1.0 }, ballroom = { file = "m_ballroom", vol = 1.0 },
+           cave = { file = "m_cave", vol = 1.0 }, safe = { file = "m_safe", vol = 1.0 }, boss = { file = "m_boss", vol = 1.0 }, victory = { file = "m_victory", vol = 1.0, once = true } }
 M.room_bed = { lobby = "lobby", hall = "dungeon", boiler = "dungeon", conveyor = "dungeon", gutter = "cave", ballroom = "ballroom", grotto = "cave", arena = "dungeon", stairwell = "safe" }
 M.kind_bed = { village = "lobby", park = "dungeon", borough_arena = "dungeon", arrival = "safe", stairwell = "safe", safe = "safe", rest = "safe", stairs_free = "safe", guild = "lobby", grotto = "cave", flooded = "cave", crypt = "cave", ballroom = "ballroom", prize = "lobby" }      -- (generated rooms by theme)
 M.want = "lobby"
@@ -30,7 +30,7 @@ local function in_combat()
 end
 
 -- the buses: the saved settings (0..1.5, 1 = as made)
-M.bus = { music = 1.4, sfx = 1.0, voice = 1.0 }
+M.bus = { music = 1.0, sfx = 1.0, voice = 1.0 }
 function M.apply_buses()
     for name, v in pairs(M.bus) do sound.bus(name, v) end
 end
@@ -68,7 +68,7 @@ function M.tick(t)
     if M.once_at and t >= M.once_at then M.once_at = nil; M.done = want; M.want = M.room_bed[G.current_room or "lobby"] or "dungeon" end
     -- the fight layer
     local fighting = in_combat() and not G.safe and want ~= "boss"
-    if fighting and not M.combat then G.sfx.logline("m_combat", "music", 0.7, 1, false); M.combat = sound.play{ file = "sounds/m_combat.wav", loop = true, bus = "music", volume = 0.7, fade_in = 0.6 }
+    if fighting and not M.combat then G.sfx.logline("m_combat", "music", 1.0, 1, false); M.combat = sound.play{ file = "sounds/m_combat.wav", loop = true, bus = "music", volume = 1.0, fade_in = 0.6 }
     elseif not fighting and M.combat then sound.stop(M.combat, 2.5); M.combat = nil end
 end
 

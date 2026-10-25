@@ -123,7 +123,7 @@ function A.voice(msg)
     for i = 1, n, 3 do
         local c = text:byte(i) or 100
         local pitch = set.pitch * (0.78 + ((c * 7) % 40) / 100)
-        after(math.floor(i * 1.9), function() G.sfx.voice(blip, 0.5, pitch) end)
+        after(math.floor(i * 1.9), function() G.sfx.voice(blip, 1.0, pitch) end)
     end
 end
 

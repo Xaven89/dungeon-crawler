@@ -16,7 +16,7 @@ function S.buy(i)
     local s = G.state
     if not e then return false end
     local price = math.floor(e.price * G.contracts.shop_price() + 0.5)
-    if s.gold < price then G.announcer.say_key("shop.broke", { prio = 1, key = "broke", cooldown = 600 }); G.sfx.play("hurt", nil, nil, nil, 0.3, 1.4); return false end
+    if s.gold < price then G.announcer.say_key("shop.broke", { prio = 1, key = "broke", cooldown = 600 }); G.sfx.play("hurt", nil, nil, nil, 0.375, 1.4); return false end
     if not G.items.add(e.id, 1) then G.player.popup("BAG FULL", "#ff8080"); return false end
     s.gold = s.gold - price
     G.sfx.play("coin")
