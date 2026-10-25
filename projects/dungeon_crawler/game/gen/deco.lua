@@ -158,7 +158,7 @@ function deco_crates(theme, room, doors, mk, fl)
         if room.w >= room.d then add("silver", room.x + room.w / 2 - 0.6, room.z + 0.2, "+z", 0)
         else add("silver", room.x + 0.2, room.z + room.d / 2 - 0.6, "+x", 0) end
     elseif theme == "station" and (room.y or 0) == 0 and room.w == 32 then                                    -- ... and a left-luggage crate on every Y platform (the Y stations; not the X halls, not the raised Blue ones)
-        add("silver", room.x + 4 + 24 * mk(31).next(), room.z + 1.3, "+z", 0)
+        add("silver", room.x + 4 + 24 * mk(31).next(), room.z + 1.3, "+z", 0, mk(32).next() < 0.3)          -- (the station Mimic: three in ten of the left-luggage crates bite)
     elseif theme == "ballroom" then
         local door_n = false
         for _, d in ipairs(doors or {}) do if d.side == "N" then door_n = true end end

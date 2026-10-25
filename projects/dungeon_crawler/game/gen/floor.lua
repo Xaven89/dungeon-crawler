@@ -264,8 +264,9 @@ function F.make_cell(id)
                     G.announcer.say_key("prize.mimic", { prio = 2 })
                     G.announcer.award("mimic_food")
                     local r = ctx.rng(room)
-                    for q = 1, 5 do
-                        local e = G.enemies.spawn(F.pick_kind(r, P.floor), room.ci * 32 + c.x + (q - 3) * 0.9, 0, room.cj * 32 + c.z + 2.2, { room = room.id, index = 90 + q })
+                    local nm = (P.floor == 4) and 3 or 5                   -- (a platform is narrow: three)
+                    for q = 1, nm do
+                        local e = G.enemies.spawn(F.pick_kind(r, P.floor), room.ci * 32 + c.x + (q - (nm + 1) / 2) * 0.9, 0, room.cj * 32 + c.z + 2.2, { room = room.id, index = 90 + q })
                         if e then G.enemies.aggro(e, true) end
                     end
                 end
