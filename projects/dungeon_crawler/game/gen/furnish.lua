@@ -24,7 +24,7 @@ function deco_catalogue()
         urn        = { cat = "urn", w = 0.5, d = 0.5, h = 0.9, anchor = "corner", clear = 0.5 },
         candle     = { cat = "candle", w = 0.4, d = 0.4, h = 1.5, near = "sarcophagus", per = { 0, 1 }, gap = 0.4, front_only = true },
         -- shelving
-        bookcase   = { cat = "bookcase", w = 2.4, d = 0.5, h = 3.2, anchor = "wall", clear = 0.9, spots = { { "idle", 0, 1.3 } } },
+        bookcase   = { cat = "bookcase", w = 2.4, d = 0.5, h = 2.2, anchor = "wall", clear = 0.9, spots = { { "idle", 0, 1.3 } } },
         stack_s    = { cat = "stack", w = 0.8, d = 2.4, h = 3.0, anchor = "free", align = 3.4, clear = 1.0, spots = { { "ambush", 0.9, 1.2 } } },
         stack_m    = { cat = "stack", w = 0.8, d = 3.6, h = 3.0, anchor = "free", align = 3.4, clear = 1.0, spots = { { "ambush", 0.9, 1.8 } } },
         stack_l    = { cat = "stack", w = 0.8, d = 4.8, h = 3.0, anchor = "free", align = 3.4, clear = 1.0, spots = { { "ambush", 0.9, 2.4 } } },
@@ -525,6 +525,174 @@ function deco_layout_check(lay, room, doors)
 end
 
 -- ---------------------------------------------------------------------------------------------- the voxels of an item
+-- The grammar's furniture as the pack draws it (voxel-art, STYLE.md "Furniture" and rule 6 at play height): a slab on thin legs, the same wood on a
+-- whole part, two materials per piece (a lighter top / seat in chest_wood on a dark_wood frame), slats rather than slabs, nothing that glows.
+-- Drop-in bodies for deco_item_draw's branches (box(u0, y0, v0, u1, y1, v1, mat) is that function's local, u along the item's width, v its depth,
+-- v = 0 its back). Heights for a 1.8 m figure: table 0.78, seat 0.45, chair back 0.95, bar stool 0.75 is the bar's (stool 0.6 kept: the catalogue's).
+-- A hook function sees only hook_globals and its own locals: every helper is inside its function (legs: 0.1 m, between 1 and 2 voxels, the pack's thin legs).
+-- One hook global (hook_globals holds at most 64 names): deco_furniture(kind, box, ...) with the pieces as locals.
+function deco_furniture(kind, box, ...)
+    local function table_(box, W, D, long)
+        local L = 0.1
+    local function legs(box, W, D, y1, inset, mat)
+            for _, u in ipairs({ inset, W - inset - L }) do for _, v in ipairs({ inset, D - inset - L }) do box(u, 0, v, u + L, y1, v + L, mat) end end
+        end
+        legs(box, W, D, 0.68, 0.08, "dark_wood")
+        box(0.06, 0.62, 0.06, W - 0.06, 0.7, D - 0.06, "dark_wood")             -- the apron (a frame under the top)
+        box(0.12, 0.62, 0.12, W - 0.12, 0.7, D - 0.12, nil)
+        box(0, 0.7, 0, W, 0.78, D, "chest_wood")                                 -- the top, lighter than the frame
+        if long then box(0.2, 0.78, D / 2 - 0.15, W - 0.2, 0.8, D / 2 + 0.15, "carpet") end   -- a runner on the long table only
+    end
+    local function chair(box, W, D)
+        local L = 0.1
+    local function legs(box, W, D, y1, inset, mat)
+            for _, u in ipairs({ inset, W - inset - L }) do for _, v in ipairs({ inset, D - inset - L }) do box(u, 0, v, u + L, y1, v + L, mat) end end
+        end
+        legs(box, W, D, 0.4, 0.03, "dark_wood")
+        box(0, 0.4, 0, W, 0.46, D, "chest_wood")                                 -- the seat
+        for _, u in ipairs({ 0.03, W - 0.03 - L }) do box(u, 0.46, 0.0, u + L, 0.95, L, "dark_wood") end   -- two back posts
+        for _, y in ipairs({ 0.6, 0.73, 0.86 }) do box(0.03 + L, y, 0.02, W - 0.03 - L, y + 0.06, 0.08, "chest_wood") end   -- three rails, light between dark posts
+    end
+    local function stool(box, W, D)
+        local L = 0.1
+    local function legs(box, W, D, y1, inset, mat)
+            for _, u in ipairs({ inset, W - inset - L }) do for _, v in ipairs({ inset, D - inset - L }) do box(u, 0, v, u + L, y1, v + L, mat) end end
+        end
+        legs(box, W, D, 0.52, 0.04, "dark_wood")
+        box(0.04, 0.2, 0.04, W - 0.04, 0.25, D - 0.04, "dark_wood"); box(0.04 + L, 0.2, 0.04 + L, W - 0.04 - L, 0.25, D - 0.04 - L, nil)   -- the footrest ring
+        box(-0.02, 0.52, -0.02, W + 0.02, 0.6, D + 0.02, "chest_wood")           -- the seat, a little proud
+    end
+    local function bench(box, W, D)
+        local L = 0.1
+    local function legs(box, W, D, y1, inset, mat)
+            for _, u in ipairs({ inset, W - inset - L }) do for _, v in ipairs({ inset, D - inset - L }) do box(u, 0, v, u + L, y1, v + L, mat) end end
+        end
+        for _, u in ipairs({ 0.12, W - 0.12 - L }) do box(u, 0, 0.06, u + L, 0.4, D - 0.06, "dark_wood") end
+        box(0.12, 0.12, D / 2 - 0.04, W - 0.12, 0.18, D / 2 + 0.04, "dark_wood")   -- the stretcher
+        box(0, 0.4, 0, W, 0.46, D, "chest_wood")
+    end
+    local function sofa(box, W, D)
+        box(0, 0, 0, W, 0.15, D, "dark_wood")                                    -- the base and its feet
+        box(0.1, 0, 0.1, W - 0.1, 0.06, D - 0.1, nil)
+        box(0.05, 0.15, 0.05, W - 0.05, 0.42, D - 0.05, "carpet")                -- the seat cushion
+        box(0, 0.15, 0, W, 0.85, 0.22, "carpet"); box(0, 0.15, 0, 0.22, 0.62, D, "carpet"); box(W - 0.22, 0.15, 0, W, 0.62, D, "carpet")
+        box(0, 0.62, 0.22, 0.22, 0.68, D, "dark_wood"); box(W - 0.22, 0.62, 0.22, W, 0.68, D, "dark_wood")   -- wooden arm caps
+    end
+    local function bookcase(box, W, D, H, seed)
+        box(0, 0, 0, W, 0.1, D, "dark_wood"); box(0, 0, 0, 0.08, H, D, "dark_wood"); box(W - 0.08, 0, 0, W, H, D, "dark_wood")
+        box(0, 0.1, 0, W, H, 0.06, "chest_wood"); box(0, H - 0.1, 0, W, H, D, "dark_wood")   -- a lighter back panel
+        local MAT = { "carpet", "chest_wood", "mossy", "bone", "dark_wood", "carpet" }       -- spines: cloth, leather, vellum; none glows (the rune was an emissive)
+        local n_sh = math.floor((H - 0.2) / 0.5)
+        for k = 0, n_sh - 1 do
+            local y = 0.1 + k * 0.5
+            box(0.08, y, 0.06, W - 0.08, y + 0.04, D, "dark_wood")
+            local u, n = 0.12, 0
+            while u < W - 0.25 do
+                local bw = math.min(0.3 + ((n * 3 + k) % 3) * 0.12, W - 0.1 - u)
+                local bh = 0.3 + ((n * 5 + k) % 3) * 0.05
+                box(u, y + 0.04, 0.1, u + bw, y + 0.04 + bh, D - 0.04, MAT[1 + (n * 2 + k * 3 + seed) % #MAT])
+                u = u + bw + 0.04; n = n + 1
+            end
+        end
+    end
+    local function crate(box, u0, y0, s)
+        box(u0, y0, 0, u0 + s, y0 + s, s, "chest_wood")                          -- the boards
+        for _, e in ipairs({ { 0, 0 }, { s - 0.08, 0 }, { 0, s - 0.08 }, { s - 0.08, s - 0.08 } }) do      -- a dark frame on the eight edges (the four uprights and two rings)
+            box(u0 + e[1], y0, e[2], u0 + e[1] + 0.08, y0 + s, e[2] + 0.08, "dark_wood")
+        end
+        box(u0, y0, 0, u0 + s, y0 + 0.08, s, "dark_wood"); box(u0 + 0.08, y0, 0.08, u0 + s - 0.08, y0 + 0.08, s - 0.08, "chest_wood")
+        box(u0, y0 + s - 0.08, 0, u0 + s, y0 + s, s, "dark_wood"); box(u0 + 0.08, y0 + s - 0.08, 0.08, u0 + s - 0.08, y0 + s, s - 0.08, "chest_wood")
+    end
+    -- ---- props (the reviewer's list after the furniture): metres in the item's frame unless it says voxels; iron_dark (149) for frames and posts
+    local IRON = "iron_dark"
+    local function lantern(box, x0, y0, z0, s, h, glass)                         -- a lantern: an iron frame (corner posts, a cap and a foot), glass panes that glow
+        box(x0, y0, z0, x0 + s, y0 + 0.0625, z0 + s, IRON)
+        box(x0 + 0.03, y0 + 0.0625, z0 + 0.03, x0 + s - 0.03, y0 + h - 0.0625, z0 + s - 0.03, glass)
+        for _, c in ipairs({ { 0, 0 }, { s - 0.0625, 0 }, { 0, s - 0.0625 }, { s - 0.0625, s - 0.0625 } }) do box(x0 + c[1], y0, z0 + c[2], x0 + c[1] + 0.0625, y0 + h, z0 + c[2] + 0.0625, IRON) end
+        box(x0 - 0.03, y0 + h - 0.0625, z0 - 0.03, x0 + s + 0.03, y0 + h, z0 + s + 0.03, IRON)
+    end
+    local function hanging_lamp(box, cx, cz, hh, drop, glass)                    -- deco_lamp: the chain, the ceiling plate, a framed lantern instead of a glowing block
+        box(cx - 0.03, hh - drop, cz - 0.03, cx + 0.03, hh, cz + 0.03, IRON)
+        box(cx - 0.2, hh - 0.0625, cz - 0.2, cx + 0.2, hh, cz + 0.2, IRON)
+        lantern(box, cx - 0.17, hh - drop - 0.4, cz - 0.17, 0.34, 0.4, glass)
+    end
+    local function street_lamp(box, u, glass)                                     -- a slim iron post on a stone foot, an arm, a framed lantern (u along the wall, v out of it)
+        box(u - 0.15, 0, 0, u + 0.15, 0.3, 0.3, "plinth_stone")
+        box(u - 0.0625, 0.3, 0.09, u + 0.0625, 3.3, 0.21, IRON)
+        box(u - 0.0625, 3.25, 0.09, u + 0.0625, 3.3, 0.45, IRON)
+        lantern(box, u - 0.15, 2.85, 0.32, 0.3, 0.4, glass)
+    end
+    local function plinth(box, x0, z0, x1, z1)                                    -- the save crystal's plinth: a stone foot, a polished shaft, a gold rim, a polished top (top at 0.9)
+        box(x0, 0, z0, x1, 0.15, z1, "plinth_stone")
+        box(x0 + 0.1, 0.15, z0 + 0.1, x1 - 0.1, 0.78, z1 - 0.1, "polished_marble")
+        box(x0 + 0.05, 0.78, z0 + 0.05, x1 - 0.05, 0.84, z1 - 0.05, "gold")
+        box(x0 + 0.08, 0.84, z0 + 0.08, x1 - 0.08, 0.9, z1 - 0.08, "polished_marble")
+    end
+    local function vending(box)                                                   -- u -1.2 .. 1.2 along the wall, v 0 (the wall) .. 0.96 (the front): one machine for the hub and the store
+        box(-1.2, 0, 0, 1.2, 2.3, 0.9, "metal")
+        box(-1.2, 0, 0.84, -1.05, 2.3, 0.9, IRON); box(1.05, 0, 0.84, 1.2, 2.3, 0.9, IRON); box(-1.2, 2.2, 0.84, 1.2, 2.3, 0.9, IRON)   -- a dark frame round the front
+        box(-1.0, 0.8, 0.9, 0.5, 2.0, 0.96, "obsidian")                           -- the glass, dark: you see the shelves' lights only
+        for k = 0, 2 do box(-0.9, 0.95 + k * 0.38, 0.9, 0.4, 1.0 + k * 0.38, 0.93, "lantern_off") end
+        box(-0.8, 1.7, 0.95, 0.3, 1.9, 0.97, "lantern")                           -- the lit display strip (small: no blown-out face)
+        box(0.65, 1.2, 0.9, 0.95, 1.9, 0.96, IRON); for k = 0, 3 do box(0.72, 1.3 + k * 0.15, 0.96, 0.88, 1.38 + k * 0.15, 0.98, "gold") end   -- the buttons
+        box(0.7, 1.0, 0.96, 0.9, 1.08, 0.98, "neon_red")                          -- the coin slot's light
+        box(-0.9, 0.25, 0.9, 0.4, 0.5, 0.97, "char")                              -- the drawer
+    end
+    local function kiosk(box, W, D)
+        box(0, 0, 0, W, 1.0, D, "dark_wood"); box(-0.05, 1.0, -0.05, W + 0.05, 1.08, D + 0.1, "marble")
+        box(0.05, 1.08, 0.05, 0.15, 2.3, 0.15, IRON); box(W - 0.15, 1.08, 0.05, W - 0.05, 2.3, 0.15, IRON)
+        local n = math.max(2, math.floor(W / 0.3))
+        for k = 0, n - 1 do box(k * W / n, 2.3, -0.1, (k + 1) * W / n, 2.4, D + 0.25, (k % 2 == 0) and "carpet" or "plaster") end   -- a striped awning
+        box(0, 2.18, D + 0.1, W, 2.3, D + 0.25, "carpet")                         -- its valance
+        box(0.3, 1.08, 0.3, 0.7, 1.38, 0.6, "gold"); box(1.0, 1.08, 0.3, 1.5, 1.33, 0.7, "chest_wood")
+    end
+    local function notice(box, x0, y0, x1, y1, z0, z1)                             -- a notice board: a dark frame, paper notes, a small lamp above (was a glowing panel)
+        box(x0, y0, z0, x1, y1, z1, "dark_wood")
+        box(x0 + 0.08, y0 + 0.08, z1, x1 - 0.08, y1 - 0.08, z1 + 0.02, "chest_wood")
+        local w = x1 - x0
+        for k = 0, math.max(1, math.floor(w / 0.45)) - 1 do
+            local px = x0 + 0.15 + k * 0.45
+            if px + 0.3 <= x1 - 0.1 then box(px, y0 + 0.18 + (k % 2) * 0.1, z1 + 0.02, px + 0.3, y1 - 0.2 - ((k + 1) % 2) * 0.08, z1 + 0.04, "plaster"); box(px + 0.12, y1 - 0.24, z1 + 0.04, px + 0.18, y1 - 0.2, z1 + 0.05, "carpet") end
+        end
+        box((x0 + x1) / 2 - 0.3, y1 + 0.05, z1, (x0 + x1) / 2 + 0.3, y1 + 0.12, z1 + 0.15, IRON)
+        box((x0 + x1) / 2 - 0.25, y1 + 0.02, z1 + 0.1, (x0 + x1) / 2 + 0.25, y1 + 0.05, z1 + 0.15, "lantern")   -- the picture lamp
+    end
+    -- voxel kinds (deco_chest and deco_barrel draw in voxels: bx is their B.vbox in the item's voxel frame)
+    local function chest(bx, tier, lx, lz, front)                                 -- lx x lz voxels, front: "+z" / "-z" / "+x" / "-x"
+        local BAND = ({ bronze = "dark_wood", silver = IRON, gold = "gold", platinum = IRON })[tier] or "dark_wood"
+        local LOCK = ({ bronze = "gold", silver = "crystal", gold = "lantern", platinum = "neon" })[tier] or "gold"   -- a glowing lock from silver up (crystal, not the violet rune)
+        bx(0, 0, 0, lx - 1, 0, lz - 1, "dark_wood")                               -- a dark foot
+        bx(0, 1, 0, lx - 1, 7, lz - 1, "chest_wood")
+        bx(0, 8, 0, lx - 1, 9, lz - 1, "dark_wood")                               -- the lid's rim
+        bx(1, 10, 1, lx - 2, 10, lz - 2, "chest_wood"); bx(2, 11, 2, lx - 3, 11, lz - 3, "chest_wood")   -- a stepped (rounded) lid
+        local along = (front == "+z" or front == "-z")
+        local function band(a)
+            if along then bx(a, 0, 0, a + 1, 11, lz - 1, BAND) else bx(0, 0, a, lx - 1, 11, a + 1, BAND) end
+        end
+        band(3); band((along and lx or lz) - 5)
+        if tier == "platinum" then if along then bx(0, 8, 0, lx - 1, 8, lz - 1, "gold") else bx(0, 8, 0, lx - 1, 8, lz - 1, "gold") end end
+        local m = math.floor(((along and lx or lz) - 2) / 2)
+        if front == "+z" then bx(m, 5, lz, m + 1, 8, lz, IRON); bx(m, 6, lz, m + 1, 7, lz, LOCK)
+        elseif front == "-z" then bx(m, 5, -1, m + 1, 8, -1, IRON); bx(m, 6, -1, m + 1, 7, -1, LOCK)
+        elseif front == "+x" then bx(lx, 5, m, lx, 8, m + 1, IRON); bx(lx, 6, m, lx, 7, m + 1, LOCK)
+        else bx(-1, 5, m, -1, 8, m + 1, IRON); bx(-1, 6, m, -1, 7, m + 1, LOCK) end
+    end
+    local function barrel(bx)                                                      -- centred on (0, 0, 0) voxels, 14 tall: octagonal staves with a belly, iron hoops, the explosive cap
+        for y = 0, 13 do
+            local r = (y >= 3 and y <= 10) and 5 or 4
+            bx(-r, y, -(r - 2), r, y, r - 2, "chest_wood"); bx(-(r - 2), y, -r, r - 2, y, r, "chest_wood")
+        end
+        for _, y in ipairs({ 1, 12 }) do bx(-4, y, -2, 4, y, 2, IRON); bx(-2, y, -4, 2, y, 4, IRON) end          -- the hoops, flush with the staves (a hoop proud of them read as a stack of discs)
+        for _, y in ipairs({ 4, 9 }) do bx(-5, y, -3, 5, y, 3, IRON); bx(-3, y, -5, 3, y, 5, IRON) end
+        bx(-3, 13, -1, 3, 13, 1, "dark_wood"); bx(-1, 13, -3, 1, 13, 3, "dark_wood")
+        bx(-2, 14, -2, 2, 14, 2, "hazard_y")
+    end
+    local K = { table = table_, chair = chair, stool = stool, bench = bench, sofa = sofa, bookcase = bookcase, crate = crate,
+                lantern = lantern, hanging_lamp = hanging_lamp, street_lamp = street_lamp, plinth = plinth, vending = vending, kiosk = kiosk,
+                notice = notice, chest = chest, barrel = barrel }
+    return K[kind](box, ...)
+end
+
 function deco_item_draw(B, it, fl)
     local x0, z0, x1, z1, face = it.x0, it.z0, it.x1, it.z1, it.face
     local W, D = it.w, it.d
@@ -544,18 +712,13 @@ function deco_item_draw(B, it, fl)
         return
     end
     if id == "table" or id == "table_long" then
-        box(0, 0.72, 0, W, 0.8, D, "dark_wood")
-        for _, u in ipairs({ 0.06, W - 0.18 }) do for _, v in ipairs({ 0.06, D - 0.18 }) do box(u, 0, v, u + 0.12, 0.72, v + 0.12, "dark_wood") end end
-        box(0.15, 0.8, D / 2 - 0.12, W - 0.15, 0.82, D / 2 + 0.12, "carpet")
+        deco_furniture("table", box, W, D, id == "table_long")
     elseif id == "chair" then
-        box(0, 0.4, 0, W, 0.48, D, "chest_wood")
-        for _, u in ipairs({ 0.02, W - 0.1 }) do for _, v in ipairs({ 0.02, D - 0.1 }) do box(u, 0, v, u + 0.08, 0.4, v + 0.08, "dark_wood") end end
-        box(0, 0.48, 0, W, 1.0, 0.1, "chest_wood")
+        deco_furniture("chair", box, W, D)
     elseif id == "stool" then
-        box(0, 0.5, 0, W, 0.58, D, "chest_wood"); box(0.1, 0, 0.1, W - 0.1, 0.5, D - 0.1, "dark_wood")
+        deco_furniture("stool", box, W, D)
     elseif id == "bench" then
-        box(0, 0.4, 0, W, 0.5, D, "dark_wood")
-        for _, u in ipairs({ 0.1, W - 0.2 }) do box(u, 0, 0.05, u + 0.1, 0.4, D - 0.05, "dark_wood") end
+        deco_furniture("bench", box, W, D)
     elseif id == "lectern" then
         box(0.2, 0, 0.2, W - 0.2, 1.0, D - 0.2, "dark_wood")
         box(0, 1.0, 0, W, 1.12, D * 0.5, "dark_wood"); box(0, 1.12, D * 0.25, W, 1.2, D, "dark_wood")
@@ -566,21 +729,7 @@ function deco_item_draw(B, it, fl)
         box(0.1, 0, 0.1, W - 0.1, 0.08, D - 0.1, "metal"); box(W / 2 - 0.04, 0.08, D / 2 - 0.04, W / 2 + 0.04, 1.2, D / 2 + 0.04, "metal")
         box(0.05, 1.2, 0.05, W - 0.05, 1.28, D - 0.05, "metal"); box(W / 2 - 0.04, 1.28, D / 2 - 0.04, W / 2 + 0.04, 1.5, D / 2 + 0.04, "lantern")
     elseif id == "bookcase" then
-        box(0, 0, 0, W, 0.1, D, "dark_wood"); box(0, 0, 0, 0.08, it.h, D, "dark_wood"); box(W - 0.08, 0, 0, W, it.h, D, "dark_wood")
-        box(0, 0.1, 0, W, it.h, 0.08, "dark_wood"); box(0, it.h - 0.1, 0, W, it.h, D, "dark_wood")
-        local MAT = { "chest_wood", "dark_wood", "rune", "chest_wood", "bone", "dark_wood" }
-        for k = 0, 3 do
-            local y = 0.1 + k * 0.78
-            box(0.08, y, 0.06, W - 0.08, y + 0.05, D, "dark_wood")
-            -- the books: three or four blocks of different height and colour (a block is a row of spines)
-            local u, n = 0.12, 0
-            while u < W - 0.3 do
-                local bw = math.min(0.55 + ((n * 3 + k) % 3) * 0.2, W - 0.1 - u)
-                local bh = 0.45 + ((n * 5 + k) % 3) * 0.1
-                box(u, y + 0.05, 0.12, u + bw, y + 0.05 + bh, D - 0.05, MAT[1 + (n * 2 + k * 3 + math.floor(x0 + z0)) % #MAT])
-                u = u + bw + 0.06; n = n + 1
-            end
-        end
+        deco_furniture("bookcase", box, W, D, it.h, math.floor(x0 + z0))
     elseif id == "stack_s" or id == "stack_m" or id == "stack_l" then
         box(0, 0, 0, W, it.h, D, "dark_wood")
         for k = 0, 3 do
@@ -604,7 +753,7 @@ function deco_item_draw(B, it, fl)
         if (math.floor(x0 * 3 + z0 * 5) % 3) == 0 then box(0.25, 1.0, 0.3, W - 0.25, 1.1, D - 0.3, "bone") end
     elseif id == "crates" then
         local n = 1 + math.floor(x0 * 7 + z0 * 3) % 3
-        for k = 0, n - 1 do box(k * 0.08, k * 1.2, 0, 1.3 + k * 0.08, (k + 1) * 1.2, 1.3, "dark_wood") end
+        for k = 0, n - 1 do deco_furniture("crate", box, k * 0.08, k * 1.2, 1.2) end
     elseif id == "barrels" then
         for _, q in ipairs(deco_item_parts(it)) do deco_barrel(B, q[2], 0, q[3]) end
     elseif id == "pillar" then
@@ -638,7 +787,7 @@ function deco_item_draw(B, it, fl)
             end
         end
     elseif id == "sofa" then
-        box(0, 0, 0, W, 0.45, D, "carpet"); box(0, 0.45, 0, W, 0.9, 0.25, "carpet"); box(0, 0.45, 0, 0.25, 0.7, D, "carpet"); box(W - 0.25, 0.45, 0, W, 0.7, D, "carpet")
+        deco_furniture("sofa", box, W, D)
     elseif id == "chain_lamp" then
         local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
         B.fill(cx - 0.2, it.ceil - 0.1, cz - 0.2, cx + 0.2, it.ceil, cz + 0.2, "metal")
