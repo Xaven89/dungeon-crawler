@@ -266,7 +266,7 @@ id = events.region{ name = "west_wall", box = {...}, keep = 0.5 }
 id = events.gravity_watch{ name = "room_watch", field = flip }
 id = events.logic{ name = "both", op = "and", inputs = {plate_a, plate_b} }  -- ops: and or xor not toggle one_shot counter delay (count = n / delay = ticks)
 id = events.lamp{ name = "lantern_1", box = {...}, on = "lantern", off = "lantern_off", radiance = {1.0, 0.8, 0.5}, reach = 8 }
-id = events.door{ name = "gate", box = {...}, travel = {0, 40, 0}, speed = 2, auto_close = false }
+id = events.door{ name = "gate", box = {...}, travel = {0, 40, 0}, speed = 2, auto_close = false }   -- sound = false: no built-in creak and thud (the game plays its own)
 id = events.gravity_target{ name = "room_field", field = flip, presets = { {{0,-1,0}, 9.81}, {{0,1,0}, 9.81} } }
 id = events.spawner{ name = "crate_drop", pos = {x, y, z}, kind = "box", size = {16, 16, 16}, material = "wood", impulse = 0 }
 id = events.effect{ name = "pop", effect = "sparks", pos = {x, y, z}, scale = 1 }
