@@ -186,22 +186,13 @@ function deco_chest(B, tier, x, y, z, face)
     local alongx = (face == "+z" or face == "-z")
     local lx_, lz_ = alongx and 20 or 12, alongx and 12 or 20
     local function bx(x0, y0, z0, x1, y1, z1, mat) B.vbox(ox + x0, oy + y0, oz + z0, ox + x1, oy + y1, oz + z1, mat) end
-    bx(0, 0, 0, lx_ - 1, 8, lz_ - 1, "chest_wood")
-    bx(0, 9, 0, lx_ - 1, 10, lz_ - 1, "chest_wood"); bx(1, 11, 1, lx_ - 2, 11, lz_ - 2, "chest_wood")
-    if alongx then bx(3, 0, 0, 4, 10, lz_ - 1, "metal"); bx(lx_ - 5, 0, 0, lx_ - 4, 10, lz_ - 1, "metal")
-    else bx(0, 0, 3, lx_ - 1, 10, 4, "metal"); bx(0, 0, lz_ - 5, lx_ - 1, 10, lz_ - 4, "metal") end
-    local glow = ({ bronze = "lantern", silver = "rune", gold = "lantern", platinum = "neon" })[tier] or "lantern"
-    if face == "+z" then bx(9, 6, lz_, 10, 7, lz_, glow) elseif face == "-z" then bx(9, 6, -1, 10, 7, -1, glow)
-    elseif face == "+x" then bx(lx_, 6, 9, lx_, 7, 10, glow) else bx(-1, 6, 9, -1, 7, 10, glow) end
+    deco_furniture("chest", bx, tier, lx_, lz_, face)                                  -- (voxel-art: bands by tier, a stepped lid, no violet rune)
 end
 
 function deco_barrel(B, x, y, z)
     local function R(v) return math.floor(v * 16 + 0.5) end
     local cx, cy, cz = R(x), R(y), R(z)
-    B.vbox(cx - 4, cy, cz - 4, cx + 4, cy + 13, cz + 4, "dark_wood")
-    B.vbox(cx - 5, cy + 2, cz - 4, cx + 5, cy + 3, cz + 4, "metal"); B.vbox(cx - 4, cy + 2, cz - 5, cx + 4, cy + 3, cz + 5, "metal")
-    B.vbox(cx - 5, cy + 10, cz - 4, cx + 5, cy + 11, cz + 4, "metal"); B.vbox(cx - 4, cy + 10, cz - 5, cx + 4, cy + 11, cz + 5, "metal")
-    B.vbox(cx - 2, cy + 14, cz - 2, cx + 2, cy + 14, cz + 2, "hazard_y")
+    deco_furniture("barrel", function(x0, y0, z0, x1, y1, z1, mat) B.vbox(cx + x0, cy + y0, cz + z0, cx + x1, cy + y1, cz + z1, mat) end)   -- (voxel-art: octagonal staves, hoops)
 end
 
 -- ---------------------------------------------------------------------------------------------- the borough lair: a static spiral of rings in the courtyard (the 2 x 2 cells = 64 x 64 m, centre at 32, 32)
@@ -563,10 +554,10 @@ function deco_village(B, cu, cv, room, doors, mk)
         local d = b.door
         deco_house(bb, b)                                                             -- (voxel-art bucket D) the whole shell: kit/house.lua
         if b.kind == "pub" then
-            bb(b.crystal.x - 1, 0, b.crystal.z - 0.8, b.crystal.x + 1, 0.9, b.crystal.z + 0.8, "marble")
+            deco_furniture("plinth", bb, b.crystal.x - 1, b.crystal.z - 0.8, b.crystal.x + 1, b.crystal.z + 0.8)
             if cu * 32 <= b.crystal.x and b.crystal.x < cu * 32 + 32 and cv * 32 <= b.crystal.z and b.crystal.z < cv * 32 + 32 then B.sphere(b.crystal.x - ox, 1.55, b.crystal.z - oz, 0.55, "crystal") end
             bb(b.fire.x - 1.2, 0, b.fire.z - 0.4, b.fire.x + 1.2, 2.4, b.fire.z + 0.4, "brick"); bb(b.fire.x - 0.7, 0, b.fire.z - 0.4, b.fire.x + 0.7, 1.4, b.fire.z + 0.4, nil)
-            bb(b.note.x - 0.6, 1.3, b.note.z - 0.1, b.note.x + 0.6, 2.1, b.note.z + 0.15, "lantern")   -- the notice board with the note
+            deco_furniture("notice", bb, b.note.x - 0.6, 1.3, b.note.x + 0.6, 2.1, b.note.z - 0.1, b.note.z + 0.15)   -- the notice board with the note
             -- the furniture: the layout grammar's pub (a bar with its shelves and stools, tables and chairs, benches) around the fixtures above and the checkpoint in the middle
             local lay = deco_pub_layout(b, mk)
             if lay then
@@ -575,10 +566,10 @@ function deco_village(B, cu, cv, room, doors, mk)
                 for _, it in ipairs(lay.items) do deco_item_draw(Bc, it, 3) end
             end
         elseif b.kind == "store" then
-            bb(b.vend.x - 1.2, 0, b.vend.z - 0.5, b.vend.x + 1.2, 2.8, b.vend.z + 0.5, "metal"); bb(b.vend.x - 1.0, 0.8, b.vend.z + 0.5, b.vend.x + 1.0, 2.4, b.vend.z + 0.6, "lantern")
+            deco_furniture("vending", function(u0, y0, v0, u1, y1, v1, mat) bb(b.vend.x + u0, y0, b.vend.z - 0.5 + v0, b.vend.x + u1, y1, b.vend.z - 0.5 + v1, mat) end)
             bb(b.x0 + 3, 0, b.cz, b.x1 - 3, 1.0, b.cz + 0.9, "dark_wood")
         elseif b.kind == "hall" then
-            bb(b.cx - 3, 0, b.z0 + 0.5, b.cx + 3, 0.5, b.z0 + 2.5, "dark_wood"); bb(b.board.x - 1.5, 1.2, b.board.z - 0.1, b.board.x + 1.5, 2.6, b.board.z + 0.15, "neon_red")
+            bb(b.cx - 3, 0, b.z0 + 0.5, b.cx + 3, 0.5, b.z0 + 2.5, "dark_wood"); deco_furniture("notice", bb, b.board.x - 1.5, 1.2, b.board.x + 1.5, 2.6, b.board.z - 0.1, b.board.z + 0.15)
         end
     end
     -- the locator stones
@@ -649,9 +640,7 @@ function deco_floor_accent(fl)
 end
 
 function deco_lamp(B, lm, hh, drop, fl)
-    B.fill(lm.x - 0.04, hh - drop, lm.z - 0.04, lm.x + 0.04, hh, lm.z + 0.04, "metal")
-    B.fill(lm.x - 0.2, hh - drop - 0.4, lm.z - 0.2, lm.x + 0.2, hh - drop, lm.z + 0.2, deco_floor_accent(fl).lamp)
-    B.fill(lm.x - 0.25, hh - drop - 0.05, lm.z - 0.25, lm.x + 0.25, hh - drop, lm.z + 0.25, "metal")
+    deco_furniture("hanging_lamp", function(x0, y0, z0, x1, y1, z1, mat) B.fill(x0, y0, z0, x1, y1, z1, mat) end, lm.x, lm.z, hh, drop, deco_floor_accent(fl).lamp)   -- (voxel-art: a framed lantern)
 end
 
 -- ---------------------------------------------------------------------------------------------- voxel text for the hook (the engine's edit.text is a world edit: edits made when a cell comes alive made a replay differ)
@@ -894,9 +883,8 @@ function deco_room(B, theme, room, doors, mk, fl)
             F(2, 0.5, 12.2, 2.5, 0.9, 14, "carpet"); F(6, 0.5, 12.2, 6.5, 0.9, 14, "carpet")
         end
         if not plan.dropped.table then F(8, 0, 12.6, 10, 0.6, 14, "dark_wood") end
-        F(14, 0, 3, 16, 3.3, 6, "metal"); F(13.6, 0.8, 3.2, 14, 2.6, 5.8, "lantern"); F(13.55, 0.9, 5.1, 13.7, 1.2, 5.6, "gold")
-        F(13.55, 2.0, 3.4, 13.7, 2.4, 4.7, "neon_red")
-        F(12, 0, 0.6, 14.2, 0.9, 2.8, "marble"); B.sphere(X(13.1), 1.6, Z(1.7), 0.62, "crystal")
+        deco_furniture("vending", function(u0, y0, v0, u1, y1, v1, mat) F(16 - v1, y0, 4.5 + u0, 16 - v0, y1, 4.5 + u1, mat) end)   -- (voxel-art: the same machine everywhere)
+        deco_furniture("plinth", F, 12, 0.6, 14.2, 2.8); B.sphere(X(13.1), 1.6, Z(1.7), 0.62, "crystal")
         if not plan.dropped.bed then F(2, 0, 7, 4.4, 0.4, 9.2, "dark_wood"); F(2.2, 0.4, 7.2, 4.2, 0.6, 9, "sand") end
     elseif theme == "rest" then
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2

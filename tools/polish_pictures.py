@@ -49,6 +49,13 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]
         L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
         shot("hall_f1", 1 * 1024 + 64, 8, x + 2.2, 3.0, z + 2.2, x + w / 2, 0.9, z + d / 2, fov=90)
+    if "hands_f1" in only:                      # the first-person hands: each class's weapon in the player's own camera, idle and in the middle of a swing (render only)
+        for cls, weapon in (("janitor", "mop"), ("accountant", "stapler"), ("pyro", "torch_used"), ("bard", "lute"), ("janitor", "sword_mild"), ("janitor", "mace_pa")):
+            L(v, "local G = Game; G.state.class = '%s'; G.state.equip.weapon = '%s'; G.setup_player_models(); camera.mode('first')" % (cls, weapon), 30)
+            for phase, pre in (("idle", ""), ("swing", "player.hand_play('swing')")):
+                if pre: L(v, pre, 8)
+                v.screenshot(os.path.join(SH, "hand_%s_%s.png" % (weapon, phase)), hud=False, settle=60)
+    if "hands_f1_done" in only: pass
     if "dead_goblin_f1" in only:                # a goblin killed 90 ticks ago: lying (die clip), not standing in its gore (the player's own camera height, 3 m away)
         r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == 'hall' and r.w >= 14 and r.d >= 14 then print(id, r.x, r.z, r.w, r.d); break end end", 0)[0].split("\t")
         rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]

@@ -793,9 +793,7 @@ function deco_item_draw(B, it, fl)
         B.fill(cx - 0.2, it.ceil - 0.1, cz - 0.2, cx + 0.2, it.ceil, cz + 0.2, "metal")
         B.fill(cx - 0.05, it.ceil - 0.3, cz - 0.05, cx + 0.05, it.ceil - 0.1, cz + 0.05, "metal")
     elseif id == "kiosk" then
-        box(0, 0, 0, W, 1.0, D, "dark_wood"); box(-0.05, 1.0, -0.05, W + 0.05, 1.08, D + 0.1, "marble")
-        box(0.05, 1.08, 0.05, 0.12, 2.2, 0.12, "metal"); box(W - 0.12, 1.08, 0.05, W - 0.05, 2.2, 0.12, "metal"); box(0, 2.2, 0, W, 2.4, D, "metal")
-        box(0.2, 2.25, D - 0.04, W - 0.2, 2.35, D, "lantern"); box(0.3, 1.1, 0.3, 0.7, 1.4, 0.6, "gold"); box(1.0, 1.1, 0.3, 1.5, 1.35, 0.7, "chest_wood")
+        deco_furniture("kiosk", box, W, D)
     elseif id == "bones" then
         box(0, 0, 0, 0.5, 0.15, 0.3, "bone"); box(0.1, 0.15, 0.05, 0.25, 0.3, 0.2, "bone")
     end
@@ -982,13 +980,13 @@ function deco_street(B, seg, mk, fl)
     for k = 0, 3 do
         local lu = 4 + k * 8 + off * 0.25
         if not mouth(lu - 0.5, lu + 0.5) then
-            box(lu - 0.15, 0, 0, lu + 0.15, 3.3, 0.3, "metal"); box(lu - 0.25, 3.3, 0, lu + 0.25, 3.45, 0.5, "metal"); box(lu - 0.18, 3.45, 0.05, lu + 0.18, 3.8, 0.4, "lantern")
+            deco_furniture("street_lamp", box, lu, "lantern")                                  -- (voxel-art: a slim iron post, a framed lantern)
             prot[#prot + 1] = { lu - 0.25, lu + 0.25, 0.5 }
         end
         local mu = lu + 4
         if mu < 31 and not mouth(mu - 1, mu + 1) then
             if (k + off) % 2 == 0 then
-                box(mu - 0.9, 0, 0, mu + 0.9, 0.45, 0.5, "dark_wood"); box(mu - 0.9, 0.45, 0, mu + 0.9, 0.55, 0.12, "dark_wood")        -- a bench against the wall
+                deco_furniture("bench", function(u0, y0, v0, u1, y1, v1, m) box(mu - 0.9 + u0, y0, v0, mu - 0.9 + u1, y1, v1, m) end, 1.8, 0.5)   -- a bench against the wall
                 prot[#prot + 1] = { mu - 0.9, mu + 0.9, 0.5 }
             else
                 box(mu - 0.6, 1.4, 0, mu + 0.6, 3.6, 0.1, (k % 2 == 0) and "carpet" or "gold")                                         -- a banner on the wall

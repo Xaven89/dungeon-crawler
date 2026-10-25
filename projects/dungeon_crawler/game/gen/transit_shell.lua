@@ -189,9 +189,9 @@ function transit_region(rx, rz, wh, run)
             if ax then F(f.vend.x + x0, y0, f.vend.z - 0.45 + z0, f.vend.x + x1, y1, f.vend.z - 0.45 + z1, mat)
             else F(f.vend.x - 0.45 + z0, y0, f.vend.z + x0, f.vend.x - 0.45 + z1, y1, f.vend.z + x1, mat) end
         end
-        fx(-1.2, 0, 0, 1.2, 2.3, 0.9, "metal"); fx(-1.0, 0.8, 0.9, 1.0, 2.0, 0.96, "obsidian"); fx(-0.8, 1.55, 0.96, 0.0, 1.9, 1.0, "lantern"); fx(0.3, 0.9, 0.96, 0.9, 1.4, 1.0, "lantern_off"); fx(-0.7, 0.9, 0.96, -0.3, 1.2, 1.0, "neon_red")     -- (a dark front with a small lit display: the whole face was a blown-out lantern)
+        deco_furniture("vending", fx)                                                          -- (voxel-art: the same machine everywhere)
         local c = f.crystal
-        if ax then F(c.x - 0.6, 0, c.z - 0.45, c.x + 0.6, 0.9, c.z + 0.45, "terrazzo") else F(c.x - 0.45, 0, c.z - 0.6, c.x + 0.45, 0.9, c.z + 0.6, "terrazzo") end
+        if ax then deco_furniture("plinth", function(x0, y0, z0, x1, y1, z1, m) F(x0, y0, z0, x1, y1, z1, m) end, c.x - 0.6, c.z - 0.45, c.x + 0.6, c.z + 0.45) else deco_furniture("plinth", function(x0, y0, z0, x1, y1, z1, m) F(x0, y0, z0, x1, y1, z1, m) end, c.x - 0.45, c.z - 0.6, c.x + 0.45, c.z + 0.6) end
         B.sphere(c.x, 1.55, c.z, 0.5, "crystal")
     end
 

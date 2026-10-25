@@ -124,13 +124,25 @@ function G.kit()
     if not kit.head and CLASS_HAT[s.class or ""] then kit.head = { file = CLASS_HAT[s.class] } end
     return kit
 end
+local HAND_FP = {                     -- (voxel-art) the first-person copies of the kit tools and where they sit
+    ["mop.vxm"]     = { "models/mop_fp.vxm",     { offset = { 0.36, -0.42, 0.95 }, turn = 0,   idle = "idle" } },
+    ["torch.vxm"]   = { "models/torch_fp.vxm",   { offset = { 0.32, -0.32, 0.95 }, turn = 0,   idle = "idle" } },
+    ["lute.vxm"]    = { "models/lute_fp.vxm",    { offset = { 0.34, -0.38, 1.15 }, turn = 0,   idle = "idle" } },
+    ["stapler.vxm"] = { "models/stapler_fp.vxm", { offset = { 0.45, -0.45, 1.25 }, turn = 150, idle = "idle" } },
+}
 function G.setup_player_models()
     local body = G.state and BODIES[G.state.class or ""]
     local kit = body and G.kit() or {}
     player.model(body and ("models/figures/" .. body .. ".vxm") or "models/hero.vxm", { idle = body and kit.main_hand and "ready" or "idle", walk = "walk", attack = "attack" })
     equipment.state.p0 = nil                                          -- (a new player.model starts bare)
     if body then equipment.apply(equipment.player(0), kit) end
-    if not (kit.main_hand and kit.main_hand.hand) then player.hand_model("models/sword.vxm", { offset = { 0.35, -0.05, 1.0 }, turn = 0, idle = "idle" }) end
+    -- the first-person hands (voxel-art, kit/hand_placement.md): the tools have their own first-person copies with a gloved fist, an idle tilt and a swing clip (player.hand_play("swing") on every attack);
+    -- the blades and the empty hand show the sword, the axes their own model; about a sixth of the frame, lower right, the crosshair free. Render only: the reach is the items table's.
+    local f = kit.main_hand and kit.main_hand.file
+    local h = f and HAND_FP[f]
+    if h then player.hand_model(h[1], h[2])
+    elseif f == "battle_axe.vxm" then player.hand_model("models/axe.vxm", { offset = { 0.22, -0.30, 1.15 }, turn = 0, idle = "idle" })
+    else player.hand_model("models/sword.vxm", { offset = { 0.28, 0.0, 1.0 }, turn = 0, idle = "idle" }) end
 end
 
 function on_tick(t)
