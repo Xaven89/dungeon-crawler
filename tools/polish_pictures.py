@@ -71,7 +71,10 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
             if not r: print(name, "no such room on floor 1 of this seed"); continue
             rid, x, z, w, d = r[0].split("\t")[0], *[float(t) for t in r[0].split("\t")[1:5]]
             L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
-            shot(name, 1 * 1024 + 64, 8, x + 2.2, 1.9, z + 2.2, x + w / 2, 0.6, z + d / 2, fov=90)
+            if theme == "furnace":      # (the corner is a pillar: look along the causeway from the middle of the end wall)
+                if w >= d: shot(name, 1 * 1024 + 64, 8, x + 1.2, 1.9, z + d / 2, x + w / 2, 0.0, z + d / 2, fov=90)
+                else: shot(name, 1 * 1024 + 64, 8, x + w / 2, 1.9, z + 1.2, x + w / 2, 0.0, z + d / 2, fov=90)
+            else: shot(name, 1 * 1024 + 64, 8, x + 2.2, 1.9, z + 2.2, x + w / 2, 0.6, z + d / 2, fov=90)
     if "corridor_f2" in only:                   # floor 2: an artery (the 6 m wide strip between blocks), looking along it
         new_floor(v, 2)
         a = L(v, """local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]
@@ -91,7 +94,10 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
             if not r: print(name, "no such room"); continue
             rid, x, z, w, d = r[0].split("\t")[0], *[float(t) for t in r[0].split("\t")[1:5]]
             L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
-            shot(name, 2 * 1024 + 64, 8, x + 2.2, 1.9, z + 2.2, x + w / 2, 0.6, z + d / 2, fov=90)
+            if theme == "furnace":
+                if w >= d: shot(name, 2 * 1024 + 64, 8, x + 1.2, 1.9, z + d / 2, x + w / 2, 0.0, z + d / 2, fov=90)
+                else: shot(name, 2 * 1024 + 64, 8, x + w / 2, 1.9, z + 1.2, x + w / 2, 0.0, z + d / 2, fov=90)
+            else: shot(name, 2 * 1024 + 64, 8, x + 2.2, 1.9, z + 2.2, x + w / 2, 0.6, z + d / 2, fov=90)
     if "square_f3_day" in only or "pub_f3_inside" in only or "meadow_f3" in only or "street_f3_day" in only or "square_f3_night" in only:
         new_floor(v, 3); BZ = 3 * 1024 + 64
         vil = L(v, "local CG, H = Game.floorgen.cg(); local P = Game.floorgen.layout\nfor _, id in ipairs(P.order) do local r = P.rooms[id]\n  if r.theme == 'village' then local sup = CG.super_of(P.ctx, r.ci, r.cj); print(sup.ci, sup.cj); return end end", 0)
@@ -117,6 +123,7 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         new_floor(v, 4)
         tp(100, 201, wait=400)
         shot("hub_f4", 4 * 1024 + 64, 8, 100, 1.7, 201, 124, 1.2, 209, settle=300)
+        shot("hub_crate", 4 * 1024 + 64, 8, 104, 1.7, 207, 112, 0.6, 198.5, settle=60)      # the lost-luggage locker (balance step 1)
 # (the views of the floors above run in the order of their floors: the sessions only ever go DOWN, except borough_f2 which begins floor 2 again)
     def hall_view(fl, name):                    # the first hall of the floor, from its north-west corner toward the middle
         r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == 'hall' and r.w >= 14 and r.d >= 14 then print(id, r.x, r.z, r.w, r.d); break end end", 0)[0].split("\t")

@@ -335,6 +335,7 @@ function E.kill(inst, opts)
     local k = A.bump("kills")
     if not T.boss then A.award("first_blood") end
     local gold = G.irange(T.gold[1], T.gold[2])
+    if inst.commuter then gold = gold * 2 + 4 end                           -- (floor 4: those that came off a car carry a fare)
     local sniped = inst.riding ~= nil                     -- shot from a platform while he rides: a time trap, low pay and no loot (the transit floor)
     if sniped then gold = floor(gold * 0.25) end
     if G.state.marked_bonus and inst.marked then gold = gold * 2 end

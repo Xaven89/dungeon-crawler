@@ -153,6 +153,12 @@ function deco_crates(theme, room, doors, mk, fl)
         if door_s then add("gold", room.x + 2.5, room.z + room.d - 2, "-z", 0) else add("gold", cx - 0.6, room.z + room.d - 2, "-z", 0.45) end
     elseif theme == "furnace" then add(fl >= 3 and "gold" or "silver", cx - 0.6, cz - 0.4, "+z", 0)
     elseif theme == "flooded" then add("silver", cx - 0.6, cz - 0.4, "+z", 0)
+    elseif theme == "den" then add("silver", cx - 0.6, cz - 0.4, "+z", 0)                                       -- (floor 4's income: a chest in each den ...)
+    elseif theme == "hub" then                                                                              -- (a lost-luggage locker on the platform wall between the vending machine and the crystal)
+        if room.w >= room.d then add("silver", room.x + room.w / 2 - 0.6, room.z + 0.2, "+z", 0)
+        else add("silver", room.x + 0.2, room.z + room.d / 2 - 0.6, "+x", 0) end
+    elseif theme == "station" and (room.y or 0) == 0 and room.w == 32 then                                    -- ... and a left-luggage crate on every Y platform (the Y stations; not the X halls, not the raised Blue ones)
+        add("silver", room.x + 4 + 24 * mk(31).next(), room.z + 1.3, "+z", 0)
     elseif theme == "ballroom" then
         local door_n = false
         for _, d in ipairs(doors or {}) do if d.side == "N" then door_n = true end end
@@ -722,6 +728,17 @@ function deco_room(B, theme, room, doors, mk, fl)
         local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
         B.fill(cx - 1.2, -depth, cz - 1.2, cx + 1.2, 0.0, cz + 1.2, "obsidian")
         local sx = (x1 - x0) >= (z1 - z0)
+        if fluid == "lava" then
+            -- (balance step 1: nobody dies to the lava on the first floors) a causeway from the pool's edge to the middle block, 1.6 m wide, with a 0.5 m rim on both sides; the bot died here twice a run
+            if sx then
+                B.fill(x0, -depth, cz - 0.8, cx - 1.2, 0, cz + 0.8, "obsidian")
+                B.fill(x0, 0, cz - 0.8, cx - 1.2, 0.5, cz - 0.6, "obsidian"); B.fill(x0, 0, cz + 0.6, cx - 1.2, 0.5, cz + 0.8, "obsidian")
+            else
+                B.fill(cx - 0.8, -depth, z0, cx + 0.8, 0, cz - 1.2, "obsidian")
+                B.fill(cx - 0.8, 0, z0, cx - 0.6, 0.5, cz - 1.2, "obsidian"); B.fill(cx + 0.6, 0, z0, cx + 0.8, 0.5, cz - 1.2, "obsidian")
+            end
+            return
+        end
         local n = floor(((sx and (x1 - x0) or (z1 - z0)) / 2 - 1.2) / 1.7)
         for i = 1, math.max(1, n) do
             local d = 1.2 + i * 1.7 - 0.5

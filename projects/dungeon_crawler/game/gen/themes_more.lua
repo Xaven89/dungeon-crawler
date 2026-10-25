@@ -30,7 +30,7 @@ F.register("furnace", {
         G.torch(cx, 0.2, pl.z0 + 2, { preset = "campfire", color = { 1, 0.35, 0.1 }, reach = 18, far = 26, name = room.id .. "_glow1" })
         G.torch(cx, 0.2, pl.z1 - 2, { preset = "campfire", color = { 1, 0.35, 0.1 }, reach = 18, far = 26, name = room.id .. "_glow2" })
         emitter.create(G.embers{ name = room.id .. "_embers", preset = "embers", pos = { G.mx(cx), G.my(0.4), G.mz(cz) }, size = { (pl.x1 - pl.x0) / 2, 0.5, (pl.z1 - pl.z0) / 2 } })
-        T.hazard("lava", pl.x0, -3.4, pl.z0, pl.x1, 0.35, pl.z1, 28 + ctx.floor * 2)
+        T.hazard("lava", pl.x0, -3.4, pl.z0, pl.x1, -0.1, pl.z1, 28 + ctx.floor * 2)       -- (balance step 1: the box ended at +0.35, so the stones and the causeway at 0 hurt too; now only whoever is IN the lava, like the toxic pool)
         local corners = { { room.x + 2, room.z + 2 }, { room.x + room.w - 2, room.z + 2 }, { room.x + 2, room.z + room.d - 2 }, { room.x + room.w - 2, room.z + room.d - 2 } }
         local out = outside(pl)
         local function allow(x, z) for _, c in ipairs(corners) do if G.dist2(x, z, c[1], c[2]) < 2.1 then return false end end return out(x, z) end

@@ -101,7 +101,7 @@ print(table.concat(out, ' | '))""" % room, 0))
 local px, py, pz = player.pos()
 for _, i in pairs(G.enemies.list) do if not i.dead and i.room == '%s' then local x, y, z = G.enemies.position(i); if x then local d = G.dist2(x, z, px, pz); if not bd or d < bd then best, bd = { x, y, z }, d end end end end
 local r = G.floorgen.layout.rooms['%s']; local cx, cz = G.mx(r.x + r.w / 2), G.mz(r.z + r.d / 2)
-if best and bd > 6 then local dx, dz = cx - best[1], cz - best[3]; local n = math.max(0.1, math.sqrt(dx*dx + dz*dz)); local tx, ty, tz = best[1] + dx / n * 2.2, best[2] + 0.1, best[3] + dz / n * 2.2; local function solid(h) return world.solid(math.floor(tx * 16), math.floor((ty + h) * 16), math.floor(tz * 16)) end; if not (solid(0.2) or solid(1.0) or solid(1.7)) then player.teleport(tx, ty, tz, { wait = true }) end end""" % (room, room), 1)
+if best and bd > 6 then local dx, dz = cx - best[1], cz - best[3]; local n = math.max(0.1, math.sqrt(dx*dx + dz*dz)); local tx, ty, tz = best[1] + dx / n * 2.2, best[2] + 0.1, best[3] + dz / n * 2.2; local function solid(h) return world.solid(math.floor(tx * 16), math.floor((ty + h) * 16), math.floor(tz * 16)) end; local ground = world.solid(math.floor(tx * 16), math.floor((ty - 0.2) * 16), math.floor(tz * 16)); if ground and not (solid(0.2) or solid(1.0) or solid(1.7)) then player.teleport(tx, ty, tz, { wait = true }) end end""" % (room, room), 1)
         if out and out[0].split("\t")[0] == "0": break
     act(v, name="attack", down=False, player=0)
     L(v, "Game.autoaim = false", 0)
@@ -235,7 +235,10 @@ def main():
                 t, kills, end = fight(v, rid, 2400)
                 n = int(L(v, "print(Game.enemies.alive_count())", 0)[0]); maxagents = max(maxagents, n)
                 # the crates of the room, in a sorted order (`pairs` over string keys differs between processes)
-                L(v, "local G=Game; local ids = {}; for id, c in pairs(G.traps.crates) do if c.cell == '%s' then ids[#ids+1] = id end end; table.sort(ids); for _, id in ipairs(ids) do G.traps.open_crate(id) end" % rid, 60)
+                ids = L(v, "local G=Game; local ids = {}; for id, c in pairs(G.traps.crates) do if c.cell == '%s' then ids[#ids+1] = id end end; table.sort(ids); print(table.concat(ids, ','))" % rid, 0)[0].split(",")
+                for cid in [x for x in ids if x]:        # (the bot stands at the crate when it opens it and waits for the loot to be picked up: a crate opened from across the room paid nothing)
+                    L(v, "local G=Game; local c = G.traps.crates['%s']; local off = { ['+z'] = { 0, 1.4 }, ['-z'] = { 0, -1.4 }, ['+x'] = { 1.4, 0 }, ['-x'] = { -1.4, 0 } }; local o = off[c.face] or { 0, 1.4 }; player.teleport(G.mx(c.cx + o[1]), G.my(c.ly + 0.1), G.mz(c.cz + o[2]), { wait = true }); G.traps.open_crate('%s')" % (cid, cid), 150)
+                L(v, "local G=Game", 30)
                 L(v, """local G=Game
 for _, s in ipairs(G.items.inv.bag) do
   if s then local d = G.items.defs[s.id]

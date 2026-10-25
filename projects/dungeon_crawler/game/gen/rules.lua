@@ -66,6 +66,7 @@ function R.tick_third_rail(t)
     local lvl = (ly > 4) and 1 or 0
     if transit_on_bed(lx, lz, lvl) and ly < lvl * 8 - 0.08 then
         G.player.hurt(8, "the third rail", { pierce = true })
+        G.tally("zaps", "third_rail")
         if not R.rail_warned then R.rail_warned = true; G.announcer.say_key("rule.third_rail.zap", { prio = 2 }) end
         G.sfx.play("firebolt", px, py, pz, 0.5, 1.6)
     end

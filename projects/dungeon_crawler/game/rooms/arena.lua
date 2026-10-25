@@ -54,7 +54,7 @@ end
 W.things[#W.things + 1] = function()
     for i = 0, 7 do
         local a = i * math.pi / 4 + math.pi / 8
-        G.torch(CX + math.cos(a) * 14.6, 3.5, CZ + math.sin(a) * 14.6, { reach = 13, color = { 1.0, 0.45, 0.2 } })
+        G.torch(CX + math.cos(a) * 14.6, 3.5, CZ + math.sin(a) * 14.6, { reach = 8, far = 24, intensity = 8, raw = true, flicker = false, color = { 1.0, 0.45, 0.2 } })   -- (voxel-art) raw: the moat is dimmer now
     end
     G.torch(CX, 0.5, CZ, { preset = "campfire", color = { 1, 0.3, 0.2 }, reach = 18, name = "arena_core" })
     G.brazier(23.5, 137.5, { reach = 12 }); G.brazier(36.5, 137.5, { reach = 12 })       -- they light the manager's face for his entrance

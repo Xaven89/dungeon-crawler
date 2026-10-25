@@ -146,6 +146,9 @@ function transit_region(rx, rz, wh, run)
                     local along_x = (dz == 0)
                     local hb = BED / 2
                     if along_x then F(x0, ly - 0.25, z0 - hb, x1, ly, z0 + hb, nil) else F(x0 - hb, ly - 0.25, z0, x0 + hb, ly, z1, nil) end
+                    -- (voxel-art) the live bed: a basalt ballast under it all, a glowing conductor line along its middle (FLUSH with the bed floor: a 1-voxel ridge is a wall for the nav grid, see ENGINE_FEEDBACK)
+                    if along_x then F(x0, ly - 0.3125, z0 - hb, x1, ly - 0.25, z0 + hb, "basalt"); F(x0, ly - 0.3125, z0 - 0.0625, x1, ly - 0.25, z0 + 0.0625, "live_rail")
+                    else F(x0 - hb, ly - 0.3125, z0, x0 + hb, ly - 0.25, z1, "basalt"); F(x0 - 0.0625, ly - 0.3125, z0, x0 + 0.0625, ly - 0.25, z1, "live_rail") end
                     if along_x then
                         F(x0, ly - 0.25, z0 - 1.25, x1, ly - 0.2, z0 - 1.13, "metal"); F(x0, ly - 0.25, z0 + 1.13, x1, ly - 0.2, z0 + 1.25, "metal")
                         local t = math.ceil(max(0, x0)); while t < min(32, x1) do F(t, ly - 0.25, z0 - 1.6, t + 0.3, ly - 0.22, z0 + 1.6, "dark_wood"); t = t + 1 end
@@ -160,13 +163,15 @@ function transit_region(rx, rz, wh, run)
                         local px, pz = ax + dx * t / len, az + dz * t / len
                         if px > 0 and px < 32 and pz > 0 and pz < 32 then
                             F(px - BED / 2, ly - 0.25, pz - BED / 2, px + BED / 2, ly, pz + BED / 2, nil)
+                            F(px - BED / 2, ly - 0.3125, pz - BED / 2, px + BED / 2, ly - 0.25, pz + BED / 2, "basalt")            -- (voxel-art) the ballast
                         end
                         t = t + 1
                     end
                     t = 0
                     while t <= len do
                         local px, pz = ax + dx * t / len, az + dz * t / len
-                        for _, o in ipairs({ -1.6, -0.8, 0, 0.8, 1.6 }) do
+                        if px > 0.2 and px < 31.8 and pz > 0.2 and pz < 31.8 then F(px - 0.07, ly - 0.3125, pz - 0.07, px + 0.07, ly - 0.25, pz + 0.07, "live_rail") end   -- (voxel-art) the live line
+                        for _, o in ipairs({ -1.6, -0.8, 0.8, 1.6 }) do
                             local qx, qz = px + nx * o, pz + nz * o
                             if qx > 0.2 and qx < 31.8 and qz > 0.2 and qz < 31.8 then F(qx - 0.15, ly - 0.25, qz - 0.15, qx + 0.15, ly - 0.22, qz + 0.15, "dark_wood") end
                         end
@@ -252,6 +257,8 @@ function transit_region(rx, rz, wh, run)
     end
 
     -- the layout grammar's items: benches, kiosks, banners, crates ... (hubs, Yellow stations, dens)
+    -- the loot crates of the dens and the Y platforms (the plan is deco_crates: the buttons are the game's, floor.lua; the grammar leaves their places free: transit_layout reserves them)
+    for _, c in ipairs(deco_crates(info.theme, room, {}, function(salt) return deco_rng(cellgen_hash_from(wh, run), fl, ci, cj, salt or 1) end, 4)) do deco_chest(B, c.tier, c.x, c.y or 0, c.z, c.face) end
     local lay = transit_layout(info, function(salt) return deco_rng(cellgen_hash_from(wh, run), fl, ci, cj, salt or 1) end)
     if lay then for _, it in ipairs(lay.items) do if it.y0 == nil then it.y0 = 0 end; deco_item_draw(B, it, fl) end end
 
