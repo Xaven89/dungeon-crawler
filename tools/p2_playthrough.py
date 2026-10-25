@@ -254,6 +254,17 @@ end""", 5)
         print("sim:", json.dumps({k: st["sim"].get(k) for k in ("bodies", "awake_bodies", "gravity_fields")}), "agents", L(v, "print(Game.enemies.alive_count(), #Game.floorgen.made_list)", 0)[0].replace("\t", " cells "))
         body_table(v, "the end")
         print("agent spawns refused by the engine (inside solid voxels):", L(v, "print(Game.enemies.refused or 0)", 0))
+        # the corpse audit (V_animation of the artist): a creature whose model has a `die` clip must die by it (die_clip), one that ragdolls must not have one (a drawn-only scale-0.6 model cannot ragdoll:
+        # the rebuilt goblins stood upright in their gore for 40 s); every enemy type is spawned once at the player and its model asked for the clip
+        ca = L(v, """local G=Game; local E=G.enemies; local px, py, pz = player.pos(); local lx, ly, lz = G.to_local(px, py, pz); local kinds = {}
+for k in pairs(E.types) do kinds[#kinds + 1] = k end; table.sort(kinds)
+local bad, n = {}, 0
+for _, k in ipairs(kinds) do local T = E.types[k]; local i = E.spawn(k, lx, ly, lz, { room = G.current_room })
+  if i then n = n + 1; local ok = pcall(model.play, i.mdl, 'die', 1, false, 6)
+    if T.ragdoll and ok then bad[#bad + 1] = k .. ': ragdoll = true but the model has a die clip' elseif T.die_clip and not ok then bad[#bad + 1] = k .. ': die_clip = true but no die clip' end
+    pcall(agent.remove, i.id); E.list[i.id] = nil; E.by_model[i.mdl] = nil end end
+print(n, #kinds, table.concat(bad, '; '))""", 5)
+        print("corpse audit (types spawned, types, problems):", ca)
         print("state hash:", v.state_hash())
         if os.environ.get("DUMP_BODIES"):
             b = v.tool("bodies")

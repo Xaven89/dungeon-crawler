@@ -49,6 +49,15 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]
         L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
         shot("hall_f1", 1 * 1024 + 64, 8, x + 2.2, 3.0, z + 2.2, x + w / 2, 0.9, z + d / 2, fov=90)
+    if "dead_goblin_f1" in only:                # a goblin killed 90 ticks ago: lying (die clip), not standing in its gore (the player's own camera height, 3 m away)
+        r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == 'hall' and r.w >= 14 and r.d >= 14 then print(id, r.x, r.z, r.w, r.d); break end end", 0)[0].split("\t")
+        rid, x, z, w, d = r[0], *[float(t) for t in r[1:5]]
+        L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
+        cx, cz = L(v, "local G=Game; local px, py, pz = player.pos(); local lx, ly, lz = G.to_local(px, py, pz); print(lx, lz)", 0)[0].split("\t")
+        cx, cz = float(cx), float(cz)
+        L(v, "local G=Game; G.dg = G.enemies.spawn('goblin', %f, 0, %f, { room = '%s' }); G.state.flags.god = true" % (cx + 3.0, cz, rid), 30)
+        L(v, "local G=Game; G.enemies.kill(G.dg, { source = 'test' })", 90)
+        shot("dead_goblin_f1", 1 * 1024 + 64, 8, cx, 1.7, cz, cx + 3.0, 0.4, cz, fov=70)
     for name, theme in (("ballroom_f1", "ballroom"), ("flooded_f1", "flooded"), ("library_f1", "library"), ("safe_f1", "safe"), ("rest_f1", "rest")):      # single-room materials (polished_marble, wet_flagstone): judged on their own rooms, from a corner
         if name in only:
             r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == '%s' then print(id, r.x, r.z, r.w, r.d); break end end" % theme, 0)
