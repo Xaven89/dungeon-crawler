@@ -5,7 +5,7 @@ local W, T, E = G.world, G.traps, G.enemies
 local R = W.rooms.boiler
 
 W.builders[#W.builders + 1] = function()
-    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "flagstone", wall = "dungeon_brick", ceil = "dungeon_brick", ftex = "tiles", wtex = "blocks", ctex = "planks" }
+    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "scorched_stone", wall = "soot_brick", ceil = "ceiling_dark" }
     -- the lava channel, x 90..96, down to -3 m, lined with obsidian
     G.clear(90, -3, 0, 96, 0, 26)
     G.fill(89.75, -3, 0, 90, 0, 26, "obsidian"); G.fill(96, -3, 0, 96.25, 0, 26, "obsidian"); G.fill(90, -3.3, 0, 96, -3, 26, "obsidian")

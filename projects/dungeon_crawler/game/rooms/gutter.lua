@@ -11,7 +11,7 @@ local walkways = {      -- { x0, z0, x1, z1 } (metres, local): the dry paths, 2 
 W.gutter_level = -0.2
 
 W.builders[#W.builders + 1] = function()
-    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "flagstone", wall = "mossy", ceil = "dungeon_brick", wtex = "big_bricks", ctex = "blocks" }
+    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "flagstone", wall = "mossy", ceil = "ceiling_dark", wtex = "big_bricks" }
     -- the sunken channel: the whole floor goes down 1.5 m and fills with toxic water
     G.clear(80, -1.5, 70, 122, 0, 96)
     G.fill(80, -2, 70, 122, -1.5, 96, "flagstone")

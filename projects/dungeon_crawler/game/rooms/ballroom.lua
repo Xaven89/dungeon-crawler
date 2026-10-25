@@ -6,11 +6,11 @@ local R = W.rooms.ballroom
 W.gravity = {}
 
 W.builders[#W.builders + 1] = function()
-    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "marble", wall = "dungeon_brick", ceil = "dungeon_brick", wtex = "blocks", ctex = "planks" }
+    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "polished_marble", wall = "plaster", ceil = "ceiling_dark" }
     -- the dance floor: 2 m tiles, marble and obsidian, a gold ring in the middle
     for ix = 0, 18 do
         for iz = 0, 15 do
-            if (ix + iz) % 2 == 0 then G.fill(38 + ix * 2, -0.5, 66 + iz * 2, 40 + ix * 2, 0, 68 + iz * 2, "obsidian", "tiles") end
+            if (ix + iz) % 2 == 0 then G.fill(38 + ix * 2, -0.5, 66 + iz * 2, 40 + ix * 2, 0, 68 + iz * 2, "dark_wood", "tiles") end
         end
     end
     -- the stage on the north wall, curtains of carpet

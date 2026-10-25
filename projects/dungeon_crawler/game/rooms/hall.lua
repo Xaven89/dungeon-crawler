@@ -5,7 +5,7 @@ local W, T, E = G.world, G.traps, G.enemies
 local R = W.rooms.hall
 
 W.builders[#W.builders + 1] = function()
-    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "flagstone", wall = "dungeon_brick", ceil = "dungeon_brick", ftex = "big_tiles", wtex = "blocks", ctex = "planks" }
+    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "flagstone", wall = "dungeon_brick", ceil = "ceiling_dark", ftex = "big_tiles", wtex = "blocks" }
     -- a long red runner with gold edges
     G.fill(30, 0, 8, 72, 0.06, 14, "carpet"); G.fill(30, 0, 7.8, 72, 0.06, 8, "gold"); G.fill(30, 0, 14, 72, 0.06, 14.2, "gold")
     -- ceiling beams

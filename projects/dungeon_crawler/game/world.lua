@@ -32,7 +32,7 @@ end
 -- ================================================================================================ A: the Intake Lobby
 local function build_lobby_voxels()
     local r = W.rooms.lobby
-    G.room{ x = r.x, z = r.z, w = r.w, d = r.d, h = r.h, floor = "marble", wall = "dungeon_brick", ceil = "dungeon_brick", wtex = "blocks", ctex = "planks" }
+    G.room{ x = r.x, z = r.z, w = r.w, d = r.d, h = r.h, floor = "ruin_stone", wall = "plaster", ceil = "ceiling_dark", wtex = "blocks" }          -- (voxel-art) floor-0 palette
     -- a checkered floor of marble and flagstone, 2 m squares
     for ix = 0, 12 do
         for iz = 0, 10 do
@@ -45,8 +45,8 @@ local function build_lobby_voxels()
     -- four pillars
     for _, p in ipairs({ { 7, 6 }, { 19, 6 }, { 7, 16 }, { 19, 16 } }) do
         G.pillar(p[1], p[2], 0.8, 0, 8.2, "marble", "blocks")
-        G.pillar(p[1], p[2], 1.1, 0, 0.5, "dungeon_brick")
-        G.pillar(p[1], p[2], 1.1, 7.7, 8.2, "dungeon_brick")
+        G.pillar(p[1], p[2], 1.1, 0, 0.5, "plinth_stone")
+        G.pillar(p[1], p[2], 1.1, 7.7, 8.2, "plinth_stone")
     end
     -- the reception desk on the north wall, with a golden trim, and the show's sign above it
     G.fill(8, 0, 2.2, 18, 1.1, 3.8, "marble", "blocks")

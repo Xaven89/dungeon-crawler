@@ -142,11 +142,31 @@ function E.spawn_room(room, list)
     E.spawned[room] = true
     local rem = E.remaining[room]
     local n = 0
+    local failed = {}
     for i, e in ipairs(list) do
         if e.captive and G.state.opened[e.captive] then rem = rem            -- (let out already)
         elseif not rem or rem[i] then
-            if E.spawn_entry(room, list, i) then n = n + 1 end
+            if E.spawn_entry(room, list, i) then n = n + 1 else failed[#failed + 1] = i end
         end
+    end
+    -- an entry the engine refused (its place is not built yet: the Orientation's hall is spawned from the lobby before its voxels exist, 5 of its 7 monsters were missing on a fresh world) is tried again every second
+    -- while the room stays spawned, at most ten times; entries that came back from the dead meanwhile (rem[i] cleared) are not
+    if #failed > 0 then
+        local tries = 0
+        local function retry()
+            tries = tries + 1
+            if not E.spawned[room] or G.state.cleared[room] or tries > 10 then return end
+            local again = {}
+            local alive = {}
+            for _, inst in pairs(E.list) do if inst.room == room and inst.index and not inst.dead then alive[inst.index] = true end end
+            for _, i in ipairs(failed) do
+                local owed = (not E.remaining[room]) or E.remaining[room][i]
+                if owed and not alive[i] then if not E.spawn_entry(room, list, i) then again[#again + 1] = i end end
+            end
+            failed = again
+            if #failed > 0 then after(60, retry) end
+        end
+        after(60, retry)
     end
     return n
 end

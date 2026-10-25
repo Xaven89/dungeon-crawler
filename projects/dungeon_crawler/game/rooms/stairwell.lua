@@ -5,7 +5,7 @@ local W, T, E = G.world, G.traps, G.enemies
 local R = W.rooms.stairwell
 
 W.builders[#W.builders + 1] = function()
-    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "dark_wood", wall = "dark_wood", ceil = "dark_wood", ftex = "planks", wtex = "fine_planks", ctex = "planks" }
+    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "oak_floor", wall = "dark_wood", ceil = "plaster", wtex = "fine_planks" }
     W.openings[#W.openings + 1] = { 53.6, 0, 130.2, 54.4, 3.8, 133.8 }
     -- a red rug, the fireplace in the north wall, bookshelves along the west wall
     G.fill(58, 0, 128, 66, 0.05, 136, "carpet"); G.fill(57.9, 0, 127.9, 66.1, 0.05, 128, "gold"); G.fill(57.9, 0, 136, 66.1, 0.05, 136.1, "gold")

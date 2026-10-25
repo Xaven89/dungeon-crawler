@@ -5,7 +5,7 @@ local W, T, E = G.world, G.traps, G.enemies
 local R = W.rooms.conveyor
 
 W.builders[#W.builders + 1] = function()
-    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "metal", wall = "dungeon_brick", ceil = "dungeon_brick", ftex = "hazard", wtex = "blocks", ctex = "planks" }
+    G.room{ x = R.x, z = R.z, w = R.w, d = R.d, h = R.h, floor = "metal", wall = "cinderblock", ceil = "ceiling_dark", ftex = "hazard" }
     -- the belt bed (4 m wide) is the floor itself; the ledges either side are raised half a metre
     G.fill(114, 0, 20, 116, 0.5, 70, "flagstone", "tiles"); G.fill(120, 0, 20, 122, 0.5, 70, "flagstone", "tiles")
     G.fill(115.8, 0.5, 20, 116, 1.3, 70, "metal"); G.fill(120, 0.5, 20, 120.2, 1.3, 70, "metal")

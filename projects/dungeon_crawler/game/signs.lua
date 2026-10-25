@@ -9,7 +9,7 @@ local SIGNS = {
     { 6.8, 5.3, 0, "THE DESCENT", { facing = "+z", material = "sign_warm", size = 3, spacing = 1, depth = 2 } },
     { 8.7, 4.1, 0, "NOW WITH 40% MORE DEATH", { facing = "+z", material = "sign_red", size = 1, depth = 1 } },
     { 16.3, 1.9, 0, "STAFF ONLY", { facing = "+z", material = "hazard_y", size = 1, depth = 1 } },
-    { 5.0, 6.4, 22, "GAUNTLET GATE - SCREAM IN AN ORDERLY FASHION", { facing = "-z", material = "hazard_y", size = 1, depth = 1 } },
+    { 5.0, 6.4, 22, "GAUNTLET GATE - SCREAM IN AN ORDERLY FASHION", { facing = "-z", material = "sign_red", size = 1, depth = 1 } },
     { 89.6, 4.6, 0, "DRAWBRIDGE: RAISED", { facing = "+z", material = "sign_red", size = 1, depth = 1 } },
     { 116.6, 3.6, 69.6, "FURNACE AHEAD", { facing = "-z", material = "sign_red", size = 1, depth = 1 } },
     { 114.8, 4.4, 20, "BELT IS ALWAYS ON", { facing = "+z", material = "hazard_y", size = 1, depth = 1 } },
