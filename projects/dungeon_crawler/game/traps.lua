@@ -333,6 +333,7 @@ function T.swing_feedback(reach)
     local m = world.material_at(floor(hx * 16), floor(hy * 16), floor(hz * 16))
     G.player.hitmark = time.tick(); G.player.hitmark_crit = false; G.player.hitmark_wall = true
     fx.play(chip_of[m] or "chip_stone", floor(hx * 16), floor(hy * 16), floor(hz * 16), 1.0)
+    G.sfx.logline("hit_" .. (sound_of[m] or "stone"), "sfx", 1, 1, true)
     sound.hit(sound_of[m] or "stone", 5 + G.state.level * 0.3, 1.0, hx, hy, hz)
     if m == "metal" or m == "gold" then G.sfx.play("trap_click", nil, nil, nil, 0.5, 0.7) end
     return true

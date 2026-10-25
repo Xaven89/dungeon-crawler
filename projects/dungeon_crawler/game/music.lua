@@ -51,6 +51,7 @@ end
 function M.crossfade_to(name)
     local bed = M.beds[name] or M.beds.dungeon
     if M.cur then sound.stop(M.cur, 2.0) end
+    G.sfx.logline(bed.file, "music", bed.vol, 1, false)
     M.cur = sound.play{ file = "sounds/" .. bed.file .. ".wav", loop = true, bus = "music", volume = bed.vol, fade_in = 2.0 }
     M.cur_name = name
     M.done = nil
@@ -67,7 +68,7 @@ function M.tick(t)
     if M.once_at and t >= M.once_at then M.once_at = nil; M.done = want; M.want = M.room_bed[G.current_room or "lobby"] or "dungeon" end
     -- the fight layer
     local fighting = in_combat() and not G.safe and want ~= "boss"
-    if fighting and not M.combat then M.combat = sound.play{ file = "sounds/m_combat.wav", loop = true, bus = "music", volume = 0.7, fade_in = 0.6 }
+    if fighting and not M.combat then G.sfx.logline("m_combat", "music", 0.7, 1, false); M.combat = sound.play{ file = "sounds/m_combat.wav", loop = true, bus = "music", volume = 0.7, fade_in = 0.6 }
     elseif not fighting and M.combat then sound.stop(M.combat, 2.5); M.combat = nil end
 end
 

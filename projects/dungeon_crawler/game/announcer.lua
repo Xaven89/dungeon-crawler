@@ -8,6 +8,13 @@ G.announcer = A
 -- ---------------------------------------------------------------------------------------------- sounds
 G.sfx = {}
 local sfx_index = {}
+-- an opt-in log of every sound the game starts (for the sound audit: exact counts from a recording): `Game.sfx.log(true)` (the MCP lua tool, at the start of the session: a recording keeps the call, so a replay logs too),
+-- then every sound prints  SFXLOG <tick> <name> <bus> <volume> <pitch> <2d|3d>  to the engine log. Not part of the saved state, no effect on the simulation.
+G.sfx.logging = false
+function G.sfx.log(on) G.sfx.logging = on and true or false end
+function G.sfx.logline(name, bus, vol, pitch, is3d)
+    if G.sfx.logging then print(string.format("SFXLOG %d %s %s %.2f %.2f %s", time.tick(), name, bus, vol or 1, pitch or 1, is3d and "3d" or "2d")) end
+end
 local function load_sound(name)
     local v = sfx_index[name]
     if v == nil then
@@ -20,16 +27,19 @@ end
 function G.sfx.play(name, lx, ly, lz, vol, pitch)
     local idx = load_sound(name)
     if idx < 0 then return false end
+    G.sfx.logline(name, "sfx", vol, pitch, lx ~= nil)
     if lx then return sound.play{ file = "sounds/" .. name .. ".wav", at = { G.mx(lx), G.my(ly), G.mz(lz) }, volume = vol or 1, pitch = pitch or 1, bus = "sfx" } end
     return sound.play{ file = "sounds/" .. name .. ".wav", volume = vol or 1, pitch = pitch or 1, bus = "sfx" }
 end
 -- a voice blip: 2D on the voice bus
 function G.sfx.voice(name, vol, pitch)
     if load_sound(name) < 0 then return false end
+    G.sfx.logline(name, "voice", vol, pitch, false)
     return sound.play{ file = "sounds/" .. name .. ".wav", volume = vol or 1, pitch = pitch or 1, bus = "voice" }
 end
 function G.sfx.play_world(name, wx, wy, wz, vol, pitch)
     if load_sound(name) < 0 then return false end
+    G.sfx.logline(name, "sfx", vol, pitch, true)
     return sound.play{ file = "sounds/" .. name .. ".wav", at = { wx, wy, wz }, volume = vol or 1, pitch = pitch or 1, bus = "sfx" }
 end
 function G.sfx.preload(names) for _, n in ipairs(names) do load_sound(n) end end
