@@ -443,3 +443,14 @@ happened: (1) a `from` that lies exactly on the ridge column: "the standing spot
 repro: any floor strip of 3 m or more with a line of solid voxels one voxel high across or along its middle (`edit.box(x, y, z0, x, y, z1, "stone")` on a flat floor at y - 1), `flood_region` from a spot 1 m beside the line to a spot 1 m beyond it.
 workaround: the line is FLUSH with the bed floor (the live_rail voxels replace the top row of the ballast instead of sitting on it): the same glowing line seen from above, no ridge, 0 problems.
 ask: a ridge of one voxel should not change the nav cells (the cell height is the highest solid of its 0.5 m, then a 0.06 m step is nothing), or the docs should say which obstacles a 0.5 m cell cannot cross.
+
+## Phase 29: a replay without `--project` has no strings (the recording's clip folder does not snapshot strings/*.csv) (binary 077c6a9)
+kind: bug or unclear docs        severity: hurts (a `--replay ... --audio-out` render silently lacked all of the announcer's voice: 117 blips instead of 2,270; found by the sound audit)
+what I tried: the 4-floor bot recording (`--record`), replayed with `voxelith --replay rec.log --threads 3 --save S --state-dir D --audio-out out.wav` (the command the docs suggest; the recording holds the scripts, materials, biomes, foliage in `rec.log.clip/`).
+expected: the replay is the session again, with the same texts: the announcer's messages are presentation only, but the audio render and the HUD are part of what a replay is for.
+happened: the hash is equal (the simulation does not depend on text), but `has_text` / `tr` find nothing: the game's `A.say_key` returns false for every message, 13 messages said instead of 286 (only those whose text is the key itself, the achievements), 117 voice blips instead of 2,270. The clip folder contains `materials_0.csv`, `biomes_0.csv`, `foliage_0.csv`, `prefab_N.lua`, no `strings/*.csv`. With `--project projects/dungeon_crawler` added to the same command: 286 messages, 2,270 blips, the same hash.
+repro: any recording of a session in which the game says something (tr / has_text); replay it without `--project` and count `has_text("some.key")`: false.
+workaround: always pass `--project <dir>` to a replay that renders audio or the HUD (tools/p2_playthrough.py does not need it for the hash). The opt-in `SAYLOG` / `SFXLOG` lines (Game.sfx.log(true)) show the difference.
+ask: snapshot strings/*.csv in the clip like materials, or make `--replay` print a warning when the project it recorded is not loaded; docs/MCP.md / LOCALIZATION.md should say what a replay loads.
+
+Also found on the way: in a live MCP session without `--audio-out` `sound.play{...}` returns nil (no sink): game code that keeps the handle (the music director's combat layer) restarts the layer every 20 ticks: 647 live against 44 in a replay with `--audio-out`. Expected, but worth a line in docs/AUDIO.md ("a headless session without --audio-out has no handles").

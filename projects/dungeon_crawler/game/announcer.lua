@@ -89,6 +89,7 @@ function A.say(text, opts)
         A.cooldowns[opts.key] = now + (opts.cooldown or 600)
     end
     local msg = { text = text, who = opts.who or "GLEE", prio = opts.prio or 0, color = opts.color, silent = opts.silent }
+    if G.sfx.logging then print(string.format("SAYLOG %d %s prio %d %s | %s", now, msg.who, msg.prio, tostring(opts.key), text:sub(1, 48))) end
     msg.dur = opts.dur or math.max(150, math.min(520, 80 + #text * 3))
     if msg.prio >= 2 then
         A.queue = {}
