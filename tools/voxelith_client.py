@@ -8,7 +8,7 @@
         v.screenshot("shot.png", time_of_day=0.25)
         print(v.state_hash())
 """
-import base64, collections, json, os, subprocess, threading
+import atexit, base64, collections, json, os, shutil, subprocess, tempfile, threading
 
 DEFAULT_BIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "build", "release", "voxelith")
 
@@ -17,10 +17,20 @@ class McpError(RuntimeError):
     pass
 
 
+def state_dir_args():
+    """`--state-dir DIR` with a FRESH directory (removed at exit): the project folder's persisted state (.state/store.json, .prefabs/, .events/state.txt, .state/wear.bin) is read at the start of a run and written at its
+    end, so a run that starts from what the last run left is not the same session: two live runs of one seed only agree from fresh state (engine 6a8e1fe, ENGINE_FEEDBACK Phase 27). Every tool that starts the engine passes it."""
+    d = tempfile.mkdtemp(prefix="descent_state_")
+    atexit.register(shutil.rmtree, d, True)
+    return ["--state-dir", d]
+
+
 class Voxelith:
     def __init__(self, args=(), binary=None, env=None):
         self.binary = binary or os.environ.get("VOXELITH", DEFAULT_BIN)
-        self.p = subprocess.Popen([self.binary, "--mcp"] + list(args), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace", bufsize=1,
+        args = list(args)
+        if "--state-dir" not in args and not os.environ.get("VX_KEEP_STATE"): args += state_dir_args()
+        self.p = subprocess.Popen([self.binary, "--mcp"] + args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace", bufsize=1,
                                   env=dict(os.environ, **(env or {})))
         # the engine logs to stderr: it is drained all the time (a full pipe would block the server in the middle of a call); the last lines are kept for error messages
         self._err = collections.deque(maxlen=200)

@@ -6,7 +6,7 @@ usage: tools/playthrough.py [class] [--no-replay]"""
 import os, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("VOXELITH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "voxelith"))
-from voxelith_client import Voxelith
+from voxelith_client import Voxelith, state_dir_args
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SHARE = os.path.expanduser("~/share/tour")
@@ -106,7 +106,7 @@ print(G.state.flags.boss_dead and 1 or 0, G.boss.inst and math.floor(G.boss.inst
         print("\n".join(report))
     if "--no-replay" not in sys.argv:
         print("replaying the recording ...")
-        r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3", "--audio-out", os.path.join(SHARE, "playthrough_audio.wav")], capture_output=True, text=True, cwd=ROOT)
+        r = subprocess.run([os.path.join(ROOT, "voxelith"), *state_dir_args(), "--replay", log, "--threads", "3", "--audio-out", os.path.join(SHARE, "playthrough_audio.wav")], capture_output=True, text=True, cwd=ROOT)
         print([l for l in (r.stdout + r.stderr).splitlines() if "hash" in l.lower() or "replay" in l.lower()][-6:])
 
 main()

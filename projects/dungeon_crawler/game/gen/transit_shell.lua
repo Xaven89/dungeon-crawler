@@ -209,6 +209,11 @@ function transit_region(rx, rz, wh, run)
         else F(16 - 2.4, yl - 0.0625, rz0, 16 - 2.1, yl, rz1, "hazard_y"); F(16 + 2.1, yl - 0.0625, rz0, 16 + 2.4, yl, rz1, "hazard_y") end
         if along_x then F(rx0, yl - 0.0625, 16 - 2.7, rx1, yl, 16 - 2.4, "polished_marble"); F(rx0, yl - 0.0625, 16 + 2.4, rx1, yl, 16 + 2.7, "polished_marble")      -- (voxel-art) the coping
         else F(16 - 2.7, yl - 0.0625, rz0, 16 - 2.4, yl, rz1, "polished_marble"); F(16 + 2.4, yl - 0.0625, rz0, 16 + 2.7, yl, rz1, "polished_marble") end
+        -- the boarding gaps of the car: 2.5 m wide in the middle of both its sides = the stop waypoint +-1.25 m along the track (voxel-art kit/train_car.md): marked on the hazard strip in gold
+        local sx, sz = 16, 16
+        if code == "B" then sz = (cj == 1) and 23 or 9 end
+        if along_x then F(sx - 1.25, yl - 0.0625, 16 - 2.4, sx + 1.25, yl, 16 - 2.1, "gold"); F(sx - 1.25, yl - 0.0625, 16 + 2.1, sx + 1.25, yl, 16 + 2.4, "gold")
+        else F(16 - 2.4, yl - 0.0625, sz - 1.25, 16 - 2.1, yl, sz + 1.25, "gold"); F(16 + 2.1, yl - 0.0625, sz - 1.25, 16 + 2.4, yl, sz + 1.25, "gold") end
     elseif code == "c" then
         for _, p in ipairs({ { 8, 8 }, { 24, 8 }, { 8, 24 }, { 24, 24 }, { 16, 16 } }) do lamp(p[1], p[2], room.h - 0.12) end
     elseif code == "X" then

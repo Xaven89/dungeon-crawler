@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
 os.chdir(ROOT)
-from voxelith_client import Voxelith
+from voxelith_client import Voxelith, state_dir_args
 import glob as _g, shutil as _sh
 for p in _g.glob('/tmp/descent_scratch.vxs*'): (_sh.rmtree if os.path.isdir(p) else os.remove)(p)
 seed = int(sys.argv[1]) if len(sys.argv) > 1 else 4242
@@ -41,5 +41,5 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
     print("log:", [l.strip()[:200] for l in v.stderr_tail(300).splitlines() if "error" in l.lower() or "warn" in l.lower()][-5:])
     v.step(5); live = v.state_hash(); print("state hash:", live)
 for p_ in _g.glob('/tmp/descent_scratch.vxs*'): (_sh.rmtree if os.path.isdir(p_) else os.remove)(p_)
-r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3", "--save", "/tmp/descent_scratch.vxs"], capture_output=True, text=True, cwd=ROOT)
+r = subprocess.run([os.path.join(ROOT, "voxelith"), *state_dir_args(), "--replay", log, "--threads", "3", "--save", "/tmp/descent_scratch.vxs"], capture_output=True, text=True, cwd=ROOT)
 print([l for l in (r.stdout + r.stderr).splitlines() if "replayed" in l.lower()][-1:], "live:", live)

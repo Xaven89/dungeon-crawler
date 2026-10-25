@@ -297,9 +297,9 @@ function transit_crowd_spots(info)
     if info.code == "B" then sz = (info.cj == 1) and 23 or 9 end
     local out = {}
     if info.axis == "x" then
-        for _, dz in ipairs({ -5, 5 }) do for _, dx in ipairs({ -3, 3 }) do out[#out + 1] = { x = sx + dx, z = sz + dz, kind = "idle" } end end
+        for _, dz in ipairs({ -5, 5 }) do for _, dx in ipairs({ -0.9, 0.9 }) do out[#out + 1] = { x = sx + dx, z = sz + dz, kind = "idle" } end end      -- (the car's boarding gaps are 2.5 m wide in its middle: the crowd stands in front of them)
     else
-        for _, dx in ipairs({ -5, 5 }) do for _, dz in ipairs({ -3, 3 }) do out[#out + 1] = { x = sx + dx, z = sz + dz, kind = "idle" } end end
+        for _, dx in ipairs({ -5, 5 }) do for _, dz in ipairs({ -0.9, 0.9 }) do out[#out + 1] = { x = sx + dx, z = sz + dz, kind = "idle" } end end
     end
     return out
 end

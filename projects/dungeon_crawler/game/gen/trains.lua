@@ -41,7 +41,7 @@ end
 -- (E.list) that the engine carries (agent.ride): it stands on a fixed slot of the deck and fights in world space. Getting off: the rider is removed and an ordinary enemy of its kind is spawned on a
 -- platform spot of the destination station (when that cell is alive), because an agent that was unridden stands on the deck and the departing car would leave it in the bed.
 local SLOTS = {}
-for k = 0, 6 do for _, sx in ipairs({ -0.9, 0.9 }) do SLOTS[#SLOTS + 1] = { sx, 0.15, -4.5 + k * 1.5 } end end       -- 14 slots: 2 across, 7 along (the middle of the deck is z = 0; the deck is 14 x 3.6 m: 0.5 m clear at the ends)
+for k = 0, 6 do for _, sx in ipairs({ -0.9, 0.9 }) do SLOTS[#SLOTS + 1] = { sx, -0.36, -4.5 + k * 1.5 } end end       -- 14 slots: 2 across, 7 along (the middle of the deck is z = 0; the deck is 14 x 3.6 m: 0.5 m clear at the ends)
 T.riders = {}                -- line name -> { { inst, dest = cell id } }
 T.BOARD_RANGE = 8               -- metres from the middle of the deck (the car is 14 m long: the crowd stands 3 m either side of the middle)
 

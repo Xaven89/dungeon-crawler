@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
 os.chdir(ROOT)
-from voxelith_client import Voxelith
+from voxelith_client import Voxelith, state_dir_args
 import glob as _g, shutil as _sh
 def _fresh_scratch():
     for p in _g.glob('/tmp/descent_scratch.vxs*'): (_sh.rmtree if os.path.isdir(p) else os.remove)(p)
@@ -57,8 +57,8 @@ print(P.floor, #P.order, table.concat(out, ','))
 """
 
 def act(v, **kw):
-    """an input action at a KNOWN tick: the state hash is a sync point (the previous call's ticks are all done, the queue is drained); without it two live runs of one seed part in the first fight (the action lands one tick earlier or later; tools/p2_playthrough.py HASH_TRACE=1 shows two traces that agree line by line)"""
-    v.state_hash()
+    """an input action. (It used to sync with a state_hash first: that masked a real cause, the project folder's persisted state that one run leaves for the next; every Voxelith() now starts with a fresh
+    --state-dir (voxelith_client.state_dir_args) and two live runs of one seed agree without any sync: engine 6a8e1fe, ENGINE_FEEDBACK Phase 27.)"""
     return v.tool("input_action", **kw)
 
 def fight(v, room, max_ticks=1800, step=60):
@@ -284,7 +284,7 @@ print(n, #kinds, table.concat(bad, '; '))""", 5)
         restore_state(snap, present)
         _fresh_scratch()          # (a replay with the same --save file would LOAD the live run's world: the scratch must not exist)
         print("replaying the recording ...")
-        r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3", "--save", "/tmp/descent_scratch.vxs"], capture_output=True, text=True, cwd=ROOT)
+        r = subprocess.run([os.path.join(ROOT, "voxelith"), *state_dir_args(), "--replay", log, "--threads", "3", "--save", "/tmp/descent_scratch.vxs"], capture_output=True, text=True, cwd=ROOT)
         print([l for l in (r.stdout + r.stderr).splitlines() if "hash" in l.lower() or "replay" in l.lower()][-4:])
         if os.environ.get("PROBE_OUT"): open(os.environ["PROBE_OUT"] + "_replay.txt", "w").write(r.stdout + r.stderr)
 main()

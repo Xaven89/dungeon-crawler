@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 os.environ.setdefault("VOXELITH", os.path.join(ROOT, "voxelith"))
 os.chdir(ROOT)
-from voxelith_client import Voxelith
+from voxelith_client import Voxelith, state_dir_args
 import glob as _g
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 seed = int(args[0]) if args else 4242
@@ -169,5 +169,5 @@ if "--no-replay" not in sys.argv:
     restore_state(snap, present)
     for p in _g.glob(SCRATCH + '*'): (shutil.rmtree if os.path.isdir(p) else os.remove)(p)
     print("replaying the recording ...")
-    r = subprocess.run([os.path.join(ROOT, "voxelith"), "--replay", log, "--threads", "3", "--save", SCRATCH], capture_output=True, text=True, cwd=ROOT)
+    r = subprocess.run([os.path.join(ROOT, "voxelith"), *state_dir_args(), "--replay", log, "--threads", "3", "--save", SCRATCH], capture_output=True, text=True, cwd=ROOT)
     print([l for l in (r.stdout + r.stderr).splitlines() if "hash" in l.lower() or "replay" in l.lower()][-4:], "live:", res["state_a"])
