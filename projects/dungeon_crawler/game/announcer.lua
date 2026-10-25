@@ -25,7 +25,7 @@ local function load_sound(name)
 end
 -- variation sets (voxel-audio step 2): name.wav, name_2.wav .. name_N.wav, played in turn. A counter, not a random number: the sound is cosmetic, the simulation and its hash are untouched and a replay
 -- plays the same variants. Never the same variant twice in a row.
-G.sfx.variants = { swing = 4, hit = 4, goblin_hit = 4, hurt = 4, hit_crit = 2, boss_hit = 2, bone = 3, honk_bite = 3 }
+G.sfx.variants = { swing = 4, hit = 4, goblin_hit = 4, hurt = 4, hit_crit = 2, boss_hit = 2, bone = 3, honk_bite = 3, zap = 3 }
 local VORDER, vcount, vlast = { 1, 3, 2, 4, 3, 1, 4, 2 }, {}, {}
 local function variant(name)
     local n = G.sfx.variants[name]

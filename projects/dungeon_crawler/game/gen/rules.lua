@@ -68,7 +68,7 @@ function R.tick_third_rail(t)
         G.player.hurt(G.BAL.third_rail, "the third rail", { pierce = true })
         G.tally("zaps", "third_rail")
         if not R.rail_warned then R.rail_warned = true; G.announcer.say_key("rule.third_rail.zap", { prio = 2 }) end
-        G.sfx.play("firebolt", px, py, pz, 0.5, 1.6)
+        G.sfx.play_world("zap", px, py, pz)
     end
 end
 

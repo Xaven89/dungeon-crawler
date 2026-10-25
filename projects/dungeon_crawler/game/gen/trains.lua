@@ -13,6 +13,8 @@ local DECK = { red = "carpet", yellow = "gold", orange = "cinderblock", green = 
 
 -- the cars of the floor (made when the floor is entered or loaded, in the floor's scope: taken away with it)
 function T.enter(P)
+    for _, old in pairs(T.cars or {}) do if old.run then pcall(sound.stop, old.run, 0.2) end end          -- (the loops of the last floor 4)
+    if T.ride_h then pcall(sound.stop, T.ride_h, 0.2); T.ride_h = nil end
     T.cars, T.riders = {}, {}
     local car = transit_const().car
     for _, line in ipairs(transit_lines()) do
@@ -29,6 +31,7 @@ end
 
 -- every car starts over at its first stop when the player can act (the veil and the contract screen are over): the first lap begins with the Red car standing at HUB S
 function T.tick(t)
+    T.sound_tick(t)
     if t % 60 == 0 then T.sweep(t) end
     if T.pending_reset and G.state.class and not G.screen and not G.player.dead then
         T.pending_reset = false
@@ -55,6 +58,15 @@ function T.on_stopped(name, e)
     local line = c.line
     local here = station_of(line, e.stop)
     if not here then return end
+    c.brake_armed = false
+    -- the chimes (voxel-audio): 2D, only for a player in that station's cell; the departure chime 150 ticks before the car leaves
+    local function in_station()
+        local px, py, pz = player.pos()
+        local lx, _, lz = G.to_local(px, py, pz)
+        return lx and cell_of(lx, lz) == here
+    end
+    if in_station() then G.sfx.play("tr_chime_arrive") end
+    after(math.max(1, line.stops[e.stop][2] * 60 - 150), function() if G.floorgen.layout and G.floorgen.layout.floor == 4 and in_station() then G.sfx.play("tr_chime_depart") end end)
     local E = G.enemies
     local P = G.floorgen.layout
     local riders = T.riders[name] or {}
@@ -151,7 +163,88 @@ function T.send_walkers(here)
     end
 end
 
-function T.on_departing(name, e) end
+function T.on_departing(name, e)
+    local c = T.cars[name]
+    if not c then return end
+    c.brake_armed = false
+    if c.near then pcall(sound.play, { file = "sounds/tr_depart.wav", at = { body = c.body }, bus = "sfx" }); G.sfx.logline("tr_depart", "sfx", 1, 1, true) end
+end
+
+-- ---------------------------------------------------------------------------------------------- sounds (voxel-audio, step 2a): cosmetic, nothing here touches the simulation
+-- The car's own sounds follow its body (E25): one running loop per car near the player (volume and pitch by its speed), a clack every 6 m, the brake when it starts to slow, the departure; and the
+-- ride loop (2D) while the player stands on a moving deck. The speed is the car's own movement per tick (T.where), smoothed.
+local SND_RANGE = 60
+local CLACKS = { "tr_clack", "tr_clack_2", "tr_clack_3", "tr_clack_4" }
+local function sfx_at(c, file, pitch)
+    pcall(sound.play, { file = "sounds/" .. file .. ".wav", at = { body = c.body }, bus = "sfx", pitch = pitch or 1 })
+    G.sfx.logline(file, "sfx", 1, pitch or 1, true)
+end
+function T.sound_tick(t)
+    if not T.cars or not G.state or not G.state.class or G.screen then return end
+    if not G.floorgen.layout or G.floorgen.layout.floor ~= 4 then
+        if T.ride_h then pcall(sound.stop, T.ride_h, 0.5); T.ride_h = nil end
+        return
+    end
+    local px, py, pz = player.pos()
+    local deck, deck_v = nil, 0
+    for name, c in pairs(T.cars) do
+        local x, y, z = T.where(name)
+        if x then
+            local last = c.last
+            if last then
+                local dx, dz = x - last[1], z - last[2]
+                local step = math.sqrt(dx * dx + dz * dz)
+                c.v = (c.v or 0) * 0.85 + (step * 60) * 0.15
+                c.travel = (c.travel or 0) + step
+                if step > 0.005 then c.dir = { dx / step, dz / step } end
+            end
+            c.last = { x, z }
+            local v = c.v or 0
+            local d2 = G.dist2(px, pz, x, z)
+            c.near = d2 < SND_RANGE
+            -- the running loop: on a body, silent until the speed raises it
+            if c.near and not c.run then
+                c.run = sound.play{ file = "sounds/tr_run_loop.wav", loop = true, bus = "sfx", at = { body = c.body }, volume = 0 }
+                G.sfx.logline("tr_run_loop", "sfx", 0, 1, true)
+            elseif not c.near and c.run and d2 > SND_RANGE + 10 then
+                pcall(sound.stop, c.run, 0.5); c.run = nil
+            end
+            if c.run and t % 15 == 0 then
+                local f = math.min(1, v / 5)
+                pcall(sound.volume, c.run, f, 0.25); pcall(sound.pitch, c.run, 0.75 + 0.25 * f, 0.25)
+            end
+            if c.near then
+                -- rail joints every 6 m while it moves at speed
+                if v > 1.5 and (c.travel or 0) - (c.next_clack or 0) >= 6 then
+                    c.next_clack = c.travel; c.clack_n = (c.clack_n or 0) + 1
+                    sfx_at(c, CLACKS[(c.clack_n - 1) % #CLACKS + 1], math.max(0.5, math.min(1, v / 5)))
+                end
+                -- the brake: once, when the car that has been at speed starts to slow (that is 8.3 m before its stop)
+                if v > 3.5 then c.brake_armed = true; c.vmax = math.max(c.vmax or 0, v)
+                elseif c.brake_armed and v < (c.vmax or 5) - 0.4 and v > 0.8 then c.brake_armed = false; c.vmax = 0; sfx_at(c, "tr_brake", 1) end
+            end
+            -- is the player on this car's deck (14 x 3.6 m, along its heading)?
+            if c.dir then
+                local rx, rz = px - x, pz - z
+                local along, across = rx * c.dir[1] + rz * c.dir[2], -rx * c.dir[2] + rz * c.dir[1]
+                if math.abs(along) <= 7.0 and math.abs(across) <= 1.7 and py - y > -1.0 and py - y < 3.0 then deck, deck_v = c, v end
+            end
+        end
+    end
+    -- the ride: 2D, only while the deck moves
+    if deck and deck_v > 0.3 then
+        if not T.ride_h then
+            T.ride_h = sound.play{ file = "sounds/tr_ride.wav", loop = true, bus = "sfx", volume = 0 }
+            G.sfx.logline("tr_ride", "sfx", 0, 1, false)
+        end
+        if t % 15 == 0 and T.ride_h then
+            local f = math.min(1, deck_v / 5)
+            pcall(sound.volume, T.ride_h, 0.3 + 0.7 * f, 0.25); pcall(sound.pitch, T.ride_h, 0.8 + 0.2 * f, 0.25)
+        end
+    elseif T.ride_h then
+        pcall(sound.stop, T.ride_h, 0.5); T.ride_h = nil
+    end
+end
 
 -- the riders of a car the player is far from are let go (the cells around the car are not alive: nobody sees it)
 function T.sweep(t)
