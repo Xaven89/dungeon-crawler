@@ -73,6 +73,42 @@ function transit_region(rx, rz, wh, run)
         floor_mat(rx0, rz0, rx1, rz1, yl, (code == "H" or code == "Y") and "terrazzo" or "terrazzo")
     end
 
+
+    -- ------------------------------------------------------------------------------------------ (voxel-art) wall bands, before the halls are carved
+    do
+        local LC = ({ red = "carpet", yellow = "gold", orange = "cinderblock", green = "mossy", blue = "obsidian", violet = "rune", cross = "gold" })[info.line or ""] or "carpet"
+        local sta = (code == "H" or code == "Y" or code == "B")
+        local tun = (code == "-" or code == "|" or code == "T" or code == "m")
+        if sta or tun then
+            local along_x = sta and (info.axis == "x") or (code ~= "|")
+            local y0 = (code == "B") and yl or yl
+            local function band(a, b, mat)                                     -- the face layer (1 voxel) of both long walls between heights a and b
+                if along_x then F(rx0, y0 + a, rz0 - 0.0625, rx1, y0 + b, rz0, mat); F(rx0, y0 + a, rz1, rx1, y0 + b, rz1 + 0.0625, mat)
+                else F(rx0 - 0.0625, y0 + a, rz0, rx0, y0 + b, rz1, mat); F(rx1, y0 + a, rz0, rx1 + 0.0625, y0 + b, rz1, mat) end
+            end
+            band(0, 1.1, "tar_slab"); band(1.1, 1.17, "gold")
+            if sta then band(2.6, 2.9, LC) end
+            if tun then                                                         -- two cable runs and their brackets, on the +side wall
+                local function cable(y)
+                    if along_x then F(rx0, y0 + y, rz1 - 0.0625, rx1, y0 + y + 0.0625, rz1, "iron_dark") else F(rx1 - 0.0625, y0 + y, rz0, rx1, y0 + y + 0.0625, rz1, "iron_dark") end
+                end
+                cable(3.0); cable(3.15)
+                for t = 1, 31, 2 do
+                    if along_x then F(t, y0 + 2.95, rz1 - 0.125, t + 0.0625, y0 + 3.25, rz1, "iron_dark") else F(rx1 - 0.125, y0 + 2.95, t, rx1, y0 + 3.25, t + 0.0625, "iron_dark") end
+                end
+            end
+        end
+        if code == "X" then                                                     -- the two-storey cross hall: the bands on all four walls at both levels
+            for _, lv in ipairs({ 0, yd }) do
+                local function ring(a, b, mat)
+                    F(rx0, lv + a, rz0 - 0.0625, rx1, lv + b, rz0, mat); F(rx0, lv + a, rz1, rx1, lv + b, rz1 + 0.0625, mat)
+                    F(rx0 - 0.0625, lv + a, rz0, rx0, lv + b, rz1, mat); F(rx1, lv + a, rz0, rx1 + 0.0625, lv + b, rz1, mat)
+                end
+                ring(0, 1.1, "tar_slab"); ring(1.1, 1.17, "gold"); ring(2.6, 2.9, "gold")
+            end
+        end
+    end
+
     -- ------------------------------------------------------------------------------------------ the halls to the doors
     for side, kind in pairs(info.open) do
         local c, hw = info.door[side], HW[kind] or 6
@@ -147,7 +183,10 @@ function transit_region(rx, rz, wh, run)
 
     -- ------------------------------------------------------------------------------------------ light, pillars, edges
     local function lamp(x, z, y)
-        F(x - 0.15, y, z - 0.15, x + 0.15, y + 0.12, z + 0.15, "lamp_cool")
+        F(x - 0.22, y + 0.06, z - 0.22, x + 0.22, y + 0.12, z + 0.22, "iron_dark")                       -- (voxel-art) a framed fitting: the rim
+        F(x - 0.15, y, z - 0.15, x + 0.15, y + 0.06, z + 0.15, "lamp_cool")
+        F(x - 0.19, y - 0.0625, z - 0.19, x + 0.19, y, z + 0.19, "iron_dark")
+        F(x - 0.13, y - 0.0625, z - 0.13, x + 0.13, y, z + 0.13, "lamp_cool")
     end
     if code == "-" or code == "|" or code == "T" or code == "m" then
         for t = 4, 28, 8 do
@@ -168,6 +207,8 @@ function transit_region(rx, rz, wh, run)
         -- the edge of the platform: a hazard strip along the bed
         if along_x then F(rx0, yl - 0.0625, 16 - 2.4, rx1, yl, 16 - 2.1, "hazard_y"); F(rx0, yl - 0.0625, 16 + 2.1, rx1, yl, 16 + 2.4, "hazard_y")
         else F(16 - 2.4, yl - 0.0625, rz0, 16 - 2.1, yl, rz1, "hazard_y"); F(16 + 2.1, yl - 0.0625, rz0, 16 + 2.4, yl, rz1, "hazard_y") end
+        if along_x then F(rx0, yl - 0.0625, 16 - 2.7, rx1, yl, 16 - 2.4, "polished_marble"); F(rx0, yl - 0.0625, 16 + 2.4, rx1, yl, 16 + 2.7, "polished_marble")      -- (voxel-art) the coping
+        else F(16 - 2.7, yl - 0.0625, rz0, 16 - 2.4, yl, rz1, "polished_marble"); F(16 + 2.4, yl - 0.0625, rz0, 16 + 2.7, yl, rz1, "polished_marble") end
     elseif code == "c" then
         for _, p in ipairs({ { 8, 8 }, { 24, 8 }, { 8, 24 }, { 24, 24 }, { 16, 16 } }) do lamp(p[1], p[2], room.h - 0.12) end
     elseif code == "X" then
@@ -179,8 +220,8 @@ function transit_region(rx, rz, wh, run)
     if text then
         local len = deco_text_len(text)
         if code == "X" then deco_text(B, 16 + len / 2, 4.2, 4.0, text, "-z", "gold")                       -- on the north wall of the hall, looking south... (the reader stands south of it)
-        elseif info.axis == "x" then deco_text(B, 16 - len / 2, 3.4, rz0, text, "+z", "gold")
-        else deco_text(B, rx0, 3.4, 16 + len / 2, text, "+x", "gold") end
+        elseif info.axis == "x" then F(16 - len / 2 - 0.3, yl + 3.2, rz0 - 0.0625, 16 + len / 2 + 0.3, yl + 4.1, rz0, "iron_dark"); deco_text(B, 16 - len / 2, 3.4, rz0, text, "+z", "gold")
+        else F(rx0 - 0.0625, yl + 3.2, 16 - len / 2 - 0.3, rx0, yl + 4.1, 16 + len / 2 + 0.3, "iron_dark"); deco_text(B, rx0, 3.4, 16 + len / 2, text, "+x", "gold") end      -- (voxel-art) a dark name board
     end
     if code == "H" then
         local f = transit_hub_fixtures(info)

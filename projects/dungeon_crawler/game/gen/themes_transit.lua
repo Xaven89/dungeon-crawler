@@ -24,6 +24,25 @@ local function strip_lights(room, ctx, step, intensity, reach)
     end
 end
 
+
+-- (voxel-art) wall lights: every wall within the probes' ~7 m of a light
+local function wall_lights(room, y, pts, tag)
+    local ox, oz = F.off(room)
+    for k, p in ipairs(pts) do
+        G.torch(ox + p[1], y, oz + p[2], { preset = "torch", color = G.COOL, reach = 7, far = 26, intensity = 7, raw = true, flicker = false, name = room.id .. tag .. k })
+    end
+end
+local function platform_lights(room)
+    local ir = room.info.room
+    local pts = {}
+    local ax = (room.info.axis == "x")
+    local a0, a1 = ax and ir.z or ir.x, ax and (ir.z + ir.d) or (ir.x + ir.w)      -- across: the two long walls
+    local b0, b1 = ax and ir.x or ir.z, ax and (ir.x + ir.w) or (ir.z + ir.d)      -- along
+    for t = b0 + 4, b1 - 2, 8 do
+        for _, a in ipairs({ a0 + 1.5, a1 - 1.5 }) do pts[#pts + 1] = ax and { t, a } or { a, t } end
+    end
+    wall_lights(room, yl(room) + 3.0, pts, "_wl")
+end
 F.register("tunnel", { names = { "A Tunnel", "Service Tunnel", "Track Segment" }, things = function(room, ctx) strip_lights(room, ctx, 6, 15, 13) end })
 F.register("corner", {
     names = { "The Bend", "Curve Cavern", "Switching Yard" },
@@ -41,6 +60,11 @@ F.register("station", {
     names = { "Platform", "The Concourse", "Transfer Platform" },
     things = function(room, ctx)
         strip_lights(room, ctx, 6, 16, 14)
+        if room.info.code ~= "X" then platform_lights(room) end                     -- (voxel-art)
+        if room.info.code == "X" then                                               -- (voxel-art) the cross hall: wall lights at both levels
+            local pts = { { 16, 5 }, { 16, 27 }, { 5, 16 }, { 27, 16 }, { 5, 5 }, { 27, 5 }, { 5, 27 }, { 27, 27 } }
+            wall_lights(room, 3.0, pts, "_xw"); wall_lights(room, transit_const().level_m + 3.0, pts, "_xd")
+        end
         if room.info.code == "Y" or room.info.code == "B" then                  -- the crowd that waits for the train
             local lay, rects = F.furnished(room, ctx)
             local ox, oz = F.off(room)
@@ -73,6 +97,7 @@ F.register("hub", {
     names = { "Transfer Station", "Hub", "The Interchange" },
     things = function(room, ctx)
         strip_lights(room, ctx, 6, 17, 14)
+        platform_lights(room)                                                       -- (voxel-art)
         local dk = G.gen.rules.dark()
         local ox, oz = F.off(room)
         local f = transit_hub_fixtures(room.info)
