@@ -749,8 +749,14 @@ function deco_item_draw(B, it, fl)
             for c = 0, 1 do box(0.15 + c * 1.1, y + 0.08, 0.1, 1.15 + c * 1.1, y + 0.7, D - 0.1, ((c + k) % 2 == 0) and "chest_wood" or "dark_wood") end
         end
     elseif id == "sarcophagus" then
-        box(0, 0, 0, W, 0.8, D, "marble"); box(-0.1, 0.8, -0.1, W + 0.1, 1.0, D + 0.1, "marble")
-        if (math.floor(x0 * 3 + z0 * 5) % 3) == 0 then box(0.25, 1.0, 0.3, W - 0.25, 1.1, D - 0.3, "bone") end
+        box(-0.05, 0, -0.05, W + 0.05, 0.12, D + 0.05, "plinth_stone")                    -- (voxel-art) the foot
+        box(0, 0.12, 0, W, 0.72, D, "marble")                                                -- the chest
+        box(0, 0.42, 0, W, 0.52, D, "plinth_stone")                                          -- its carved band
+        box(-0.08, 0.72, -0.08, W + 0.08, 0.84, D + 0.08, "plinth_stone")                  -- the lid's rim
+        box(0.1, 0.84, 0.1, W - 0.1, 0.96, D - 0.1, "marble")                               -- the raised lid
+        if (math.floor(x0 * 3 + z0 * 5) % 3) == 0 then                                        -- the effigy: a body and a head (the head at the far end)
+            box(0.35, 0.96, 0.45, W - 0.35, 1.04, D - 0.7, "bone"); box(0.42, 0.96, D - 0.62, W - 0.42, 1.06, D - 0.3, "bone")
+        end
     elseif id == "crates" then
         local n = 1 + math.floor(x0 * 7 + z0 * 3) % 3
         for k = 0, n - 1 do deco_furniture("crate", box, k * 0.08, k * 1.2, 1.2) end

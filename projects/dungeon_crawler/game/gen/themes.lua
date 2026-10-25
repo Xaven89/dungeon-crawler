@@ -149,7 +149,22 @@ F.register("guild", {
 F.register("connector", {
     names = { "A Corridor", "Service Junction", "The Landing", "Utility Closet" },
     things = function(room, ctx)
-        G.torch(room.x + room.w / 2, 2.8, room.z + room.d / 2, { preset = "torch", reach = 9, far = 22, intensity = 9 * G.gen.rules.dark(), name = room.id .. "_c" })
+        if ctx.floor == 3 or ctx.floor == 4 then
+            G.torch(room.x + room.w / 2, 2.8, room.z + room.d / 2, { preset = "torch", reach = 9, far = 22, intensity = 9 * G.gen.rules.dark(), name = room.id .. "_c" })
+        else                                                                 -- (voxel-art) the sconces of the hall's plan (deco_room draws them): every wall within the probes' 7 m
+            local dk = G.gen.rules.dark()
+            local ox, oz = F.off(room)
+            local lr, lit = F.lroom(room), {}
+            for _, sc in ipairs(deco_sconce_plan("hall", lr, F.local_doors(room))) do
+                lit[sc.face] = true
+                G.sconce(sc.x + ox, sc.y, sc.z + oz, sc.face, { color = G.WARM, intensity = 7 * dk, reach = 7, far = 24, raw = true, flicker = false })
+            end
+            local mids = { { "+z", lr.x + lr.w / 2, lr.z + 1.5 }, { "-z", lr.x + lr.w / 2, lr.z + lr.d - 1.5 }, { "+x", lr.x + 1.5, lr.z + lr.d / 2 }, { "-x", lr.x + lr.w - 1.5, lr.z + lr.d / 2 } }
+            for _, m in ipairs(mids) do                                      -- a wall whose sconce a door took still gets a light 1.5 m in from its middle (a fixed order: ipairs)
+                local face = m[1]; m = { m[2], m[3] }
+                if not lit[face] then G.torch(m[1] + ox, 2.8, m[2] + oz, { color = G.WARM, intensity = 7 * dk, reach = 7, far = 24, raw = true, flicker = false, name = room.id .. "_cw" .. face }) end
+            end
+        end
     end,
 })
 -- allow(x, z): outside the fortress of the super-cell (the borough / the park): the quarter rooms hold the courtyard around it, the fortress walls stand inside the 2 x 2 (a guard spawned in a wall is

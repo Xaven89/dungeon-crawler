@@ -787,7 +787,7 @@ function F.make_ring(P, ring)
     -- (polish: G.torch halves every light; the ring corridors got the corners as well, so they are not left dark between the four lamps of a ring)
     -- (voxel-art: a torch every 8 m along the middle of both ring corridors, corners included: the probes carry a light 7 m, so no stretch is left dark)
     local spots = {}
-    for _, r in ipairs({ g.c1, g.c2 }) do
+    for _, r in ipairs({ g.c1, g.c2, g.w1 + g.wall + 1.4 }) do                    -- (voxel-art) and the slot outside the fortress's outer wall
         local n = math.max(1, math.floor(2 * r / 8 + 0.5))
         for i = 0, n - 1 do
             local t = -r + i * (2 * r / n)

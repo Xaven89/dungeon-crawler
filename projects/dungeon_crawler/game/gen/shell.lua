@@ -47,7 +47,7 @@ function shell_region(rx, rz, wh, run)
     local in_cell = inside(ci, cj)
     local deco
     local WALL = { flooded = "mossy", grotto = "cavestone", library = "dark_wood", safe = "dark_wood", rest = "dark_wood", ballroom = "plaster", crypt = "crypt_stone", captive = "crypt_stone",
-                   arena = "ruin_stone", ante = "ruin_stone", guild = "ruin_stone", prize = "ruin_stone", depot = "cinderblock" }
+                   arena = "ruin_stone", ante = "ruin_stone", guild = "ruin_stone", prize = "ruin_stone", depot = "cinderblock", furnace = "soot_brick" }
     -- the mass: the cell's whole volume in the wall material of its theme (everything below is carved out of it)
     local base_wall = OPEN and "ruin_stone" or ((fl == 2) and "cinderblock" or (DEEP[fl] and DEEP[fl][1]) or "dungeon_brick")          -- floor 2: the orange city is cinderblock, floor 3 weathered stone
     local mass_mat = base_wall

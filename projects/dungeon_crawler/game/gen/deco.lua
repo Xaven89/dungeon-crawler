@@ -823,9 +823,11 @@ function deco_room(B, theme, room, doors, mk, fl)
         local boxes, bones = deco_crypt_plan(room, mk)
         for _, b in ipairs(boxes) do
             local x, z = b[1], b[2]
-            B.fill(x, 0, z, x + 1.2, 0.8, z + 2.4, "marble")
-            B.fill(x - 0.1, 0.8, z - 0.1, x + 1.3, 1.0, z + 2.5, "marble")
-            if b[5] then B.fill(x + 0.25, 1.0, z + 0.3, x + 0.95, 1.1, z + 2.1, "bone") end
+            local W, D = 1.2, 2.4                                                             -- (voxel-art) the grammar's sarcophagus (gen/furnish.lua)
+            local function box(a, b, c, d, e, f, m) B.fill(x + a, b, z + c, x + d, e, z + f, m) end
+            box(-0.05, 0, -0.05, W + 0.05, 0.12, D + 0.05, "plinth_stone"); box(0, 0.12, 0, W, 0.72, D, "marble"); box(0, 0.42, 0, W, 0.52, D, "plinth_stone")
+            box(-0.08, 0.72, -0.08, W + 0.08, 0.84, D + 0.08, "plinth_stone"); box(0.1, 0.84, 0.1, W - 0.1, 0.96, D - 0.1, "marble")
+            if b[5] then box(0.35, 0.96, 0.45, W - 0.35, 1.04, D - 0.7, "bone"); box(0.42, 0.96, D - 0.62, W - 0.42, 1.06, D - 0.3, "bone") end
         end
         for _, b in ipairs(bones) do B.fill(b[1], 0, b[2], b[1] + 0.5, 0.15, b[2] + 0.3, "bone"); B.fill(b[1] + 0.1, 0.15, b[2] + 0.05, b[1] + 0.25, 0.3, b[2] + 0.2, "bone") end
     elseif theme == "library" and not lay then
@@ -946,6 +948,31 @@ function deco_room(B, theme, room, doors, mk, fl)
     elseif theme == "connector" and (fl or 1) == 3 then
         local cx, cz = room.x + room.w / 2, room.z + room.d / 2              -- a locator stone at the junction
         B.pillar(cx, cz, 0.45, 0, 2.2, "marble"); B.pillar(cx, cz, 0.3, 2.2, 2.6, "lantern")
+    elseif theme == "connector" and (fl or 1) ~= 4 then                     -- (voxel-art) a lit junction, not an empty box: sconces, one piece on a wall, a border
+        for _, sc in ipairs(deco_sconce_plan("hall", room, doors)) do deco_sconce(B, sc) end
+        local used = {}
+        for _, d in ipairs(doors or {}) do used[d.side] = true end
+        local side
+        for _, sd in ipairs({ "N", "S", "W", "E" }) do if not used[sd] then side = sd; break end end
+        local cx, cz = room.x + room.w / 2, room.z + room.d / 2
+        local function on_wall(W)                                            -- (u along the wall, v out of it) -> metres, the piece centred on the wall
+            return function(u0, y0, v0, u1, y1, v1, mat)
+                if not mat then return end
+                if side == "N" then B.fill(cx - W / 2 + u0, y0, room.z + 0.06 + v0, cx - W / 2 + u1, y1, room.z + 0.06 + v1, mat)
+                elseif side == "S" then B.fill(cx + W / 2 - u1, y0, room.z + room.d - 0.06 - v1, cx + W / 2 - u0, y1, room.z + room.d - 0.06 - v0, mat)
+                elseif side == "W" then B.fill(room.x + 0.06 + v0, y0, cz + W / 2 - u1, room.x + 0.06 + v1, y1, cz + W / 2 - u0, mat)
+                else B.fill(room.x + room.w - 0.06 - v1, y0, cz - W / 2 + u0, room.x + room.w - 0.06 - v0, y1, cz - W / 2 + u1, mat) end
+            end
+        end
+        if side then
+            if mk(6).next() < 0.5 then deco_furniture("bench", on_wall(2.4), 2.4, 0.5)
+            else local bx = on_wall(1.5); deco_furniture("crate", bx, 0, 0, 0.8); deco_furniture("crate", bx, 0.9, 0, 0.6); deco_furniture("crate", bx, 0.1, 0.8, 0.6) end
+        end
+        if (fl or 1) <= 2 then                                               -- a border of plinth_stone along the walls (the floor's own stone inside it)
+            local t = 0.4
+            B.fill(room.x, -0.0625, room.z, room.x + room.w, 0, room.z + t, "plinth_stone"); B.fill(room.x, -0.0625, room.z + room.d - t, room.x + room.w, 0, room.z + room.d, "plinth_stone")
+            B.fill(room.x, -0.0625, room.z, room.x + t, 0, room.z + room.d, "plinth_stone"); B.fill(room.x + room.w - t, -0.0625, room.z, room.x + room.w, 0, room.z + room.d, "plinth_stone")
+        end
     end
     for _, sc in ipairs(deco_sconce_plan(theme, room, doors)) do deco_sconce(B, sc) end
     if not open then for _, lm in ipairs(deco_lamp_plan(theme, room)) do deco_lamp(B, lm, h, (fl == 8 or fl == 6) and math.max(1.2, h - 4) or 1.2, fl) end end

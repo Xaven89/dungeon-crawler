@@ -111,10 +111,14 @@ F.register("grotto", {
 F.register("crypt", {
     names = { "The Records Crypt", "Archive of the Departed", "The Quiet Room", "Cold Storage" },
     things = function(room, ctx)
-        F.sconces(room, ctx, 8, 3.2)
+        do                                                                   -- (voxel-art) the sconces raw: the crypt read near-black (L* 14) at the game's sconce strength
+            local dk = G.gen.rules.dark()
+            local ox, oz = F.off(room)
+            for _, sc in ipairs(deco_sconce_plan("crypt", F.lroom(room), F.local_doors(room))) do G.sconce(sc.x + ox, sc.y, sc.z + oz, sc.face, { color = G.WARM, intensity = 7 * dk, reach = 7, far = 24, raw = true, flicker = false }) end
+        end
         local x0, z0, x1, z1 = inner(room, 4.5)
         for i = 1, floor(room.w / 7) do
-            G.torch(x0 + (i - 0.5) * (x1 - x0) / floor(room.w / 7), 2.0, (z0 + z1) / 2, { color = { 0.45, 0.8, 1.0 }, reach = 11, far = 22, intensity = 9, name = room.id .. "_candle" .. i })
+            G.torch(x0 + (i - 0.5) * (x1 - x0) / floor(room.w / 7), 2.0, (z0 + z1) / 2, { color = { 0.45, 0.8, 1.0 }, reach = 7, far = 22, intensity = 6, raw = true, flicker = false, name = room.id .. "_candle" .. i })
         end
         local lay, rects, spots = F.furnished(room, ctx)
         local r2 = L.make_rng(ctx.seed, ctx.floor, 2000 + room.index)

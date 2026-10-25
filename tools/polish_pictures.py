@@ -65,7 +65,7 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         L(v, "local G=Game; G.dg = G.enemies.spawn('goblin', %f, 0, %f, { room = '%s' }); G.state.flags.god = true" % (cx + 3.0, cz, rid), 30)
         L(v, "local G=Game; G.enemies.kill(G.dg, { source = 'test' })", 90)
         shot("dead_goblin_f1", 1 * 1024 + 64, 8, cx, 1.7, cz, cx + 3.0, 0.4, cz, fov=70)
-    for name, theme in (("ballroom_f1", "ballroom"), ("flooded_f1", "flooded"), ("library_f1", "library"), ("safe_f1", "safe"), ("rest_f1", "rest"), ("room_stairs_free", "stairs_free"), ("room_grotto", "grotto"), ("room_flooded", "flooded"), ("room_prize", "prize")):      # single-room materials (polished_marble, wet_flagstone): judged on their own rooms, from a corner
+    for name, theme in (("ballroom_f1", "ballroom"), ("flooded_f1", "flooded"), ("library_f1", "library"), ("safe_f1", "safe"), ("rest_f1", "rest"), ("room_stairs_free", "stairs_free"), ("connector_f1", "connector"), ("crypt_f1", "crypt"), ("furnace_f1", "furnace"), ("room_grotto", "grotto"), ("room_flooded", "flooded"), ("room_prize", "prize")):      # single-room materials (polished_marble, wet_flagstone): judged on their own rooms, from a corner
         if name in only:
             r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == '%s' then print(id, r.x, r.z, r.w, r.d); break end end" % theme, 0)
             if not r: print(name, "no such room on floor 1 of this seed"); continue
@@ -84,6 +84,14 @@ with Voxelith(["--project", "projects/dungeon_crawler", "--threads", "3", "--sav
         print("artery", rid, side, ex, ez)
         tp(ex, ez, wait=400)
         shot("corridor_f2", 2 * 1024 + 64, 8, ex, 1.7, ez, tx, 1.5, tz)
+    for name, theme in (("connector_f2", "connector"), ("crypt_f2", "crypt"), ("furnace_f2", "furnace")):       # the same rooms on floor 2 (the session is on floor 2 after corridor_f2: put the name in --only with corridor_f2 or alone)
+        if name in only:
+            if not ("corridor_f2" in only): new_floor(v, 2)
+            r = L(v, "local P = Game.floorgen.layout; for _, id in ipairs(P.order) do local r = P.rooms[id]; if r.theme == '%s' then print(id, r.x, r.z, r.w, r.d); break end end" % theme, 0)
+            if not r: print(name, "no such room"); continue
+            rid, x, z, w, d = r[0].split("\t")[0], *[float(t) for t in r[0].split("\t")[1:5]]
+            L(v, "local G=Game; local c=G.world.checkpoints['%s']; player.hand_model(nil); player.model(nil); player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true })" % rid, 400)
+            shot(name, 2 * 1024 + 64, 8, x + 2.2, 1.9, z + 2.2, x + w / 2, 0.6, z + d / 2, fov=90)
     if "square_f3_day" in only or "pub_f3_inside" in only or "meadow_f3" in only or "street_f3_day" in only or "square_f3_night" in only:
         new_floor(v, 3); BZ = 3 * 1024 + 64
         vil = L(v, "local CG, H = Game.floorgen.cg(); local P = Game.floorgen.layout\nfor _, id in ipairs(P.order) do local r = P.rooms[id]\n  if r.theme == 'village' then local sup = CG.super_of(P.ctx, r.ci, r.cj); print(sup.ci, sup.cj); return end end", 0)
