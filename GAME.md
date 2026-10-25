@@ -239,6 +239,9 @@ Design: ~/share/floor4-design.md (reviewed; Blue is a second LEVEL, not a timeta
 - **Telemetry**: `G.tally("zaps", "third_rail")` counts every zap of the third rail per floor.
 - **The bot now stands at a crate to open it** (tools/p2_playthrough.py) and its teleport towards an enemy needs ground under the landing spot (it dropped into lava pools). The balance numbers before this change under-counted the loot of every floor (gold and items lie where the crate stands and are picked up by walking over them): floors 1-4 on five seeds, mean per run: gold 216 / 186 / 206 / 101, items 19.4 / 11.2 / 11.8 / 7.4, deaths 1.0 / 0.0 / 1.4 / 0.8 (`~/share/balance/balance_step1d.md`).
 
+## nav_lips (E24, binary 077c6a9)
+`nav_lips = on` in project.cfg: a lip of up to 8 voxels on a nav-cell edge is a step for agents and the flood (the live rail's raised line would pass; it stays flush: the artist's rule is that nothing a walker crosses stands proud of the floor). p1_validate floors 1-5 (seeds 1, 2): 0 problems on and off. The recordings change with it (a recording stores the setting): 3-floor bot 266badd140e23129 (24,112 ticks) off -> 0173f17143b34d15 (22,727) on; Orientation 7e73ee103f8063ab -> 322184766d18d5ac; floor-4 ride 820e712dd79e821c on and off (cars and the player, no agent paths). All replayed equal.
+
 ## Hook cost (measured alone, `tools/hook_cost.py --floor N`, binary 346ae02 + 7 x 7)
 Mean per region: floor 1 1.38 ms, floor 3 1.28 ms, floor 4 (7 x 7, 49 cells, 6 lines) 0.28 ms; recent max (warm) 1.1 ms on floor 4. The MAXIMA (floor 1 16.5 ms, floor 3 60.1 ms, floor 4 49.6 ms) are the first regions of a floor: cold memo tables (lines, catalogue, village plan) under the veil, one-time. The 66.7 ms max of the first 7 x 7 soak was the cold start plus a busy machine; do not re-investigate unless a warm max rises above ~10 ms.
 
