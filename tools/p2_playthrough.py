@@ -56,9 +56,15 @@ for _, id in ipairs(chain) do if P.rooms[id] then out[#out + 1] = id .. ':' .. P
 print(P.floor, #P.order, table.concat(out, ','))
 """
 
+def act(v, **kw):
+    """an input action at a KNOWN tick: the state hash is a sync point (the previous call's ticks are all done, the queue is drained); without it two live runs of one seed part in the first fight (the action lands one tick earlier or later; tools/p2_playthrough.py HASH_TRACE=1 shows two traces that agree line by line)"""
+    v.state_hash()
+    return v.tool("input_action", **kw)
+
 def fight(v, room, max_ticks=1800, step=60):
+    if os.environ.get("HASH_TRACE"): print("   H", room, "start", v.state_hash())
     L(v, "Game.autoaim = true; Game.state.mp = Game.player.max_mp()", 1)
-    v.tool("input_action", name="attack", down=True, player=0)
+    act(v, name="attack", down=True, player=0)
     t = 0
     start = L(v, "local G=Game; print(G.state.kills, math.floor(G.state.hp))", 0)[0].split("\t")
     while t < max_ticks:
@@ -70,8 +76,18 @@ local r = G.floorgen.layout.rooms['%s']
 if lx < r.x - 8 or lx > r.x + r.w + 8 or lz < r.z - 8 or lz > r.z + r.d + 8 then local c = G.world.checkpoints['%s']; player.teleport(G.mx(c.x), G.my(0.1), G.mz(c.z), { wait = true }) end
 if G.state.hp < G.player.max_hp() * 0.45 then G.player.quick('heal') end
 print(G.enemies.alive_in('%s'), math.floor(G.state.hp), G.state.deaths)""" % (room, room, room), step)
-        v.tool("input_action", name="ability", down=True, player=0)
+        act(v, name="ability", down=True, player=0)
         t += step
+        if os.environ.get("HASH_TRACE"): print("   H", room, t, v.state_hash())             # (two live runs of one seed: the first line that differs says where they part)
+        if os.environ.get("BOSS_TRACE") and t % 480 == 0:      # who is where: the player, then every living enemy of the room (kind, distance, height above the player, hp, its state)
+            print("   trace t", t, L(v, """local G=Game; local px, py, pz = player.pos(); local t = {}
+for _, i in pairs(G.enemies.list) do if not i.dead and i.room == '%s' then local x, y, z = G.enemies.position(i); if x then t[#t + 1] = string.format('%%s d%%.1f dy%%.1f hp%%.0f %%s', i.kind, G.dist2(x, z, px, pz), y - py, i.hp, tostring(i.state or i.mode or '')) end end end
+table.sort(t); print(string.format('player (%%.1f,%%.1f,%%.1f) hp %%.0f | ', px, py, pz, G.state.hp) .. table.concat(t, ' | '))""" % room, 0))
+            if os.environ.get("BOSS_TRACE") == "2":
+                print("   boss/walls", L(v, """local G=Game; local P = G.floorgen.layout; local ring = P.rings and P.rings['%s']; local out = {}
+for _, i in pairs(G.enemies.list) do if i.T and i.T.boss and not i.dead then local x, y, z = G.enemies.position(i); out[#out + 1] = string.format('boss at (%%.1f,%%.2f,%%.1f) hp %%.0f', x - G.mx(0), y, z - G.mz(0), i.hp) end end
+if ring and ring.walls then for _, w in ipairs(ring.walls) do out[#out + 1] = string.format('wall %%s %%s (%%.0f,%%.0f)', tostring(w.w.id), w.open and 'OPEN' or 'shut', w.x, w.z) end end
+print(table.concat(out, ' | '))""" % room, 0))
         if os.environ.get("BODIES_TRACE"):
             bl = v.tool("bodies")["bodies"]; lowc = len([x for x in bl if x["pos_m"][1] < -5])
             if lowc != fight.last: print("   t %d: bodies below the world %d (alive in room: %s, first: %s)" % (t, lowc, out[0] if out else "?", [(x["id"], x["voxels"], [round(c) for c in x["pos_m"]]) for x in bl if x["pos_m"][1] < -5][:2])); fight.last = lowc
@@ -82,7 +98,7 @@ for _, i in pairs(G.enemies.list) do if not i.dead and i.room == '%s' then local
 local r = G.floorgen.layout.rooms['%s']; local cx, cz = G.mx(r.x + r.w / 2), G.mz(r.z + r.d / 2)
 if best and bd > 6 then local dx, dz = cx - best[1], cz - best[3]; local n = math.max(0.1, math.sqrt(dx*dx + dz*dz)); local tx, ty, tz = best[1] + dx / n * 2.2, best[2] + 0.1, best[3] + dz / n * 2.2; local function solid(h) return world.solid(math.floor(tx * 16), math.floor((ty + h) * 16), math.floor(tz * 16)) end; if not (solid(0.2) or solid(1.0) or solid(1.7)) then player.teleport(tx, ty, tz, { wait = true }) end end""" % (room, room), 1)
         if out and out[0].split("\t")[0] == "0": break
-    v.tool("input_action", name="attack", down=False, player=0)
+    act(v, name="attack", down=False, player=0)
     L(v, "Game.autoaim = false", 0)
     end = L(v, "local G=Game; print(G.state.kills, math.floor(G.state.hp), G.state.deaths, G.state.level)", 0)[0].split("\t")
     return t, int(end[0]) - int(start[0]), end

@@ -25,5 +25,12 @@ for l in open("projects/dungeon_crawler/foliage.csv"):
     if f[0] != "grass" and float(f[3]) > {"moss": 0.6}.get(f[0], 0.3): bad.append((f[0], f[3]))
 if bad: print("foliage.csv: density above 0.3:", bad); sys.exit(1)
 PY
+# determinism of the bot: two LIVE runs of one seed (floor 1, no replay) end on one state hash (only without --quick: 2 x 3 min). The bot's input actions go through act() (a state_hash first): without it
+# the action lands one tick earlier or later from run to run and the fights part (ENGINE_FEEDBACK Phase 27).
+if [ $QUICK = 0 ]; then
+    h1=$(python3 tools/p2_playthrough.py 4242 janitor 1 --no-replay 2>&1 | grep "^state hash")
+    h2=$(python3 tools/p2_playthrough.py 4242 janitor 1 --no-replay 2>&1 | grep "^state hash")
+    [ -n "$h1" ] && [ "$h1" = "$h2" ] || { echo "bot determinism FAILED: '$h1' vs '$h2'"; fail=1; }
+fi
 [ $fail = 0 ] && echo "precommit: all good" || echo "precommit: FAILED"
 exit $fail

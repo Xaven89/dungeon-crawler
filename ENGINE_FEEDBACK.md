@@ -427,3 +427,12 @@ repro: projects/dungeon_crawler/foliage.csv row `crack` density 0.02, `tools/pol
 workaround: tuned by picture (0.006 for the dark cracks); tools/precommit.sh keeps every non-meadow row at or below 0.3.
 ask: docs/FOLIAGE.md should say what `density` is (blades per what area, at which `spread`, how `share` and `patch_density` combine) so a developer can pick a value without a picture loop.
 
+## Phase 27: an MCP `input_action` lands on a different tick from one live run to the next (binary d0bc0a5)
+kind: bug (determinism of live MCP sessions)        severity: hurts (every "fight outcome in the usual band" check was noise; two live runs of one seed parted in the first fight)
+what I tried: tools/p2_playthrough.py 4242 janitor 1 --no-replay run twice; `fight()` holds the attack with `input_action {name = "attack", down = true}` and calls `lua {ticks = 60}` in a loop.
+expected: "Nothing runs between two calls" (docs/MCP.md): the same calls give the same session, hash for hash.
+happened: the two runs agree until the first fight (the crypt, 180 ticks, 3 kills in both) and end it with different player hp (97 vs 88); all later rooms differ. The recordings of both replay to their own hash. With `state_hash` called after every 60-tick chunk (HASH_TRACE=1), two runs agree on all 116 hashes; with a `state_hash` call immediately before each input_action (act() in the tool) two runs give the identical final hash (11d0223fd4ff3a2d). So a call that returns before the sim thread has finished its ticks lets the next input_action land on tick T or T+1, depending on thread timing.
+repro: the two commands above, compare "state hash:" lines (or the per-room table).
+workaround: a state_hash call before every input_action (tools/p2_playthrough.py act()); precommit (full) runs the bot twice and compares.
+ask: input_action (and every logged-action tool) should apply at a defined tick boundary: after the pending ticks of the previous call, or take an explicit `tick`.
+
