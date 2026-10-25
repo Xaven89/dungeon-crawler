@@ -13,8 +13,8 @@ local DECK = { red = "carpet", yellow = "gold", orange = "cinderblock", green = 
 
 -- the cars of the floor (made when the floor is entered or loaded, in the floor's scope: taken away with it)
 function T.enter(P)
-    for _, old in pairs(T.cars or {}) do if old.run then pcall(sound.stop, old.run, 0.2) end end          -- (the loops of the last floor 4)
-    if T.ride_h then pcall(sound.stop, T.ride_h, 0.2); T.ride_h = nil end
+    for _, old in pairs(T.cars or {}) do if type(old.run) == "number" then pcall(sound.stop, old.run, 0.2) end end          -- (the loops of the last floor 4)
+    if T.ride_h then if type(T.ride_h) == "number" then pcall(sound.stop, T.ride_h, 0.2) end; T.ride_h = nil end
     T.cars, T.riders = {}, {}
     local car = transit_const().car
     for _, line in ipairs(transit_lines()) do
@@ -182,7 +182,7 @@ end
 function T.sound_tick(t)
     if not T.cars or not G.state or not G.state.class or G.screen then return end
     if not G.floorgen.layout or G.floorgen.layout.floor ~= 4 then
-        if T.ride_h then pcall(sound.stop, T.ride_h, 0.5); T.ride_h = nil end
+        if T.ride_h then if type(T.ride_h) == "number" then pcall(sound.stop, T.ride_h, 0.5) end; T.ride_h = nil end
         return
     end
     local px, py, pz = player.pos()
@@ -204,12 +204,12 @@ function T.sound_tick(t)
             c.near = d2 < SND_RANGE
             -- the running loop: on a body, silent until the speed raises it
             if c.near and not c.run then
-                c.run = sound.play{ file = "sounds/tr_run_loop.wav", loop = true, bus = "sfx", at = { body = c.body }, volume = 0 }
+                c.run = sound.play{ file = "sounds/tr_run_loop.wav", loop = true, bus = "sfx", at = { body = c.body }, volume = 0 } or true          -- (true: no sound card / sink, a session without audio-out gets no handle and must not start it again every tick)
                 G.sfx.logline("tr_run_loop", "sfx", 0, 1, true)
             elseif not c.near and c.run and d2 > SND_RANGE + 10 then
-                pcall(sound.stop, c.run, 0.5); c.run = nil
+                if type(c.run) == "number" then pcall(sound.stop, c.run, 0.5) end; c.run = nil
             end
-            if c.run and t % 15 == 0 then
+            if type(c.run) == "number" and t % 15 == 0 then
                 local f = math.min(1, v / 5)
                 pcall(sound.volume, c.run, f, 0.25); pcall(sound.pitch, c.run, 0.75 + 0.25 * f, 0.25)
             end
@@ -234,15 +234,15 @@ function T.sound_tick(t)
     -- the ride: 2D, only while the deck moves
     if deck and deck_v > 0.3 then
         if not T.ride_h then
-            T.ride_h = sound.play{ file = "sounds/tr_ride.wav", loop = true, bus = "sfx", volume = 0 }
+            T.ride_h = sound.play{ file = "sounds/tr_ride.wav", loop = true, bus = "sfx", volume = 0 } or true
             G.sfx.logline("tr_ride", "sfx", 0, 1, false)
         end
-        if t % 15 == 0 and T.ride_h then
+        if t % 15 == 0 and type(T.ride_h) == "number" then
             local f = math.min(1, deck_v / 5)
             pcall(sound.volume, T.ride_h, 0.3 + 0.7 * f, 0.25); pcall(sound.pitch, T.ride_h, 0.8 + 0.2 * f, 0.25)
         end
     elseif T.ride_h then
-        pcall(sound.stop, T.ride_h, 0.5); T.ride_h = nil
+        if type(T.ride_h) == "number" then pcall(sound.stop, T.ride_h, 0.5) end; T.ride_h = nil
     end
 end
 
