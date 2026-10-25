@@ -12,8 +12,15 @@ local sfx_index = {}
 -- then every sound prints  SFXLOG <tick> <name> <bus> <volume> <pitch> <2d|3d>  to the engine log. Not part of the saved state, no effect on the simulation.
 G.sfx.logging = false
 function G.sfx.log(on) G.sfx.logging = on and true or false end
-function G.sfx.logline(name, bus, vol, pitch, is3d)
-    if G.sfx.logging then print(string.format("SFXLOG %d %s %s %.2f %.2f %s", time.tick(), name, bus, vol or 1, pitch or 1, is3d and "3d" or "2d")) end
+-- (wx, wy, wz: the world position of a 3D sound: SFXBAD marks one more than 64 m from the player, which would be a position passed in the wrong frame)
+function G.sfx.logline(name, bus, vol, pitch, is3d, wx, wy, wz)
+    if not G.sfx.logging then return end
+    print(string.format("SFXLOG %d %s %s %.2f %.2f %s", time.tick(), name, bus, vol or 1, pitch or 1, is3d and "3d" or "2d"))
+    if is3d and wx and wy and wz then
+        local px, py, pz = player.pos()
+        local dh = math.sqrt((wx - px) ^ 2 + (wz - pz) ^ 2)
+        if dh > 64 or math.abs(wy - py) > 24 then print(string.format("SFXBAD %d %s at (%.1f %.1f %.1f), the player at (%.1f %.1f %.1f): %.0f m", time.tick(), name, wx, wy, wz, px, py, pz, dh)) end
+    end
 end
 local function load_sound(name)
     local v = sfx_index[name]
@@ -41,7 +48,7 @@ function G.sfx.play(name, lx, ly, lz, vol, pitch)
     name = variant(name)
     local idx = load_sound(name)
     if idx < 0 then return false end
-    G.sfx.logline(name, "sfx", vol, pitch, lx ~= nil)
+    G.sfx.logline(name, "sfx", vol, pitch, lx ~= nil, lx and G.mx(lx), lx and G.my(ly), lx and G.mz(lz))
     if lx then return sound.play{ file = "sounds/" .. name .. ".wav", at = { G.mx(lx), G.my(ly), G.mz(lz) }, volume = vol or 1, pitch = pitch or 1, bus = "sfx" } end
     return sound.play{ file = "sounds/" .. name .. ".wav", volume = vol or 1, pitch = pitch or 1, bus = "sfx" }
 end
@@ -54,7 +61,7 @@ end
 function G.sfx.play_world(name, wx, wy, wz, vol, pitch)
     name = variant(name)
     if load_sound(name) < 0 then return false end
-    G.sfx.logline(name, "sfx", vol, pitch, true)
+    G.sfx.logline(name, "sfx", vol, pitch, true, wx, wy, wz)
     return sound.play{ file = "sounds/" .. name .. ".wav", at = { wx, wy, wz }, volume = vol or 1, pitch = pitch or 1, bus = "sfx" }
 end
 function G.sfx.preload(names) for _, n in ipairs(names) do load_sound(n) end end
@@ -65,7 +72,7 @@ function G.sfx.preload(names) for _, n in ipairs(names) do load_sound(n) end end
 G.sfx.loops, G.sfx.beds, G.sfx.doors = {}, {}, {}
 function G.sfx.loop(key, file, lx, ly, lz, fade)
     if G.sfx.loops[key] then return end
-    G.sfx.logline(file, "sfx", 1, 1, true)
+    G.sfx.logline(file, "sfx", 1, 1, true, G.mx(lx), G.my(ly), G.mz(lz))
     G.sfx.loops[key] = sound.play{ file = "sounds/" .. file .. ".wav", loop = true, at = { G.mx(lx), G.my(ly), G.mz(lz) }, bus = "sfx", fade_in = fade or 1 } or true
 end
 function G.sfx.loop_stop(key, fade)
