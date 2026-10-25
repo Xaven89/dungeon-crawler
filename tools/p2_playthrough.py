@@ -210,6 +210,7 @@ def main():
     maxagents = 0
     with Voxelith(["--project", project, "--threads", "3", "--save", "/tmp/descent_scratch.vxs", "--seed", str(seed), "--record", log]) as v:
         v.step(400)
+        if os.environ.get("SFXLOG"): L(v, "Game.sfx.log(true)", 1)          # (the sound audit: every sound prints SFXLOG ...; with VOXELITH_STDERR=file the whole live log is kept)
         if os.environ.get("GEN_PRELUDE"): L(v, os.environ["GEN_PRELUDE"], 1)       # (switches for a bisect: Game.nosigns = true; Game.nocover = true)
         L(v, "Game.screen = 'run'; Game.run.start(0, true)", 2)
         L(v, "Game.player.pick_class('%s')" % cls, 2)
