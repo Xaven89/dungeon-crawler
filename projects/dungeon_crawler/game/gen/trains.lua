@@ -90,7 +90,7 @@ function T.on_stopped(name, e)
     else dest = station_of(line, (e.stop == 1) and #line.stops or 1) end
     local cand = {}
     for id, inst in pairs(E.list) do
-        if inst.room == here and not inst.dead and not inst.captive and not inst.T.boss and not inst.riding then
+        if (inst.room == here or inst.walker_to == here) and not inst.dead and not inst.captive and not inst.T.boss and not inst.riding then
             local x, y, z = E.position(inst)
             if x and G.dist2(x, z, bx, bz) <= T.BOARD_RANGE and math.abs(y - by) < 1.2 then cand[#cand + 1] = inst end
         end
@@ -106,8 +106,47 @@ function T.on_stopped(name, e)
         local o = SLOTS[slot]
         if agent.ride(inst.id, c.body, { o[1], o[2], o[3] }) then
             used[slot] = true
-            inst.riding = name
+            inst.riding = name; inst.walker_to = nil
             riders[#riders + 1] = { inst = inst, dest = dest, slot = slot }
+        end
+    end
+    -- 3. when the car has gone, the den's walkers come to this platform
+    after(line.stops[e.stop][2] * 60 + 30, function() T.send_walkers(here) end)
+end
+
+-- DEN WALKERS: the monsters of a den that has a door to a station walk to the platform after the car has left it (the stop's seconds + half a second), stand at the crowd's places and board at the next `arrived` like the crowd
+-- (BOARD_RANGE); two at most per departure, the lowest ids, no boss, no captive. The walk is the agent's own (agent.walk): deterministic, only while the den and the station are alive.
+T.WALKERS = 2
+function T.send_walkers(here)
+    local P = G.floorgen.layout
+    if not P or P.floor ~= 4 then return end
+    local room = P.rooms[here]
+    if not room or not G.floorgen.made[here] then return end
+    local info, E = room.info, G.enemies
+    local dens = {}
+    for _, side in ipairs({ "N", "S", "E", "W" }) do
+        if info.open[side] == "service" then
+            local d = ({ N = { 0, -1 }, S = { 0, 1 }, E = { 1, 0 }, W = { -1, 0 } })[side]
+            local id = "c" .. (info.ci + d[1]) .. "_" .. (info.cj + d[2])
+            local nb = P.rooms[id]
+            if nb and nb.info.code == "d" and G.floorgen.made[id] then dens[#dens + 1] = id end
+        end
+    end
+    if #dens == 0 then return end
+    local ox, oz = G.floorgen.off(room)
+    local spots = transit_crowd_spots(info)
+    local n = 0
+    for _, den in ipairs(dens) do
+        local cand = {}
+        for _, inst in pairs(E.list) do
+            if inst.room == den and not inst.dead and not inst.captive and not inst.T.boss and not inst.riding and not inst.walker_to then cand[#cand + 1] = inst end
+        end
+        table.sort(cand, function(a, b) return a.id < b.id end)
+        for _, inst in ipairs(cand) do
+            if n >= T.WALKERS then break end
+            n = n + 1
+            local sp = spots[1 + (n - 1) % #spots]
+            if pcall(agent.walk, inst.id, G.mx(ox + sp.x), G.my(room.info.room.y or 0), G.mz(oz + sp.z)) then inst.walker_to = here end
         end
     end
 end
