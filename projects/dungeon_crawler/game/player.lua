@@ -175,6 +175,7 @@ function P.hurt(amount, src, opts)
         amount = max(1, amount - P.defense() * 0.5)
     end
     amount = floor(amount + 0.5)
+    P.last_hurt = time.tick()                                    -- (the music director's fight state: not saved, cosmetic)
     s.hp = s.hp - amount
     G.tally("damage", tostring(src or "?"), amount)
     if G.show then G.show.on_hurt(amount, src) end
