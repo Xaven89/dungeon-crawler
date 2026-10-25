@@ -245,7 +245,7 @@ sound.hit("metal", speed [, size [, x, y, z]])
 sound.step(creature, material [, speed [, x, y, z]])   -- one footstep of that creature (footsteps.csv, docs/AUDIO.md "Footsteps")
 sound.load("sounds/door.wav")  --> index      -- WAV, relative to the project; -1 when unreadable
 sound.play("sounds/door.wav" | index, x, y, z [, volume [, pitch]])  --> true / false
-sound.play{ file, loop, bus = "sfx" | "music" | "voice", volume, pitch, at = {x, y, z} | { body = id }, fade_in }  --> handle   -- no `at`: 2D; `at = { body = id }`: follows the body; sound.move(h, x, y, z); sound.stop(h [, fade]) / sound.volume(h, v [, fade]) / sound.pitch(h, p [, fade]) / sound.bus(name, v)  (docs/AUDIO.md)
+sound.play{ file, loop, bus = "sfx" | "music" | "voice", volume, pitch, at = {x, y, z} | { body = id }, fade_in }  --> handle   -- no `at`: 2D; `at = { body = id }`: follows the body; sound.move(h, x, y, z); ok = sound.unload(file | number)  (frees the memory; false while it plays); sound.stop(h [, fade]) / sound.volume(h, v [, fade]) / sound.pitch(h, p [, fade]) / sound.bus(name, v)  (docs/AUDIO.md)
 ```
 Cosmetic: nothing is logged or hashed; there is no sound in headless runs, recordings, replays or MCP sessions.
 
