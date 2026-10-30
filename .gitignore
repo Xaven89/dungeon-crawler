@@ -13,3 +13,29 @@ lib/
 .events/
 .engine_install.sha
 tools/*.new
+
+# generated / local state
+*.rec
+*.recording
+*.vxr
+*.vxs.gen
+.cache/
+*.tmp
+*.bak
+*.orig
+*.swp
+.DS_Store
+
+# local agent / editor state
+.claude/
+.vscode/
+.idea/
+
+# credentials: never commit
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+*.token

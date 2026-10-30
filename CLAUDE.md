@@ -32,7 +32,7 @@ Your game goes in **`projects/dungeon_crawler/`** (a project folder: `project.cf
 
 ## The machine
 - User `claude`, no sudo, no docker, no system compiler. **Use at most 8 of the 16 threads and 14 GB RAM** (other services run here; `--threads 3` for the engine is plenty). No heavy parallel work.
-- No GitHub access, on purpose. **Commit locally only** (`git`), on `main`, small commits, one topic each; never add credentials.
+- GitHub: the user permitted pushing to `git@github.com:Xaven89/dungeon-crawler.git` (private, SSH key of this machine); no token, no `gh`. Commit on `main`, small commits, one topic each, always with a commit message; push at milestones, fast-forward only; never add credentials. Keep `CHANGELOG.md` current: a section per version, tag `vX.Y.Z`.
 - Do not touch `/mnt/data/projects/voxelith` (the engine's source), `/mnt/data/projects/voxel-game` or the workspace folder. You do not need the engine's source: if the engine is wrong, say so in `ENGINE_FEEDBACK.md`.
 - Never use `pkill -f` or `pgrep -f` with a pattern that appears in your own command line (it kills your own shell).
 - Never leave generated files in git: world stores (`*.vxs`), recordings, caches (`.gitignore` has them).
